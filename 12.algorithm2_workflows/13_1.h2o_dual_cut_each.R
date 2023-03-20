@@ -3,12 +3,13 @@ filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 
+Cancerlist = Cancerlist[c(-1:-4)]
 type = "each"
 # mode = "dual"
 mode = ""
 bi_num_mode = "log"
-folder_name = "h2o_bias_pval_dual_cut_50"
-num_CancerType = "35.TCGA-KIDNEY"
+folder_name = "h2o_bias_pval_each_cut_50"
+set.seed(13524)
 for (num_CancerType in Cancerlist) {
   
   # 1) prepare for mldl
@@ -19,7 +20,7 @@ for (num_CancerType in Cancerlist) {
   h2o.removeAll()
   Sys.sleep(runif(1,min=1,max=10))
   
-  main.path_tc = paste0(filepath, "00.data/", num_CancerType)
+  main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)
   CancerType = gsub('[.]','',gsub('\\d','', num_CancerType))
   
   if (mode == "dual" && bi_num_mode == "1") {
@@ -218,7 +219,7 @@ for (num_CancerType in Cancerlist) {
       }
     
     if (top_acc < 0.8 ) {
-      max_num = num_round *50
+      max_num = num_round *4
       new_features = tmp_features[-(1:max_num)]
       print(length(new_features))
       
@@ -237,7 +238,6 @@ for (num_CancerType in Cancerlist) {
   }
 
   best_cut_dl = get(paste0("best_filtered_dl",top_num))
-  best_cut_dl = h2o.loadModel("/home/seokwon/00.data/35.TCGA-KIDNEY/h2o_bias_pval_dual_cut_50/gbm_grid_filtered_model_596_0.851/gbm_grid_filtered_model_596")
   print(paste("best_features :", best_cut_dl@parameters$x))
 
   df_dl_merge_confusion = rbind(as.data.frame(h2o.confusionMatrix(best_cut_dl)),"\n",
@@ -365,7 +365,7 @@ for (num_CancerType in Cancerlist) {
     
     if (top_acc < 0.8 ) {
       
-      max_num = num_round *50
+      max_num = num_round *4
       new_features = tmp_features[-(1:max_num)]
       print(length(new_features))
       
