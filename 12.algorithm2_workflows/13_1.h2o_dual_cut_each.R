@@ -1,13 +1,11 @@
 library(h2o)
-filepath = "/home/seokwon/"
+filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
-Cancerlist = dir(paste0(filepath, "/00.data/"))
-# Cancerlist = Cancerlist[7:9]
-Cancerlist = Cancerlist[c(-2,-5,-15)]
-Cancerlist = Cancerlist[c(-1:-6)]
-type = "link"
-mode = "dual"
-# mode = ""
+Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
+
+type = "each"
+# mode = "dual"
+mode = ""
 bi_num_mode = "log"
 folder_name = "h2o_bias_pval_dual_cut_50"
 num_CancerType = "35.TCGA-KIDNEY"
