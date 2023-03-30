@@ -32,3 +32,24 @@ for (num in 1:length(pathway_combinations)) {
 link_genes$pathway_name = rownames(link_genes)
 write.csv(link_genes , paste0(ref_path, "/KEGG_pathway_shared_genes.csv"))
 saveRDS(link_genes , paste0(ref_path, "/KEGG_pathway_shared_genes.rds"))
+
+### pathway gene for other format wo 0 shared genes
+
+onco_for_pathway_gene = data.frame(Genes = NA , Pathway = NA )
+onco_for_pathway_gene$Genes = NA
+links_genes_wo = link_genes[which(link_genes$n_genes != 0),]
+n = 0
+for ( total_pathway in 1:length(links_genes_wo$shared_genes) ) {
+  for (sh_genes in strsplit(links_genes_wo$shared_genes[total_pathway], ",")[[1]]) {
+    n = n +1
+    onco_for_pathway_gene[n,]$Genes = sh_genes
+    onco_for_pathway_gene[n,]$Pathway = links_genes_wo$pathway_name[total_pathway]
+  }
+ 
+}
+onco_for_pathway_gene <- data.frame(onco_for_pathway_gene, row.names = NULL)
+
+write.csv(onco_for_pathway_gene , paste0(ref_path, "/KEGG_pathway_shared_each_gene.csv"))
+saveRDS(onco_for_pathway_gene , paste0(ref_path, "/KEGG_pathway_shared_each_gene.rds"))
+
+
