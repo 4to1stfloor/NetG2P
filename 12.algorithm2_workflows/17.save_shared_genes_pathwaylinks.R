@@ -51,5 +51,3 @@ onco_for_pathway_gene <- data.frame(onco_for_pathway_gene, row.names = NULL)
 
 write.csv(onco_for_pathway_gene , paste0(ref_path, "/KEGG_pathway_shared_each_gene.csv"))
 saveRDS(onco_for_pathway_gene , paste0(ref_path, "/KEGG_pathway_shared_each_gene.rds"))
-
-

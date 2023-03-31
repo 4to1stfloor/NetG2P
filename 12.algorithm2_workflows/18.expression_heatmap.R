@@ -42,7 +42,7 @@ tcga.calc.zscore = function(sce, target.genes){
 
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 sce_path = "/mnt/gluster_server/data/raw/TCGA_data/00.data/"
-Cancerlist = Cancerlist[-1:-11]
+
 # for all
 for (num_CancerType in Cancerlist) {
   
