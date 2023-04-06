@@ -9,6 +9,8 @@ library(readxl)
 library(org.Hs.eg.db)
 library(clusterProfiler)
 library(DESeq2)
+library(survival) 
+library(survminer) 
 
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
@@ -46,7 +48,7 @@ tcga.calc.zscore = function(sce, target.genes){
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 sce_path = "/mnt/gluster_server/data/raw/TCGA_data/00.data/"
 Cancerlist = Cancerlist[-7]
-num_CancerType = "35.TCGA-KIDNEY"  
+num_CancerType = "04.TCGA-CESC" 
 # for all
 for (num_CancerType in Cancerlist) {
   
@@ -108,7 +110,6 @@ for (num_CancerType in Cancerlist) {
     }
   } 
   
-  
   if (sum(duplicated(names(bf_sh_zs_exp_wo_filt))) == 0 ) {
     colnames(bf_sh_zs_exp_wo_filt) = substr(colnames(bf_sh_zs_exp_wo_filt), 1, 12)
   }
@@ -153,8 +154,7 @@ for (num_CancerType in Cancerlist) {
   
   tmp_pheat_cut = as.data.frame (cutree(out$tree_row, 2) , out[["tree_row"]][["labels"]])
   colnames(tmp_pheat_cut) = "cluster"
-  
-  
+
   rownames(bf_zs_shared_exp_filt_df) %in% rownames(best_features_df)
   if (all.equal(rownames(bf_zs_shared_exp_filt_df), rownames(best_features_df)) == TRUE) {
     bf_zs_shared_exp_filt_df$cluster = tmp_pheat_cut$cluster
@@ -162,6 +162,18 @@ for (num_CancerType in Cancerlist) {
     bf_zs_shared_exp_filt_df = bf_zs_shared_exp_filt_df[rownames(best_features_df),]
     bf_zs_shared_exp_filt_df$cluster = tmp_pheat_cut$cluster
   }
+  
+  sum(bf_zs_shared_exp_filt_df$cluster == 1)
+  rownames(bf_zs_shared_exp_filt_df) == rownames(duration_log_df)
+  bf_zs_shared_exp_filt_df$duration = duration_log_df$duration
+  bf_zs_shared_exp_filt_df$vital_status = duration_log_df$vitalstatus
+  bf_zs_shared_exp_filt_df$status = NA
+  bf_zs_shared_exp_filt_df$status = ifelse(bf_zs_shared_exp_filt_df$vital_status == "Alive", 0 , 1)
+  
+  fit = survfit(Surv(duration, status) ~ cluster, data = bf_zs_shared_exp_filt_df)
+  
+  ggsurvplot(fit, data = bf_zs_shared_exp_filt_df, risk.table = TRUE,
+             palette = "jco", pval = TRUE, surv.median.line = "hv", xlab = "days")
   
   bad_group = bf_zs_shared_exp_filt_df[which(bf_zs_shared_exp_filt_df$cluster == 1),]
   bad_group = na.omit(bad_group)
@@ -174,6 +186,7 @@ for (num_CancerType in Cancerlist) {
   good_out = pheatmap::pheatmap(good_group[,-ncol(good_group)] , cluster_cols = T,
                      cluster_rows = T, labels_cols = "",
                      show_rownames = T)
+  
   bad_cluster1_gene = head(colnames(bad_group[,bad_out$tree_col[["order"]]]), n= 150)
   good_cluster2_gene = head(colnames(bad_group[,good_out$tree_col[["order"]]]), n= 150)
  
