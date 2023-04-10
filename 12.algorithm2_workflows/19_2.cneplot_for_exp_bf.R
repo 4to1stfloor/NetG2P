@@ -169,7 +169,7 @@ for (num_CancerType in Cancerlist) {
   bf_zs_shared_exp_filt_df$vital_status = duration_log_df$vitalstatus
   bf_zs_shared_exp_filt_df$status = NA
   bf_zs_shared_exp_filt_df$status = ifelse(bf_zs_shared_exp_filt_df$vital_status == "Alive", 0 , 1)
-  
+  bf_zs_shared_exp_filt_df$vital_status = NULL
   fit = survfit(Surv(duration, status) ~ cluster, data = bf_zs_shared_exp_filt_df)
   
   ggsurvplot(fit, data = bf_zs_shared_exp_filt_df, risk.table = TRUE,

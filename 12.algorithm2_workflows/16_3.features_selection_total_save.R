@@ -9,11 +9,12 @@ library(cluster)
 library(factoextra) 
 library(dplyr)
 library(stringr)
-
+setwd("/home/seokwon/nas/04.Results/")
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
-Cancerlist = Cancerlist[1:11]
+set.seed(13524)
+total_results_pval = data.frame()
 for (num_CancerType in Cancerlist) {
   
   main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)
@@ -22,11 +23,6 @@ for (num_CancerType in Cancerlist) {
   # call input
   annotate_best_features =  read.csv(paste0(filepath,"13.analysis/",CancerType,"_best_features.csv"))
   duration_log_df = readRDS(paste0(main.path_tc, "/", CancerType,"_dual_add_duration_log.rds"))
-  
-  # fig_folder_create
-  dir.create(paste0(main.path_tc,"/cluster_fig"))   
-  fig_path = paste0(main.path_tc,"/cluster_fig")
-  setwd(fig_path)
   
   # results_pval
   result_surv_pval = data.frame(matrix(ncol = 1))
@@ -40,11 +36,16 @@ for (num_CancerType in Cancerlist) {
   best_features_df$status[which(best_features_df$vitalstatus == "Dead")] = 1
   best_features_df$status[which(best_features_df$vitalstatus == "Alive")] = 0
   
-  
+  result_surv_pval$CancerType = NA
+  result_surv_pval$num_of_features = NA
+
+
   for (last_num in 2:length(annotate_best_features$variable)) {
     
-    out = pheatmap((best_features_df[,1:last_num] > -log(0.05))*1 , cluster_cols = T,
-                   cluster_rows = T, labels_cols = "",
+    out = pheatmap((best_features_df[,1:last_num] > -log(0.05))*1 , 
+                   cluster_cols = T,
+                   cluster_rows = T, 
+                   labels_cols = "",
                    show_rownames = T)
     print(paste0(CancerType , "_start : ",last_num ))
     print("----------------------------------------")
@@ -52,23 +53,35 @@ for (num_CancerType in Cancerlist) {
     
     tmp_pheat_cut = as.data.frame (cutree(out$tree_row, 2) , out[["tree_row"]][["labels"]])
     colnames(tmp_pheat_cut) = "cluster"
+    
     best_features_df$cluster = tmp_pheat_cut$cluster
     fit = survfit(Surv(duration, status) ~ cluster, data = best_features_df)
+    # ggsurvplot(fit, data = best_features_df, risk.table = TRUE,
+    #            palette = "jco", pval = TRUE, surv.median.line = "hv", xlab = "days")
+    if (round(sum(best_features_df$cluster == 1) / nrow(best_features_df),digits = 2) <= 0.7 && 
+        round(sum(best_features_df$cluster == 1) / nrow(best_features_df) >= 0.3 , digits = 2)){
+      result_surv_pval[last_num,"num_of_features"] = last_num
+      result_surv_pval[last_num,"pval"] = surv_pvalue(fit)$pval
+      result_surv_pval[last_num,"CancerType"] = CancerType
+      # result_surv_pval[last_num,"pval"] = surv_pvalue(fit)$pval
+      # result_surv_pval[last_num,"CancerType"] = CancerType
+    } 
     
-    png(filename = paste0("cut",last_num ,"_cluster_test.png"),
-        width = 25, height = 25,  units = "cm" ,pointsize = 12,
-        bg = "white", res = 1200, family = "")
-    
-    plot_roc = ggsurvplot(fit, data = best_features_df, risk.table = TRUE,
-                          palette = "jco", pval = TRUE, surv.median.line = "hv", xlab = "days")
-    print(plot_roc)
-    dev.off()
-    
-    result_surv_pval[last_num,"pval"] = surv_pvalue(fit)$pval
     remove(tmp_pheat_cut,fit,plot_roc)
   }
-  remove(best_features_df,annotate_best_features,duration_log_df)
-  write.csv(result_surv_pval, paste0(CancerType, "_result_survpval.csv"))
   
+  result_surv_pval = na.omit(result_surv_pval)
+  result_surv_pval_spe = result_surv_pval[which(result_surv_pval$pval < 0.05),]
+  
+  if (length(result_surv_pval_spe$pval) == 0) {
+    total_results_pval = rbind(total_results_pval, result_surv_pval[which(result_surv_pval$paval == min(result_surv_pval$pval)),])
+    
+  } else {
+    total_results_pval = rbind(total_results_pval, result_surv_pval_spe[which(result_surv_pval_spe$pval == min(result_surv_pval_spe$pval)),])
+  }
+  
+  write.csv(result_surv_pval_spe, paste0(CancerType, "_results_spe_survpval.csv"))
+  remove(best_features_df,annotate_best_features,duration_log_df,result_surv_pval_spe,result_surv_pval)
 }
 
+write.csv(total_results_pval, paste0("Total_results_survpval.csv"))
