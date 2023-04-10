@@ -3,7 +3,7 @@ filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 
-Cancerlist = Cancerlist[c(-1:-4)]
+Cancerlist = Cancerlist[c(-1:-9)]
 type = "each"
 # mode = "dual"
 mode = ""
