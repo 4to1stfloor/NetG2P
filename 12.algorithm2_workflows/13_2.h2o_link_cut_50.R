@@ -8,6 +8,7 @@ type = "link"
 mode = ""
 bi_num_mode = "log"
 folder_name = "h2o_bias_pval_link_cut_50"
+Cancerlist = Cancerlist[7:12]
 set.seed(13524)
 for (num_CancerType in Cancerlist) {
   
