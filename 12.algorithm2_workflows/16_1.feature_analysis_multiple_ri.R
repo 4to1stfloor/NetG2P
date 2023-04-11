@@ -13,7 +13,8 @@ library(stringr)
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
-Cancerlist = Cancerlist[1:11]
+set.seed(13524)
+
 for (num_CancerType in Cancerlist) {
   
   main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)
@@ -24,7 +25,7 @@ for (num_CancerType in Cancerlist) {
   duration_log_df = readRDS(paste0(main.path_tc, "/", CancerType,"_dual_add_duration_log.rds"))
   
   # fig_folder_create
-  dir.create(paste0(main.path_tc,"/cluster_fig"))   
+  # dir.create(paste0(main.path_tc,"/cluster_fig"))   
   fig_path = paste0(main.path_tc,"/cluster_fig")
   setwd(fig_path)
   
@@ -43,9 +44,12 @@ for (num_CancerType in Cancerlist) {
   
   for (last_num in 2:length(annotate_best_features$variable)) {
     
-    out = pheatmap((best_features_df[,1:last_num] > -log(0.05))*1 , cluster_cols = T,
-                   cluster_rows = T, labels_cols = "",
-                   show_rownames = T)
+    out = pheatmap::pheatmap((best_features_df[,1:last_num] > -log(0.05))*1 , 
+                             cluster_cols = T,
+                             cluster_rows = T, 
+                             labels_cols = "",
+                             show_rownames = T)
+    
     print(paste0(CancerType , "_start : ",last_num ))
     print("----------------------------------------")
     # print(table(cutree(out$tree_row, 2)))
