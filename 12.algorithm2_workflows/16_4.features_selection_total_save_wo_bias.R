@@ -9,11 +9,12 @@ library(cluster)
 library(factoextra) 
 library(dplyr)
 library(stringr)
-setwd("/home/seokwon/nas/04.Results/")
+setwd("/home/seokwon/nas/04.Results/test/")
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 set.seed(13524)
+Cancerlist = Cancerlist[-7]
 total_results_pval = data.frame()
 for (num_CancerType in Cancerlist) {
   
@@ -38,7 +39,6 @@ for (num_CancerType in Cancerlist) {
   
   result_surv_pval$CancerType = NA
   result_surv_pval$num_of_features = NA
-
 
   for (last_num in 2:length(annotate_best_features$variable)) {
     
