@@ -11,6 +11,9 @@ library(clusterProfiler)
 library(DESeq2)
 library(survival) 
 library(survminer) 
+library(DOSE)
+library(UpSetR)
+library(enrichplot)
 
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
@@ -20,7 +23,6 @@ link_genes = readRDS(paste0(ref_path, "/KEGG_pathway_shared_genes.rds"))
 folder_name = "h2o_bias_pval_dual_cut_50/"
 
 # zscore normalization
-# 나머지 버리고 정상만 가져와서 그걸 zscore
 tcga.calc.zscore = function(sce, target.genes){
   message("Calculating z-score with respect to all diploid cells. Version 2022.11.07")
   common.genes = intersect(rownames(sce), target.genes)
@@ -46,11 +48,11 @@ tcga.calc.zscore = function(sce, target.genes){
   return(z.mat)
 }
 
+
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 sce_path = "/mnt/gluster_server/data/raw/TCGA_data/00.data/"
 Cancerlist = Cancerlist[-7]
-num_CancerType = "04.TCGA-CESC" 
-
+num_CancerType = "35.TCGA-KIDNEY"
 # for all
 for (num_CancerType in Cancerlist) {
   
@@ -60,6 +62,7 @@ for (num_CancerType in Cancerlist) {
   # call input
   
   sce = readRDS(paste0(sce_path,num_CancerType,"/", CancerType,".sce_raw_snv_cnv.rds"))
+  input_exp = readRDS("~/nas/00.data/filtered_TCGA/35.TCGA-KIDNEY/TCGA-KIDNEY_exp_TPM_mat_filt_log_gene_symbol.rds")
   
   best_features = readRDS(paste0(main.path_tc,"/h2o_bias_pval_dual_cut_50/network/",CancerType,"_best_features_links.rds"))
   best_features$pathwaylinks = ifelse(best_features$from == best_features$to,best_features$from,  paste0(best_features$from, best_features$to) )
@@ -121,14 +124,13 @@ for (num_CancerType in Cancerlist) {
   # rownames(bf_sh_zs_exp_wo_filt) = rownames(bf_sh_zs_exp_wo_filt_df)
   
   # patients filt
-  
   if (CancerType %in% c("TCGA-COADREAD","TCGA-KIDNEY")) {
     bf_zs_shared_exp_filt_df= bf_sh_zs_exp_wo_filt[,intersect(colnames(bf_sh_zs_exp_wo_filt) , rownames(duration_log_df))]
     
   } else {
     bf_zs_shared_exp_filt_df= bf_sh_zs_exp_wo_filt[,rownames(duration_log_df)]
   }
-
+  
   # add vital_status
   bf_zs_shared_exp_filt_df = as.data.frame(t(bf_zs_shared_exp_filt_df))
   bf_zs_shared_exp_filt_df$vitalstatus  = NA
@@ -145,55 +147,81 @@ for (num_CancerType in Cancerlist) {
   best_features_df$status[which(best_features_df$vitalstatus == "Dead")] = 1
   best_features_df$status[which(best_features_df$vitalstatus == "Alive")] = 0
   best_features_df$vitalstatus = NULL
+
   bf_zs_shared_exp_filt_df$vitalstatus = NULL
+  
+  # get best pval on survplot (It could be changed and also the method of )
   pathwaylink_num = readxl::read_xlsx(paste0(main.path_tc,"/cluster_fig/",CancerType,"_result_survpval.xlsx"),sheet = "best")
   
   # 18 means best p-value when devide two cluster
-  out = pheatmap::pheatmap((best_features_df[,1:as.numeric(pathwaylink_num$num)] > -log(0.05))*1 , cluster_cols = T,
-                 cluster_rows = T,labels_cols = "", 
-                 show_rownames = T)
+  out = pheatmap::pheatmap((best_features_df[,1:as.numeric(pathwaylink_num$num)] > -log(0.05))*1 ,
+                           cluster_cols = T,
+                           cluster_rows = T,
+                           labels_cols = "", 
+                           show_rownames = T,
+                           silent = T)
   
   tmp_pheat_cut = as.data.frame (cutree(out$tree_row, 2) , out[["tree_row"]][["labels"]])
   colnames(tmp_pheat_cut) = "cluster"
-
-  rownames(bf_zs_shared_exp_filt_df) %in% rownames(best_features_df)
-  if (all.equal(rownames(bf_zs_shared_exp_filt_df), rownames(best_features_df)) == TRUE) {
-    bf_zs_shared_exp_filt_df$cluster = tmp_pheat_cut$cluster
-  } else {
+  
+  # rownames(bf_zs_shared_exp_filt_df) %in% rownames(best_features_df)
+  if (CancerType == "TCGA-KIDNEY") {
     bf_zs_shared_exp_filt_df = bf_zs_shared_exp_filt_df[rownames(best_features_df),]
     bf_zs_shared_exp_filt_df$cluster = tmp_pheat_cut$cluster
-  }
-  
-  sum(bf_zs_shared_exp_filt_df$cluster == 1)
-  rownames(bf_zs_shared_exp_filt_df) == rownames(duration_log_df)
+    
+    } else if (all.equal(rownames(bf_zs_shared_exp_filt_df), rownames(best_features_df)) == TRUE) {
+      bf_zs_shared_exp_filt_df$cluster = tmp_pheat_cut$cluster
+      }  else {
+        bf_zs_shared_exp_filt_df = bf_zs_shared_exp_filt_df[rownames(best_features_df),]
+        bf_zs_shared_exp_filt_df$cluster = tmp_pheat_cut$cluster
+        }
+
   bf_zs_shared_exp_filt_df$duration = duration_log_df$duration
   bf_zs_shared_exp_filt_df$vital_status = duration_log_df$vitalstatus
   bf_zs_shared_exp_filt_df$status = NA
   bf_zs_shared_exp_filt_df$status = ifelse(bf_zs_shared_exp_filt_df$vital_status == "Alive", 0 , 1)
   bf_zs_shared_exp_filt_df$vital_status = NULL
+  bf_zs_shared_exp_filt_df = na.omit(bf_zs_shared_exp_filt_df)
+  
+  bf_zs_shared_exp_filt_df = bf_zs_shared_exp_filt_df[which((bf_zs_shared_exp_filt_df$duration >= 0)),]
+  
   fit = survfit(Surv(duration, status) ~ cluster, data = bf_zs_shared_exp_filt_df)
+  # ggsurvplot(fit, data = bf_zs_shared_exp_filt_df, risk.table = TRUE,
+  #            palette = "jco", pval = TRUE, surv.median.line = "hv", xlab = "days")
   
-  ggsurvplot(fit, data = bf_zs_shared_exp_filt_df, risk.table = TRUE,
-             palette = "jco", pval = TRUE, surv.median.line = "hv", xlab = "days")
+  # hypothesis : cluster 1 = better prognosis
+  if (mean(fit$surv[1:fit[['strata']][['cluster=1']]]) > mean(fit$surv[fit[['strata']][['cluster=1']] + 1: fit[['strata']][['cluster=2']]])) {
+    bad_group = bf_zs_shared_exp_filt_df[which(bf_zs_shared_exp_filt_df$cluster == 2),]
+    good_group = bf_zs_shared_exp_filt_df[which(bf_zs_shared_exp_filt_df$cluster == 1),]
+    
+  } else if (mean(fit$surv[1:fit[['strata']][['cluster=1']]]) < mean(fit$surv[fit[['strata']][['cluster=1']] + 1: fit[['strata']][['cluster=2']]])) {
+    bad_group = bf_zs_shared_exp_filt_df[which(bf_zs_shared_exp_filt_df$cluster == 1),]
+    good_group = bf_zs_shared_exp_filt_df[which(bf_zs_shared_exp_filt_df$cluster == 2),]
+  } else {
+    print("I don't know")
+  }
   
-  bad_group = bf_zs_shared_exp_filt_df[which(bf_zs_shared_exp_filt_df$cluster == 1),]
   bad_group = na.omit(bad_group)
-  good_group = bf_zs_shared_exp_filt_df[which(bf_zs_shared_exp_filt_df$cluster == 2),]
   good_group = na.omit(good_group)
-  bad_out = pheatmap::pheatmap(bad_group[,-ncol(bad_group)] , cluster_cols = T,
-           cluster_rows = T, labels_cols = "",
-           show_rownames = T)
   
-  good_out = pheatmap::pheatmap(good_group[,-ncol(good_group)] , cluster_cols = T,
-                     cluster_rows = T, labels_cols = "",
-                     show_rownames = T)
+  bad_out = pheatmap::pheatmap(bad_group %>% select(-cluster,-duration,-status), 
+                               cluster_cols = T,
+                               cluster_rows = T, 
+                               labels_cols = "",
+                               show_rownames = T)
   
-  bad_cluster1_gene = head(colnames(bad_group[,bad_out$tree_col[["order"]]]), n= 150)
-  good_cluster2_gene = head(colnames(bad_group[,good_out$tree_col[["order"]]]), n= 150)
+  good_out = pheatmap::pheatmap(good_group %>% select(-cluster,-duration,-status), 
+                                cluster_cols = T,
+                                cluster_rows = T, 
+                                labels_cols = "",
+                                show_rownames = T)
  
+  # cut genes 300 / total genes about 1100
+  bad_cluster1_gene = head(colnames(bad_group[,bad_out$tree_col[["order"]]]), n= 300)
+  good_cluster2_gene = head(colnames(good_group[,good_out$tree_col[["order"]]]), n= 300)
+  
   bad_cluster1_gene_en = AnnotationDbi::select(org.Hs.eg.db, bad_cluster1_gene, 'ENTREZID', 'SYMBOL')[
     which(!is.na(AnnotationDbi::select(org.Hs.eg.db, bad_cluster1_gene, 'ENTREZID', 'SYMBOL')$ENTREZID)),]
-  
   bad_cluster1_gene_en <- data.frame(bad_cluster1_gene_en, row.names = NULL)
   
   good_cluster2_gene_en = AnnotationDbi::select(org.Hs.eg.db, good_cluster2_gene, 'ENTREZID', 'SYMBOL')[
@@ -201,19 +229,128 @@ for (num_CancerType in Cancerlist) {
   good_cluster2_gene_en <- data.frame(good_cluster2_gene_en, row.names = NULL)
   
   top_genes_group = list(bad_cluster = bad_cluster1_gene_en$ENTREZID,good_cluster = good_cluster2_gene_en$ENTREZID)
+  
   ck <- compareCluster(geneCluster = top_genes_group, fun = "enrichKEGG")
   ck <- setReadable(ck, OrgDb = org.Hs.eg.db, keyType="ENTREZID")
-  
+
+  # for exp enrichment
   fig_path = paste0(main.path_tc,"/",CancerType,"_analysis_exp_bf/")
   setwd(fig_path)
   
   png(filename = paste0(CancerType,"_cnetplot.png"),
       width = 25, height = 25,  units = "cm" ,pointsize = 12,
       bg = "white", res = 1200, family = "")
-
-  exp_cnet = cnetplot(ck)
+  
+  exp_cnet = cnetplot(ck) + ggtitle("Exp_for_Top300")
   
   print(exp_cnet)
+  dev.off()
+  
+  # for disease enrichment
+  
+  edo_bad <- enrichDGN(top_genes_group$bad_cluster)
+  edo_good <- enrichDGN(top_genes_group$good_cluster)
+  
+  edox_bad <- setReadable(edo_bad, OrgDb = org.Hs.eg.db, keyType="ENTREZID")
+  edox_good <- setReadable(edo_good, OrgDb = org.Hs.eg.db, keyType="ENTREZID")
+  
+  # barplot
+  png(filename = paste0(CancerType,"_DGN_good_barplot.png"),
+      width = 25, height = 25,  units = "cm" ,pointsize = 12,
+      bg = "white", res = 1200, family = "")
+  
+  disease_good = barplot(edo_good, showCategory=25)  + ggtitle("top 25")
+  
+  print(disease_good)
+  dev.off()
+  
+  png(filename = paste0(CancerType,"_DGN_bad_barplot.png"),
+      width = 25, height = 25,  units = "cm" ,pointsize = 12,
+      bg = "white", res = 1200, family = "")
+  
+  disease_bad = barplot(edo_bad, showCategory=25)  + ggtitle("top 25")
+  
+  print(disease_bad)
+  dev.off()
+
+  # dotplot
+  png(filename = paste0(CancerType,"_DGN_good_dotplot.png"),
+      width = 25, height = 25,  units = "cm" ,pointsize = 12,
+      bg = "white", res = 1200, family = "")
+  
+  disease_dot_good = dotplot(edo_good, showCategory=30) + ggtitle("dotplot for good")
+  
+  print(disease_dot_good)
+  dev.off()
+  
+  png(filename = paste0(CancerType,"_DGN_bad_dotplot.png"),
+      width = 25, height = 25,  units = "cm" ,pointsize = 12,
+      bg = "white", res = 1200, family = "")
+  
+  disease_dot_bad =  dotplot(edo_bad, showCategory=30) + ggtitle("dotplot for bad")
+  
+  print(disease_dot_bad)
+  dev.off()
+  
+  # tree plot
+  edox_good <- pairwise_termsim(edo_good)
+  png(filename = paste0(CancerType,"_DGN_good_treeplot.png"),
+      width = 25, height = 25,  units = "cm" ,pointsize = 12,
+      bg = "white", res = 1200, family = "")
+  
+  disease_tree_good =  treeplot(edox_good) + ggtitle("treeplot for good")
+  
+  print(disease_tree_good)
+  dev.off()
+  
+  edox_bad <- pairwise_termsim(edo_bad)
+  
+  png(filename = paste0(CancerType,"_DGN_bad_treeplot.png"),
+      width = 25, height = 25,  units = "cm" ,pointsize = 12,
+      bg = "white", res = 1200, family = "")
+  
+  disease_tree_bad =  treeplot(edox_bad) + ggtitle("treeplot for bad")
+  
+  print(disease_tree_bad)
+  dev.off()
+  
+  # emapplot
+  
+  png(filename = paste0(CancerType,"_DGN_good_emapplot.png"),
+      width = 25, height = 25,  units = "cm" ,pointsize = 12,
+      bg = "white", res = 1200, family = "")
+  
+  disease_emap_good = emapplot(edox_good) + ggtitle("emapplot for good")
+  
+  print(disease_emap_good)
+  dev.off()
+  
+  png(filename = paste0(CancerType,"_DGN_bad_emapplot.png"),
+      width = 25, height = 25,  units = "cm" ,pointsize = 12,
+      bg = "white", res = 1200, family = "")
+  
+  disease_emap_bad = emapplot(edox_bad) + ggtitle("emapplot for bad")
+  
+  print(disease_emap_bad)
+  dev.off()
+  
+  # upsetplot
+  png(filename = paste0(CancerType,"_DGN_good_upsetplot.png"),
+      width = 25, height = 25,  units = "cm" ,pointsize = 12,
+      bg = "white", res = 1200, family = "")
+  
+  disease_upset_good = upsetplot(edox_good) + ggtitle("upsetplot for good")
+  
+  print(disease_upset_good)
+  dev.off()
+  
+  png(filename = paste0(CancerType,"_DGN_bad_upsetplot.png"),
+      width = 25, height = 25,  units = "cm" ,pointsize = 12,
+      bg = "white", res = 1200, family = "")
+  
+  disease_upset_bad = upsetplot(edox_bad) + ggtitle("usetplot for bad")
+  
+  print(disease_upset_bad)
   dev.off()
   
   remove(exp_cnet,fig_path,ck,top_genes_group,good_cluster2_gene_en,bad_cluster1_gene_en,good_cluster2_gene,bad_cluster1_gene,bad_out
