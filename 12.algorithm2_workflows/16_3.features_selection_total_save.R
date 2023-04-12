@@ -39,14 +39,14 @@ for (num_CancerType in Cancerlist) {
   result_surv_pval$CancerType = NA
   result_surv_pval$num_of_features = NA
 
-
   for (last_num in 2:length(annotate_best_features$variable)) {
     
     out = pheatmap((best_features_df[,1:last_num] > -log(0.05))*1 , 
                    cluster_cols = T,
                    cluster_rows = T, 
                    labels_cols = "",
-                   show_rownames = T)
+                   show_rownames = T,
+                   silent = T)
     print(paste0(CancerType , "_start : ",last_num ))
     print("----------------------------------------")
     # print(table(cutree(out$tree_row, 2)))
@@ -63,17 +63,28 @@ for (num_CancerType in Cancerlist) {
     result_surv_pval[last_num,"pval"] = surv_pvalue(fit)$pval
     result_surv_pval[last_num,"CancerType"] = CancerType
     
+    if (round(fit$n[1] / (fit$n[1] + fit$n[2]), 2) <= 0.7 && round(fit$n[1] / (fit$n[1] + fit$n[2]), 2) >= 0.3) {
+      result_surv_pval[last_num,"bias"] = "balanced"
+    } else {
+      result_surv_pval[last_num,"bias"] = "not balanced"
+    }
+    
     remove(tmp_pheat_cut,fit,plot_roc)
   }
   
   result_surv_pval = na.omit(result_surv_pval)
   result_surv_pval_spe = result_surv_pval[which(result_surv_pval$pval < 0.05),]
-  
+
   if (length(result_surv_pval_spe$pval) == 0) {
     total_results_pval = rbind(total_results_pval, result_surv_pval[which(result_surv_pval$pval == min(result_surv_pval$pval)),])
     
-  } else {
+  } else if (length(unique(result_surv_pval_spe$bias)) == 1 && unique(result_surv_pval_spe$bias == "not balanced") ) {
+    
     total_results_pval = rbind(total_results_pval, result_surv_pval_spe[which(result_surv_pval_spe$pval == min(result_surv_pval_spe$pval)),])
+    
+  } else {
+    tmp_bias_pval = result_surv_pval_spe[which(result_surv_pval_spe$bias == "balanced"),]
+    total_results_pval = rbind(total_results_pval, tmp_bias_pval[which(tmp_bias_pval$pval == min(tmp_bias_pval$pval)),])
   }
   
   write.csv(result_surv_pval_spe, paste0(CancerType, "_results_spe_survpval.csv"))
