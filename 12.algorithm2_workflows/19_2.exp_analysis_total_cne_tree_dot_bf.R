@@ -48,11 +48,11 @@ tcga.calc.zscore = function(sce, target.genes){
   return(z.mat)
 }
 
-
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 sce_path = "/mnt/gluster_server/data/raw/TCGA_data/00.data/"
 Cancerlist = Cancerlist[-7]
-num_CancerType = "35.TCGA-KIDNEY"
+surv_total_results = read.csv(paste0("~/nas/04.Results/Total_results_survpval.csv"))
+
 # for all
 for (num_CancerType in Cancerlist) {
   
@@ -62,8 +62,6 @@ for (num_CancerType in Cancerlist) {
   # call input
   
   sce = readRDS(paste0(sce_path,num_CancerType,"/", CancerType,".sce_raw_snv_cnv.rds"))
-  input_exp = readRDS("~/nas/00.data/filtered_TCGA/35.TCGA-KIDNEY/TCGA-KIDNEY_exp_TPM_mat_filt_log_gene_symbol.rds")
-  
   best_features = readRDS(paste0(main.path_tc,"/h2o_bias_pval_dual_cut_50/network/",CancerType,"_best_features_links.rds"))
   best_features$pathwaylinks = ifelse(best_features$from == best_features$to,best_features$from,  paste0(best_features$from, best_features$to) )
   annotate_best_features =  read.csv(paste0(filepath,"13.analysis/",CancerType,"_best_features.csv"))
@@ -151,10 +149,10 @@ for (num_CancerType in Cancerlist) {
   bf_zs_shared_exp_filt_df$vitalstatus = NULL
   
   # get best pval on survplot (It could be changed and also the method of )
-  pathwaylink_num = readxl::read_xlsx(paste0(main.path_tc,"/cluster_fig/",CancerType,"_result_survpval.xlsx"),sheet = "best")
+  pathwaylink_num = surv_total_results[which(surv_total_results$CancerType == CancerType),]$num_of_features
   
   # 18 means best p-value when devide two cluster
-  out = pheatmap::pheatmap((best_features_df[,1:as.numeric(pathwaylink_num$num)] > -log(0.05))*1 ,
+  out = pheatmap::pheatmap((best_features_df[,1:as.numeric(pathwaylink_num)] > -log(0.05))*1 ,
                            cluster_cols = T,
                            cluster_rows = T,
                            labels_cols = "", 
@@ -208,13 +206,15 @@ for (num_CancerType in Cancerlist) {
                                cluster_cols = T,
                                cluster_rows = T, 
                                labels_cols = "",
-                               show_rownames = T)
+                               show_rownames = T,
+                               silent = T)
   
   good_out = pheatmap::pheatmap(good_group %>% select(-cluster,-duration,-status), 
                                 cluster_cols = T,
                                 cluster_rows = T, 
                                 labels_cols = "",
-                                show_rownames = T)
+                                show_rownames = T,
+                                silent = T)
  
   # cut genes 300 / total genes about 1100
   bad_cluster1_gene = head(colnames(bad_group[,bad_out$tree_col[["order"]]]), n= 300)
