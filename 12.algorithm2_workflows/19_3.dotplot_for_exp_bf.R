@@ -14,6 +14,7 @@ filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
 
 link_genes = readRDS(paste0(ref_path, "/KEGG_pathway_shared_genes.rds"))
+dual_total_genes = readRDS(paste0(ref_path, "/KEGG_dual_total_genes.rds"))
 
 # zscore normalization
 tcga.calc.zscore = function(sce, target.genes){
@@ -40,6 +41,7 @@ tcga.calc.zscore = function(sce, target.genes){
   }
   return(z.mat)
 }
+total_spe_pval = read.csv(paste0(filepath,"/04.Results/Total_results_survpval.csv"))
 
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 sce_path = "/mnt/gluster_server/data/raw/TCGA_data/00.data/"
@@ -59,9 +61,10 @@ for (num_CancerType in Cancerlist) {
   best_features$pathwaylinks = ifelse(best_features$from == best_features$to,best_features$from,  paste0(best_features$from, best_features$to) )
   annotate_best_features =  read.csv(paste0(filepath,"13.analysis/",CancerType,"_best_features.csv"))
   duration_log_df = readRDS(paste0(main.path_tc, "/", CancerType,"_dual_add_duration_log.rds"))
+  best_spe_features_surv = total_spe_pval[which(total_spe_pval$CancerType == CancerType),]$num_of_features
   
   # only has links
-  total_link_genes <- unlist(strsplit(link_genes[which(link_genes$pathway_name %in% best_features$pathwaylinks),]$shared_genes, ","))
+  total_link_genes <- dual_total_genes[which(dual_total_genes$Pathway %in% best_features$pathwaylinks[1:best_spe_features_surv]),]$Genes
   
   # zscore normalizaiton 
   best_features_shared_zscore_exp_df = tcga.calc.zscore(sce = sce, target.genes = unique(total_link_genes))
@@ -145,9 +148,12 @@ for (num_CancerType in Cancerlist) {
   pathwaylink_num = readxl::read_xlsx(paste0(main.path_tc,"/cluster_fig/",CancerType,"_result_survpval.xlsx"),sheet = "best")
   
   # 18 means best p-value when devide two cluster
-  out = pheatmap::pheatmap((best_features_df[,1:as.numeric(pathwaylink_num$num)] > -log(0.05))*1 , cluster_cols = T,
-                           cluster_rows = T,labels_cols = "", 
-                           show_rownames = T)
+  out = pheatmap::pheatmap((best_features_df[,1:as.numeric(pathwaylink_num$num)] > -log(0.05))*1 , 
+                           cluster_cols = T,
+                           cluster_rows = T,
+                           labels_cols = "", 
+                           show_rownames = T,
+                           silent = T)
   
   tmp_pheat_cut = as.data.frame (cutree(out$tree_row, 2) , out[["tree_row"]][["labels"]])
   colnames(tmp_pheat_cut) = "cluster"
@@ -155,17 +161,35 @@ for (num_CancerType in Cancerlist) {
   if (CancerType == "TCGA-KIDNEY") {
     bf_zs_shared_exp_filt_df = bf_zs_shared_exp_filt_df[rownames(best_features_df),]
     bf_zs_shared_exp_filt_df$cluster = tmp_pheat_cut$cluster
+    
   } else if (all.equal(rownames(bf_zs_shared_exp_filt_df), rownames(best_features_df)) == TRUE) {
     bf_zs_shared_exp_filt_df$cluster = tmp_pheat_cut$cluster
-  } else {
+  }  else {
     bf_zs_shared_exp_filt_df = bf_zs_shared_exp_filt_df[rownames(best_features_df),]
     bf_zs_shared_exp_filt_df$cluster = tmp_pheat_cut$cluster
   }
   
-  bad_group = bf_zs_shared_exp_filt_df[which(bf_zs_shared_exp_filt_df$cluster == 1),]
-  bad_group = na.omit(bad_group)
-  good_group = bf_zs_shared_exp_filt_df[which(bf_zs_shared_exp_filt_df$cluster == 2),]
-  good_group = na.omit(good_group)
+  bf_zs_shared_exp_filt_df$duration = duration_log_df$duration
+  bf_zs_shared_exp_filt_df$vital_status = duration_log_df$vitalstatus
+  bf_zs_shared_exp_filt_df$status = NA
+  bf_zs_shared_exp_filt_df$status = ifelse(bf_zs_shared_exp_filt_df$vital_status == "Alive", 0 , 1)
+  bf_zs_shared_exp_filt_df$vital_status = NULL
+  bf_zs_shared_exp_filt_df = na.omit(bf_zs_shared_exp_filt_df)
+  
+  bf_zs_shared_exp_filt_df = bf_zs_shared_exp_filt_df[which((bf_zs_shared_exp_filt_df$duration >= 0)),]
+  
+  fit = survfit(Surv(duration, status) ~ cluster, data = bf_zs_shared_exp_filt_df)
+  
+  if (mean(fit$surv[1:fit[['strata']][['cluster=1']]]) > mean(fit$surv[fit[['strata']][['cluster=1']] + 1: fit[['strata']][['cluster=2']]])) {
+    bad_group = bf_zs_shared_exp_filt_df[which(bf_zs_shared_exp_filt_df$cluster == 2),]
+    good_group = bf_zs_shared_exp_filt_df[which(bf_zs_shared_exp_filt_df$cluster == 1),]
+    
+  } else if (mean(fit$surv[1:fit[['strata']][['cluster=1']]]) < mean(fit$surv[fit[['strata']][['cluster=1']] + 1: fit[['strata']][['cluster=2']]])) {
+    bad_group = bf_zs_shared_exp_filt_df[which(bf_zs_shared_exp_filt_df$cluster == 1),]
+    good_group = bf_zs_shared_exp_filt_df[which(bf_zs_shared_exp_filt_df$cluster == 2),]
+  } else {
+    print("I don't know")
+  }
   
   bad_group[bad_group > 5] <- 5
   bad_group[bad_group < -5] <- -5
@@ -178,10 +202,10 @@ for (num_CancerType in Cancerlist) {
   
   total_group = rbind(good_group,bad_group)
   
-  pvals <- as.data.frame(matrix(nrow = c(ncol(total_group)-1)))
-  rownames(pvals) = colnames(total_group)[-length(total_group)]
+  pvals <- as.data.frame(matrix(nrow = c(ncol(total_group)-3)))
+  rownames(pvals) = colnames(total_group)[1:(ncol(total_group)-3)]
   colnames(pvals) = "pval"
-  for(i in 1:c(ncol(total_group)-1)) {
+  for(i in 1:c(ncol(total_group)-3)) {
     gene_expr_bad <- bad_group[,i]
     gene_expr_good <- good_group[,i]
     ttest_result <- t.test(gene_expr_bad, gene_expr_good)
@@ -193,6 +217,7 @@ for (num_CancerType in Cancerlist) {
   
   bad_cluster1_gene = c()
   good_cluster2_gene = c()
+  
   for (deg_genes in deg_good_bad) {
     if (mean(deg_group[which(deg_group$cluster == "bad"), deg_genes]) > mean(deg_group[which(deg_group$cluster == "good"), deg_genes])) {
       bad_cluster1_gene <- c(bad_cluster1_gene, deg_genes)
