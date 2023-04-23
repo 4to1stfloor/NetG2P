@@ -1,7 +1,6 @@
 #loading R packages
 library(data.table)
 library(igraph)
-library(data.table)
 library(survival)
 library(survminer)
 
