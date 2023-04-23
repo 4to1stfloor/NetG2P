@@ -3,6 +3,7 @@ library(data.table)
 library(igraph)
 library(survival)
 library(survminer)
+library(scater)
 
 # global setting
 filepath = paste0("/home/seokwon/nas/")
