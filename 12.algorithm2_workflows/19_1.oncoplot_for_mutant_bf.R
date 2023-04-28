@@ -123,8 +123,8 @@ for (num_CancerType in Cancerlist) {
   
   # top 10 pathway
   png(filename = paste0(CancerType,"_pathwaylink_oncoplot.png"),
-      width = 1200, height = 800, units = "px", pointsize = 12,
-      bg = "white", res = NA, family = "")
+      width = 25, height = 25,  units = "cm" ,pointsize = 12,
+      bg = "white", res = 1200, family = "")
   
   plot_pathwaylink = oncoplot(maf = maf.data_2, 
                               pathways = bf_links_genes_ordered[which(bf_links_genes_ordered$Pathway %in% best_features_onlylinks$pathwaylinks[1:10]),], 

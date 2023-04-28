@@ -6,7 +6,7 @@ library(data.table)
 library(scater)
 library(scran)
 library(pheatmap)
-
+library(maftools)
 # zscore normalization
 tcga.calc.zscore = function(sce, target.genes){
   message("Calculating z-score with respect to all diploid cells. Version 2022.11.07")
@@ -50,6 +50,10 @@ for (num_CancerType in Cancerlist) {
   # call input
   
   sce = readRDS(paste0(sce_path,num_CancerType,"/", CancerType,".sce_raw_snv_cnv.rds"))
+  mut = readRDS(paste0(sce_path,num_CancerType,"/", CancerType,"_maf.rds"))
+  mut_filtered <- subsetMaf(maf = mut, query = "Variant_Classification != 'Nonsense_Mutation'")
+  
+  mut_count = mutCountMatrix(mut_filtered)
   sce_for_hvgs = sce 
   
   sce_for_hvgs = logNormCounts(sce_for_hvgs)
@@ -60,16 +64,10 @@ for (num_CancerType in Cancerlist) {
     assay(sce_for_hvgs, assay_name) <- NULL
   }
   
-  
   dec.sce <- modelGeneVar(sce_for_hvgs)
   hvgs = getTopHVGs(dec.sce, n=1000)
-  sce_exp = tcga.calc.zscore(sce = sce, hvgs)
-  #loading RDPN output and function 2 output 
-  sce_exp = as.data.frame(sce_exp)
-  sce_exp = sce_exp[complete.cases(sce_exp),]
   
-  sce_count = assay(sce, 1)
-
+ 
   if (CancerType == "TCGA-COADREAD") {
     cli_surv = cli[cli$project %in% c("TCGA-COAD","TCGA-READ"),
                    c("submitter_id",
@@ -104,32 +102,36 @@ for (num_CancerType in Cancerlist) {
   
   cli_surv$status = as.numeric(cli_surv$status)
   
-  sce_exp_filt_t_df = as.data.frame(sce_exp)
+  mut_count = as.data.frame(mut_count)
   
-  if (CancerType %in% c("TCGA-COADREAD","TCGA-KIDNEY")) {
-    cols_to_keep <- grep("^.*-01A-", colnames(sce_exp_filt_t_df), value = TRUE)
-  } else {
-    cols_to_keep <- grep("^.*-01A$", colnames(sce_exp_filt_t_df), value = TRUE)
+  # if (CancerType %in% c("TCGA-COADREAD","TCGA-KIDNEY")) {
+  #   cols_to_keep <- grep("^.*-01A-", colnames(mut_count), value = TRUE)
+  # } else {
+  #   cols_to_keep <- grep("^.*-01A$", colnames(mut_count), value = TRUE)
+  # }
+  cols_to_keep <- grep("^.*-01A-", colnames(mut_count), value = TRUE)
+ 
+  mut_count_filt_df <- mut_count[, cols_to_keep]
+  
+  if (sum(duplicated(substr(rownames(mut_count_filt_df),1,12))) != 0) {
+    
+    for (dup_pat in rownames(mut_count_filt_df[duplicated(substr(rownames(mut_count_filt_df),1,12)),])) {
+      tmp_df = mut_count_filt_df[grep(paste0(substr(dup_pat,1,12),"-*"), rownames(mut_count_filt_df)),]
+      first = rownames(tmp_df)[1]
+      second = rownames(tmp_df)[2]
+      tmp_df_mean = as.data.frame(t(colMeans(tmp_df)))
+      rownames(tmp_df_mean) = substr(first,1,12)
+      
+      mut_count_filt_df <- subset(mut_count_filt_df, rownames(mut_count_filt_df) != first)
+      mut_count_filt_df <- subset(mut_count_filt_df, rownames(mut_count_filt_df) != second)
+      
+      mut_count_filt_df = rbind(mut_count_filt_df, tmp_df_mean)
+      remove(tmp_df, tmp_df_mean)
+    }
   }
   
-  sce_exp_filt_t_df_filt <- sce_exp_filt_t_df[, cols_to_keep]
+  dup_names = grep("\\.1$",names(mut_count_filt_df),value = TRUE)
   
-  for (dup_pat in rownames(sce_exp_filt_t_df_filt[duplicated(substr(rownames(sce_exp_filt_t_df_filt),1,12)),])) {
-    tmp_df = sce_exp_filt_t_df_filt[grep(paste0(substr(dup_pat,1,12),"-*"), rownames(sce_exp_filt_t_df_filt)),]
-    first = rownames(tmp_df)[1]
-    second = rownames(tmp_df)[2]
-    tmp_df_mean = as.data.frame(t(colMeans(tmp_df)))
-    rownames(tmp_df_mean) = substr(first,1,12)
-    
-    sce_exp_filt_t_df_filt <- subset(sce_exp_filt_t_df_filt, rownames(sce_exp_filt_t_df_filt) != first)
-    sce_exp_filt_t_df_filt <- subset(sce_exp_filt_t_df_filt, rownames(sce_exp_filt_t_df_filt) != second)
-    
-    sce_exp_filt_t_df_filt = rbind(sce_exp_filt_t_df_filt, tmp_df_mean)
-    remove(tmp_df, tmp_df_mean)
-  }
-  
-  
-  dup_names = grep("\\.1$",names(sce_exp_filt_t_df_filt),value = TRUE)
   if (CancerType %in% c("TCGA-COADREAD","TCGA-KIDNEY")) {
     dup_names_ori = substr(dup_names, 1, 28)
   }else {
@@ -141,104 +143,78 @@ for (num_CancerType in Cancerlist) {
     for (dup_patients in 1:length(dup_names)) {
       first = dup_names[dup_patients]
       second = dup_names_ori[dup_patients]
-      tmp_dup = as.data.frame(sce_exp_filt_t_df_filt[,which(names(sce_exp_filt_t_df_filt) == first)])
+      tmp_dup = as.data.frame(mut_count_filt_df[,which(names(mut_count_filt_df) == first)])
       tmp_dup2 = data.frame(lapply(tmp_dup, as.numeric))
-      rownames(tmp_dup2) = rownames(sce_exp_filt_t_df_filt)
+      rownames(tmp_dup2) = rownames(mut_count_filt_df)
       colnames(tmp_dup2) = "first"
       
-      tmp_dup3 = as.data.frame(sce_exp_filt_t_df_filt[,which(names(sce_exp_filt_t_df_filt) == second)])
+      tmp_dup3 = as.data.frame(mut_count_filt_df[,which(names(mut_count_filt_df) == second)])
       tmp_dup4 = data.frame(lapply(tmp_dup3, as.numeric))
-      rownames(tmp_dup4) = rownames(sce_exp_filt_t_df_filt)
+      rownames(tmp_dup4) = rownames(mut_count_filt_df)
       colnames(tmp_dup4) = "second"
       averages <- as.data.frame(rowMeans(cbind(tmp_dup2, tmp_dup4)))
       colnames(averages) = second
-      sce_exp_filt_t_df_filt[,first] =NULL
-      sce_exp_filt_t_df_filt[,second] = NULL
-      sce_exp_filt_t_df_filt = cbind(sce_exp_filt_t_df_filt,averages)
+      mut_count_filt_df[,first] =NULL
+      mut_count_filt_df[,second] = NULL
+      mut_count_filt_df = cbind(mut_count_filt_df,averages)
       
     }
   } 
   
-  if (sum(duplicated(names(sce_exp_filt_t_df_filt))) == 0 ) {
-    colnames(sce_exp_filt_t_df_filt) = substr(colnames(sce_exp_filt_t_df_filt), 1, 12)
+  if (sum(duplicated(names(mut_count_filt_df))) == 0 ) {
+    colnames(mut_count_filt_df) = substr(colnames(mut_count_filt_df), 1, 12)
   }
 
-  sce_exp_filt2_df = sce_exp_filt_t_df_filt[,substr(colnames(sce_exp_filt_t_df_filt),1,12) %in% cli_surv$submitter_id]
+  mut_count_filt2_df = mut_count_filt_df[,substr(colnames(mut_count_filt_df),1,12) %in% cli_surv$submitter_id]
   
-  if (ncol(sce_exp_filt_t_df_filt) != length(cli_surv$submitter_id) ) {
-    cli_surv_filt  = cli_surv[cli_surv$submitter_id %in% substr(colnames(sce_exp_filt2_df),1,12) ,]
+  if (ncol(mut_count_filt2_df) != length(cli_surv$submitter_id) ) {
+    tmp_pat = intersect(cli_surv$submitter_id,substr(colnames(mut_count_filt2_df),1,12))
+    cli_surv_filt  = cli_surv[which(cli_surv$submitter_id %in% tmp_pat),]
+    mut_count_filt2_df  = mut_count_filt2_df[,tmp_pat]
   }
   
   if (CancerType %in% c("TCGA-COADREAD","TCGA-KIDNEY")) {
     
-    sce_exp_filt2_df = sce_exp_filt_t_df_filt[,intersect(substr(colnames(sce_exp_filt_t_df_filt),1,12) , cli_surv$submitter_id)]
+    mut_count_filt2_df = mut_count_filt2_df[,intersect(substr(colnames(mut_count_filt2_df),1,12) , cli_surv$submitter_id)]
     
   } 
   
-  if (all.equal(ncol(sce_exp_filt2_df),  length(cli_surv_filt$submitter_id) )) {
-      sce_exp_filt2_df = as.data.frame(t(sce_exp_filt2_df))
-      sce_exp_filt2_df$vital_status = cli_surv_filt$vital_status
+  if (all.equal(ncol(mut_count_filt2_df),  length(cli_surv_filt$submitter_id) )) {
+    mut_count_filt2_df = as.data.frame(t(mut_count_filt2_df))
+    mut_count_filt2_df$vital_status = cli_surv_filt$vital_status
       
       }
+  
+  mut_filtered@clinical.data$vital_status = NA
+  mut_filtered@clinical.data$submitter_id = substr(mut_filtered@clinical.data$Tumor_Sample_Barcode,1,12)
+  mut_filtered@clinical.data$vital_status <- as.character(mut_filtered@clinical.data$vital_status)
+  
+  for (maf_patients in substr(mut_filtered@clinical.data$Tumor_Sample_Barcode,1,12)) {
+    if (maf_patients  %in% cli_surv$submitter_id) {
+      mut_filtered@clinical.data[which(mut_filtered@clinical.data$submitter_id == maf_patients),]$vital_status = 
+        cli_surv[which(cli_surv$submitter_id == maf_patients),]$vital_status
+    } 
     
+  }
   
+  # # maf.data_2@clinical.data = na.omit(maf.data_2@clinical.data)
+  # mut_filtered@clinical.data$vital_status = ifelse(mut_filtered@clinical.data$vital_status == FALSE, 0 , 1)
+  # mut_filtered@clinical.data$vital_status = as.factor(mut_filtered@clinical.data$vital_status)
+  genes = intersect(hvgs ,rownames(mut_count))[1:250]
   
-  
-  sce_count_log_with_sym_replaced <- sce_exp_filt2_df
-  sce_count_log_with_sym_replaced[is.na(sce_exp_filt2_df) ] <- 0
-  
-  tmp_vital = sce_exp_filt2_df$vital_status
-  sce_exp_filt3_df = sce_exp_filt2_df[,-ncol(sce_exp_filt2_df)]
-  sce_exp_filt3_df[sce_exp_filt3_df > 4] <- 4
-  sce_exp_filt3_df[sce_exp_filt3_df < -4] <- -4
-  sce_exp_filt4_df = cbind(sce_exp_filt3_df,vital_status = tmp_vital)
-  
-  sce_exp_filt4_df = sce_exp_filt4_df[order(sce_exp_filt4_df$vital_status),]
-  annotation_df <- data.frame(vital_status = sce_exp_filt4_df$vital_status)
-  rownames(annotation_df) <- rownames(sce_exp_filt4_df)
-  
-  # Create a named color vector for the unique values of vital_status
-  vital_status_colors <- c("Alive" = "yellow", "Dead" = "black")
-  names(vital_status_colors) <- unique(annotation_df$vital_status)
-  
-  png(filename = paste0(CancerType,"_exp_colum_clusterT_surv.png"),
+  # for count above median
+  setwd("~/nas/04.Results/compare_surv/")
+  png(filename = paste0(CancerType,"_hvgs_top250_oncoplot.png"),
       width = 25, height = 25,  units = "cm" ,pointsize = 12,
       bg = "white", res = 1200, family = "")
   
-  tmp = pheatmap::pheatmap(as.matrix(t(sce_exp_filt4_df[,-ncol(sce_exp_filt4_df)])),
-                            annotation_col = annotation_df,
-                            annotation_colors = list(vital_status = vital_status_colors),
-                            cluster_cols = T)
-  print(tmp)
-  
+  plot_count = oncoplot(maf = mut_filtered, genes = genes,
+                        clinicalFeatures = "vital_status",
+                        sortByAnnotation = TRUE)
+  print(plot_count)
   dev.off()
   
-  png(filename = paste0(CancerType,"_exp_column_clusterF_surv.png"),
-      width = 25, height = 25,  units = "cm" ,pointsize = 12,
-      bg = "white", res = 1200, family = "")
-  
-  tmp = pheatmap::pheatmap(as.matrix(t(sce_exp_filt4_df[,-ncol(sce_exp_filt4_df)])),
-                           annotation_col = annotation_df,
-                           annotation_colors = list(vital_status = vital_status_colors),
-                           cluster_cols = F)
-  print(tmp)
-  
-  dev.off()
-  
-  png(filename = paste0(CancerType,"_exp_cluster_surv_complex.png"),
-      width = 25, height = 25,  units = "cm" ,pointsize = 12,
-      bg = "white", res = 1200, family = "")
-  tmp2 = ComplexHeatmap::pheatmap(as.matrix(t(sce_exp_filt4_df[,-ncol(sce_exp_filt4_df)])),
-                                 column_split = annotation_df$vital_status,
-                                 annotation_col = annotation_df,
-                                 annotation_colors = list(vital_status = vital_status_colors),
-                                 cluster_cols = T)
-
-  print(tmp2)
-
-  dev.off()
-  
-  remove(tmp,tmp2,sce_exp_filt4_df,sce_exp_filt3_df,sce_exp_filt2_df,cli_surv_filt,sce_exp_filt_t_df_filt,cli_surv, sce_for_hvgs, sce)
+  remove(mut_count_filt_df,mut_count_filt2_df,mut_filtered,cli_surv_filt,cli_surv, sce_for_hvgs, sce)
 }
 
 #   
