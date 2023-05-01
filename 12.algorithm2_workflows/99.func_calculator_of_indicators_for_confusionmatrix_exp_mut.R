@@ -41,11 +41,12 @@ calculate_metrics <- function(cancer_type, count_matrix, model_name) {
 
 filepath = "/home/seokwon/nas/"
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
-folder_name = "h2o_bias_pval_exp_dual_cut_50/"
+# folder_name = "h2o_bias_pval_exp_dual_cut_50/"
+folder_name = "h2o_bias_pval_mut_dual_cut_50/"
 
 # find best model
-# total_result = read_xlsx("~/nas/04.Results/algorithm2_results_for_wo_merge.xlsx", sheet = "Sheet5")
-total_result = read_xlsx("~/nas/04.Results/algorithm2_results_for_exp.xlsx")
+# total_result = read_xlsx("~/nas/04.Results/algorithm2_results_for_exp.xlsx")
+total_result = read_xlsx("~/nas/04.Results/algorithm2_results_for_mut.xlsx")
 
 result_each = as.data.frame(total_result)
 colnames(result_each) = result_each[1,]
@@ -103,4 +104,6 @@ for (num_CancerType in Cancerlist) {
 
 metrics_df <- do.call(rbind, metrics_list)
 setwd("~/nas/04.Results/")
-write.csv(metrics_df,"ml_indicators_for_exp.csv")
+# write.csv(metrics_df,"ml_indicators_for_exp.csv")
+# write.csv(metrics_df,"ml_indicators_for_mut.csv")
+write_xlsx(metrics_df, "ml_indicators_for_mut.xlsx")
