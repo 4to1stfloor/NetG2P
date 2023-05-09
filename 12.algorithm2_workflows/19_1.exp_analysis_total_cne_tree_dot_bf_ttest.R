@@ -14,6 +14,7 @@ library(survminer)
 library(DOSE)
 library(UpSetR)
 library(enrichplot)
+library(dplyr)
 
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
@@ -51,7 +52,7 @@ tcga.calc.zscore = function(sce, target.genes){
 
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 sce_path = "/mnt/gluster_server/data/raw/TCGA_data/00.data/"
-Cancerlist = Cancerlist[-7]
+
 surv_total_results = read.csv("~/nas/04.Results/Total_results_survpval.csv")
 
 # for all
@@ -215,14 +216,14 @@ for (num_CancerType in Cancerlist) {
   bad_group = na.omit(bad_group)
   good_group = na.omit(good_group)
   
-  bad_out = pheatmap::pheatmap(bad_group %>% select(-cluster,-duration,-status), 
+  bad_out = pheatmap::pheatmap(bad_group %>% dplyr::select(-cluster,-duration,-status), 
                                cluster_cols = T,
                                cluster_rows = T, 
                                labels_cols = "",
                                show_rownames = T,
                                silent = T)
   
-  good_out = pheatmap::pheatmap(good_group %>% select(-cluster,-duration,-status), 
+  good_out = pheatmap::pheatmap(good_group %>% dplyr::select(-cluster,-duration,-status), 
                                 cluster_cols = T,
                                 cluster_rows = T, 
                                 labels_cols = "",
@@ -248,6 +249,12 @@ for (num_CancerType in Cancerlist) {
   
   # for top300 (from heatmap)
   fig_path = paste0(main.path_tc,"/",CancerType,"_analysis_exp_bf/")
+  if(!dir.exists(fig_path)){
+    dir.create(fig_path)
+    print(paste0("Created folder: ", fig_path))
+  } else {
+    print(paste0("Folder already exists: ", fig_path))
+  }
   setwd(fig_path)
   
   png(filename = paste0(CancerType,"_cnetplot.png"),

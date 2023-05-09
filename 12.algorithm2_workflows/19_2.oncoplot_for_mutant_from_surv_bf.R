@@ -11,7 +11,7 @@ library(data.table)
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
-Cancerlist = Cancerlist[-3]
+
 cli = fread(paste0(ref_path , "all_clin_indexed.csv"))
 
 total_spe_pval = read.csv(paste0(filepath,"/04.Results/Total_results_survpval.csv"))
@@ -141,17 +141,26 @@ for (num_CancerType in Cancerlist) {
     bf_dual_genes_ordered = rbind(bf_dual_genes_ordered , bf_dual_genes[which(bf_dual_genes$Pathway == bf_pathway),])
   }
   
+  
   bf_dual_genes_ordered = data.frame(bf_dual_genes_ordered, row.names = NULL)
+  
+  common_genes = intersect(bf_dual_genes_ordered$Genes, mafdata@data$Hugo_Symbol)
+  bf_dual_genes_ordered_filtered = bf_dual_genes_ordered[which(bf_dual_genes_ordered$Genes %in% common_genes),]
+  
   bf_dual_genes_ordered_filtered = bf_dual_genes_ordered[which(bf_dual_genes_ordered$Genes %in% mafdata@data$Hugo_Symbol),]
   row.names(bf_dual_genes_ordered_filtered) <- NULL
+  
+  common_genes = bf_dual_genes_ordered_filtered$Genes[which( unique(bf_dual_genes_ordered_filtered$Genes) %in% mafdata@maf.silent$Hugo_Symbol)]
+  
+  bf_dual_genes_ordered_filtered2 = bf_dual_genes_ordered_filtered[which(bf_dual_genes_ordered_filtered$Genes %in% common_genes),]
+  rownames(bf_dual_genes_ordered_filtered2 ) = NULL
+  
+  common_genes2 = unique(bf_dual_genes_ordered_filtered2$Genes)[which(unique(bf_dual_genes_ordered_filtered2$Genes) %in% mafdata@maf.silent$Hugo_Symbol)]
+  bf_dual_genes_ordered_filtered3 = bf_dual_genes_ordered_filtered2[which(bf_dual_genes_ordered_filtered2$Genes %in% common_genes2),]
+  rownames(bf_dual_genes_ordered_filtered3 ) = NULL
+  
+  
   uni_dualpathway = unique(bf_dual_genes_ordered_filtered$Pathway)[1:2]
-  
-  bf_dual_genes_ordered_filtered$Genes %in% mafdata@data
-  bf_dual_genes_ordered_filtered$Genes %in% mafdata@data$Hugo_Symbol 
-  bf_dual_genes_ordered_filtered$Genes %in% rownames(mutCountMatrix(mafdata))
-  
-  maf_subset <- subset(mafdata@data, Hugo_Symbol %in% bf_dual_genes_ordered_filtered$Genes)
-  maf_subset <- MAF(maf_subset)
   
   # top 2 pathway
   png(filename = paste0(CancerType,"_dual_oncoplot.png"),
@@ -159,18 +168,15 @@ for (num_CancerType in Cancerlist) {
       bg = "white", res = 1200, family = "")
 
   plot_pathwaylink = oncoplot(maf = mafdata,
-                              pathways = bf_dual_genes_ordered_filtered[which(bf_dual_genes_ordered_filtered$Pathway %in% uni_dualpathway),],
+                              pathways = bf_dual_genes_ordered_filtered3[which(bf_dual_genes_ordered_filtered3$Pathway %in% uni_dualpathway),],
                               clinicalFeatures = "vital_status",
                               sortByAnnotation = TRUE)
-  colnames(maf_subset@data)[2] <- "Hugo_Symbol"
-  maf_subset@data$Hugo_Symbol = as.factor(maf_subset@data$Hugo_Symbol)
-  oncoplot(maf = maf_subset,
-           pathways = bf_dual_genes_ordered_filtered[which(bf_dual_genes_ordered_filtered$Pathway %in% uni_dualpathway),],
-           clinicalFeatures = "vital_status",
-           sortByAnnotation = TRUE)
+  
   
   print(plot_pathwaylink)
   dev.off()
 
   remove(bf_dual_genes_ordered,best_features,mafdata,plot_pathwaylink,cli_surv,bf_genes_count)
 }
+
+
