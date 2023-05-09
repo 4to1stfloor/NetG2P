@@ -284,7 +284,16 @@ for (num_CancerType in Cancerlist) {
                                 as.data.frame(h2o.confusionMatrix(object = best_cut_dl,test_tc.hex)))
   best_cut_dl_perf = h2o.performance(best_cut_dl, newdata = test_tc.hex)
   best_cut_dl_conma = as.data.frame(h2o.confusionMatrix(best_cut_dl_perf))
-  dir.create(paste0(main.path_tc,"/",folder_name))
+  
+  dirpath = paste0(main.path_tc,"/",folder_name)
+  
+  if(!dir.exists(dirpath)){
+    dir.create(dirpath)
+    print(paste0("Created folder: ", dirpath))
+  } else {
+    print(paste0("Folder already exists: ", dirpath))
+  }
+  
   write.csv(df_dl_merge_confusion,paste0(main.path_tc,"/",folder_name,"/", best_cut_dl@model_id,"_", round(1-best_cut_dl_conma$Error[3],3) ,"_confusionmatrix.csv"))
   write.csv(dl_round_acc, paste0(main.path_tc,"/",folder_name,"/",CancerType, "_acc_dl_round.csv"))
   h2o.saveModel(best_cut_dl, path = paste0(main.path_tc, "/",folder_name,"/", best_cut_dl@model_id,"_", round(1-best_cut_dl_conma$Error[3],3)))
@@ -294,9 +303,14 @@ for (num_CancerType in Cancerlist) {
   if (best_cut_dl@model$training_metrics@metrics$AUC == "NaN") {
     print(paste0(num_CancerType," " ,best_cut_dl@algorithm," has no specific model"))
     } else {
-    
-      dir.create(paste0(main.path_tc,"/",folder_name,"/dl_figure"))
       fig_path = paste0(main.path_tc,"/",folder_name,"/dl_figure")
+      if(!dir.exists(fig_path)){
+        dir.create(fig_path)
+        print(paste0("Created folder: ", fig_path))
+      } else {
+        print(paste0("Folder already exists: ", fig_path))
+      }
+      
       setwd(fig_path)
       png(filename = paste0(best_cut_dl@model_id, "roc_test_set.png"),
           width = 2000, height = 2000, units = "px", pointsize = 12,
@@ -445,9 +459,16 @@ for (num_CancerType in Cancerlist) {
     print(paste0(num_CancerType," " ,best_cut_gbm@algorithm," has no specific model"))
   } else {
     
-    dir.create(paste0(main.path_tc,"/",folder_name,"/gbm_figure"))
     fig_path = paste0(main.path_tc,"/",folder_name,"/gbm_figure")
+    if(!dir.exists(fig_path)){
+      dir.create(fig_path)
+      print(paste0("Created folder: ", fig_path))
+    } else {
+      print(paste0("Folder already exists: ", fig_path))
+    }
+    
     setwd(fig_path)
+    
     png(filename = paste0(best_cut_gbm@model_id, "roc_test_set.png"),
         width = 2000, height = 2000, units = "px", pointsize = 12,
         bg = "white", res = NA, family = "")
