@@ -1,38 +1,40 @@
-
-library(devtools)
-library(CMSclassifier)
 library(org.Hs.eg.db)
 library(data.table)
 library(scater)
 library(scran)
 library(pheatmap)
-
+library(devtools)
+library(data.table)
+library(scuttle)
+library(scran)
+install_github("Sage-Bionetworks/CMSclassifier")
+library(CMSclassifier)
 # zscore normalization
+
 tcga.calc.zscore = function(sce, target.genes){
-  message("Calculating z-score with respect to all diploid cells. Version 2022.11.07")
+  message("Calculating z-score with respect to all diploid cells. Version 2023.05.03")
   common.genes = intersect(rownames(sce), target.genes)
   if (length(common.genes) == 0) {
     stop("None of the target genes found in sce. Please check your nomenclature")
-  } else if (all(common.genes %in% target.genes)) {
-    print("Check!")
+  } else if (length(common.genes) != length(target.genes)) {
+    message("Some of the genes from query does not exist in this cancer type. It will result in NAs")
+    message("Missing genes are: ", paste(setdiff(target.genes, common.genes), collapse = ", "))
   }
-  sce.sub = subset(sce, rownames(sce) %in% target.genes,)
+  sce.sub = subset(sce, rownames(sce) %in% common.genes,)
   #i am not checking assay names.
   count.mat = assay(sce.sub, 1)
   cnv.mat = assay(sce.sub, 3)
-  z.mat = matrix(data = NA, nrow = length(target.genes), ncol = ncol(count.mat))
+  z.mat = matrix(data = NA, nrow = nrow(count.mat), ncol = ncol(count.mat))
   colnames(z.mat) = colnames(count.mat)
-  rownames(z.mat) = target.genes
+  rownames(z.mat) = rownames(count.mat)
   for (i in 1:nrow(count.mat)) {
     idx.di = which(cnv.mat[i,] == 2)
     query.mean = mean(count.mat[i, idx.di], na.rm = T)
     query.sd = sd(count.mat[i, idx.di], na.rm = T)
-    idx.symb = which(rownames(z.mat) == rownames(count.mat)[i])
     z.mat[i,] = (count.mat[i,] - query.mean)/query.sd
   }
   return(z.mat)
 }
-
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
 
@@ -240,28 +242,4 @@ for (num_CancerType in Cancerlist) {
   
   remove(tmp,tmp2,sce_exp_filt4_df,sce_exp_filt3_df,sce_exp_filt2_df,cli_surv_filt,sce_exp_filt_t_df_filt,cli_surv, sce_for_hvgs, sce)
 }
-
-#   
-# # for complex_heatmap divide by a specific column annotation 
-# col_colors = list(CMS = c("black", "yellow", "green", "red"))
-# col_colors = list(CMS = c("black", "yellow", "green"))
-# col_ann = subset(sce_count_t[order(sce_count_t$CMS),],select = CMS)
-# names(col_colors$CMS) = unique(col_ann$CMS)
-# sce_count_t = sce_count_t[rownames(col_ann),]
-# cheatmap_mat = as.matrix(t(sce_count_t[,-length(sce_count_t)]))
-# 
-# library(ComplexHeatmap)
-# ComplexHeatmap::pheatmap(cheatmap_mat, 
-#                          column_split = col_ann$CMS,
-#                          labels_col = "",
-#                          show_rownames = T, 
-#                          show_colnames = F, 
-#                          annotation_col = col_ann,
-#                          annotation_colors = col_colors,
-#                          # clustering_method = "average",
-#                          cluster_cols = T,
-#                          cluster_rows = T)
-# 
-# 
-
 
