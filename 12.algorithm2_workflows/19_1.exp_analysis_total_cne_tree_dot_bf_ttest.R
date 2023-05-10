@@ -54,7 +54,7 @@ Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 sce_path = "/mnt/gluster_server/data/raw/TCGA_data/00.data/"
 
 surv_total_results = read.csv("~/nas/04.Results/Total_results_survpval.csv")
-
+Cancerlist = "04.TCGA-CESC"
 # for all
 for (num_CancerType in Cancerlist) {
   
@@ -446,12 +446,12 @@ for (num_CancerType in Cancerlist) {
           good_cluster2_gene <- c(good_cluster2_gene, deg_genes)
         }
         
-        if (length(bad_cluster1_gene) != 0 && length(good_cluster2_gene) != 0) {
-          print(paste0("The least pvalue that are divided by short and long is ",not_spe))
-          break
-        }
+       
       }
-      
+      if (length(bad_cluster1_gene) != 0 && length(good_cluster2_gene) != 0) {
+        print(paste0("The least pvalue that are divided by short and long is ",not_spe))
+        break
+      }
     }
   }
 
