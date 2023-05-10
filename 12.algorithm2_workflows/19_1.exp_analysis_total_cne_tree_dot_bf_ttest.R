@@ -427,10 +427,13 @@ for (num_CancerType in Cancerlist) {
   
   hreason = c(0.1,0.2,0.3,0.4,0.5)
   
-  for (not_spe in hreason) {
-    if (length(bad_cluster1_gene) == 0 || length(good_cluster2_gene) == 0) {
-      
-      deg_good_bad = rownames(pvals)[which(pvals < 0.1)]
+  
+  if (length(bad_cluster1_gene) != 0 && length(good_cluster2_gene) != 0) {
+    print("There are well divided genes as short or long")
+    
+  } else {
+    for (not_spe in hreason){
+      deg_good_bad = rownames(pvals)[which(pvals < not_spe)]
       deg_group = total_group[,c(deg_good_bad,"cluster")]
       
       bad_cluster1_gene = c()
@@ -442,12 +445,16 @@ for (num_CancerType in Cancerlist) {
         } else {
           good_cluster2_gene <- c(good_cluster2_gene, deg_genes)
         }
+        
+        if (length(bad_cluster1_gene) != 0 && length(good_cluster2_gene) != 0) {
+          print(paste0("The least pvalue that are divided by short and long is ",not_spe))
+          break
+        }
       }
-    } else {
-      break
+      
     }
   }
-  
+
   bad_cluster1_gene_en = AnnotationDbi::select(org.Hs.eg.db, bad_cluster1_gene, 'ENTREZID', 'SYMBOL')[
     which(!is.na(AnnotationDbi::select(org.Hs.eg.db, bad_cluster1_gene, 'ENTREZID', 'SYMBOL')$ENTREZID)),]
   
