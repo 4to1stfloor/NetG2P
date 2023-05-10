@@ -9,25 +9,25 @@ library(pheatmap)
 library(maftools)
 # zscore normalization
 tcga.calc.zscore = function(sce, target.genes){
-  message("Calculating z-score with respect to all diploid cells. Version 2022.11.07")
+  message("Calculating z-score with respect to all diploid cells. Version 2023.05.03")
   common.genes = intersect(rownames(sce), target.genes)
   if (length(common.genes) == 0) {
     stop("None of the target genes found in sce. Please check your nomenclature")
-  } else if (all(common.genes %in% target.genes)) {
-    print("Check!")
+  } else if (length(common.genes) != length(target.genes)) {
+    message("Some of the genes from query does not exist in this cancer type. It will result in NAs")
+    message("Missing genes are: ", paste(setdiff(target.genes, common.genes), collapse = ", "))
   }
-  sce.sub = subset(sce, rownames(sce) %in% target.genes,)
+  sce.sub = subset(sce, rownames(sce) %in% common.genes,)
   #i am not checking assay names.
   count.mat = assay(sce.sub, 1)
   cnv.mat = assay(sce.sub, 3)
-  z.mat = matrix(data = NA, nrow = length(target.genes), ncol = ncol(count.mat))
+  z.mat = matrix(data = NA, nrow = nrow(count.mat), ncol = ncol(count.mat))
   colnames(z.mat) = colnames(count.mat)
-  rownames(z.mat) = target.genes
+  rownames(z.mat) = rownames(count.mat)
   for (i in 1:nrow(count.mat)) {
     idx.di = which(cnv.mat[i,] == 2)
     query.mean = mean(count.mat[i, idx.di], na.rm = T)
     query.sd = sd(count.mat[i, idx.di], na.rm = T)
-    idx.symb = which(rownames(z.mat) == rownames(count.mat)[i])
     z.mat[i,] = (count.mat[i,] - query.mean)/query.sd
   }
   return(z.mat)
