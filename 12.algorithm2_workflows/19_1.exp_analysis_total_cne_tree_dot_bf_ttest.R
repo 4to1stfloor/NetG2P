@@ -54,7 +54,7 @@ Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 sce_path = "/mnt/gluster_server/data/raw/TCGA_data/00.data/"
 
 surv_total_results = read.csv("~/nas/04.Results/Total_results_survpval.csv")
-Cancerlist = "04.TCGA-CESC"
+
 # for all
 for (num_CancerType in Cancerlist) {
   
