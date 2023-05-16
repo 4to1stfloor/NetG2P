@@ -49,7 +49,6 @@ for (num_CancerType in Cancerlist) {
   # call input
   
   sce = readRDS(paste0(sce_path,num_CancerType,"/", CancerType,".sce_raw_snv_cnv.rds"))
-  mut = readRDS(paste0(sce_path,num_CancerType,"/", CancerType,"_maf.rds"))
   net = readRDS(paste0(main.path_tc, "/", list.files(main.path_tc, pattern = "^net_prop_total")))
   
   sce_for_hvgs = sce 
@@ -177,7 +176,9 @@ for (num_CancerType in Cancerlist) {
     net_filt2_df$vital_status = cli_surv_filt$vital_status
     
   }
+  net_filt_hvgs_df = net_filt2_df[,which(colnames(net_filt2_df) %in% hvgs)]
   
+  net_filt2_df = cbind(net_filt_hvgs_df,vital_status = net_filt2_df[,c("vital_status")])
   net_filt2_df = net_filt2_df[order(net_filt2_df$vital_status),]
   annotation_df <- data.frame(vital_status = net_filt2_df$vital_status)
   rownames(annotation_df) <- rownames(net_filt2_df)
