@@ -190,6 +190,20 @@ if (all.equal(rownames(mut_count_filtered_tdf_common), rownames(cms_filtered_com
 
 mut_count_filtered_tdf_common = mut_count_filtered_tdf_common[order(mut_count_filtered_tdf_common$CMS),]
 
+# Convert the matrix to a numeric matrix
+mut_CMS_numeric <- matrix(as.numeric(unlist(mut_CMS_wo_CMS)), nrow = nrow(mut_CMS_wo_CMS))
+
+# Convert the numeric matrix to a vector
+vec <- as.vector(mut_CMS_numeric)
+
+# Create the histogram
+hist(vec)
+
+mut_tmp_CMS= mut_count_filtered_tdf_common[,c("CMS")]
+mut_CMS_wo_CMS = mut_count_filtered_tdf_common[,which(!colnames(mut_count_filtered_tdf_common) %in% "CMS")]
+mut_CMS_wo_CMS[mut_CMS_wo_CMS >= 1] <- 1
+mut_count_filtered_tdf_common = cbind(mut_CMS_wo_CMS , CMS = mut_tmp_CMS)
+
 annotation_df <- data.frame(CMS = mut_count_filtered_tdf_common$CMS)
 rownames(annotation_df) <- rownames(mut_count_filtered_tdf_common)
 
@@ -198,26 +212,26 @@ CMS_colors <- c("CMS1" = "yellow", "CMS2" = "black", "CMS3" = "green", "CMS4" = 
 names(CMS_colors) <- unique(annotation_df$CMS)
 
 
-png(filename = paste0(CancerType,"_mut_clusterT_CMS_rowgene_col_pat.png"),
+png(filename = paste0(CancerType,"_mut_clusterT_CMS.png"),
     width = 25, height = 25,  units = "cm" ,pointsize = 12,
     bg = "white", res = 1200, family = "")
 
 tmp = pheatmap::pheatmap(as.matrix(t(mut_count_filtered_tdf_common[,-ncol(mut_count_filtered_tdf_common)])),
                          annotation_col = annotation_df,
                          annotation_colors = list(CMS = CMS_colors),
-                         cluster_cols = T,show_rownames = F,show_colnames = F)
+                         cluster_cols = T)
 print(tmp)
 
 dev.off()
 
-png(filename = paste0(CancerType,"_mut_clusterF_CMS_rowgene_col_pat.png"),
+png(filename = paste0(CancerType,"_mut_clusterF_CMS.png"),
     width = 25, height = 25,  units = "cm" ,pointsize = 12,
     bg = "white", res = 1200, family = "")
 
 tmp2 = pheatmap::pheatmap(as.matrix(t(mut_count_filtered_tdf_common[,-ncol(mut_count_filtered_tdf_common)])),
                           annotation_col = annotation_df,
                           annotation_colors = list(CMS = CMS_colors),
-                          cluster_cols = F,show_rownames = F,show_colnames = F)
+                          cluster_cols = F)
 print(tmp2)
 
 dev.off()
@@ -296,6 +310,21 @@ if (all.equal(rownames(net_cms_tdf_common), rownames(cms_net_filtered_common))) 
 
 net_cms_tdf_common = net_cms_tdf_common[order(net_cms_tdf_common$CMS),]
 
+# Convert the matrix to a numeric matrix
+net_cms_numeric <- matrix(as.numeric(unlist(net_cms_wo_cms)), nrow = nrow(net_cms_wo_cms))
+
+# Convert the numeric matrix to a vector
+vec <- as.vector(net_cms_numeric)
+
+# Create the histogram
+hist(vec)
+
+tmp_CMS = net_cms_tdf_common[,c("CMS")]
+net_cms_wo_cms = net_cms_tdf_common[,which(!colnames(net_cms_tdf_common) %in% "CMS")]
+net_cms_wo_cms[net_cms_wo_cms > 0.03] <- 0.03
+net_cms_tdf_common = cbind(net_cms_wo_cms , CMS = tmp_CMS)
+
+
 annotation_df <- data.frame(CMS = net_cms_tdf_common$CMS)
 rownames(annotation_df) <- rownames(net_cms_tdf_common)
 
@@ -303,6 +332,17 @@ rownames(annotation_df) <- rownames(net_cms_tdf_common)
 CMS_colors <- c("CMS1" = "yellow", "CMS2" = "black", "CMS3" = "green", "CMS4" = "red")
 names(CMS_colors) <- unique(annotation_df$CMS)
 
+png(filename = paste0(CancerType,"_n222.png"),
+    width = 35, height = 35,  units = "cm" ,pointsize = 12,
+    bg = "white", res = 1200, family = "")
+
+tmp2 = pheatmap::pheatmap(as.matrix(t(net_cms_tdf_common[,-ncol(net_cms_tdf_common)])),
+                         annotation_col = annotation_df,
+                         annotation_colors = list(CMS = CMS_colors),
+                         cluster_cols = T)
+print(tmp2)
+
+dev.off()
 
 png(filename = paste0(CancerType,"_net_clusterT_CMS.png"),
     width = 35, height = 35,  units = "cm" ,pointsize = 12,
