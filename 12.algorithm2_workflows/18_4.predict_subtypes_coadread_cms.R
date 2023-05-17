@@ -234,6 +234,32 @@ tmp3 = ComplexHeatmap::pheatmap(as.matrix(t(mut_count_filtered_tdf_common[,-ncol
 print(tmp3)
 dev.off()
 
+mut_filtered@clinical.data$CMS = NA
+mut_filtered@clinical.data$CMS = as.character(mut_filtered@clinical.data$CMS)
+
+mut_filtered@clinical.data$submitter_id = substr(mut_filtered@clinical.data$Tumor_Sample_Barcode,1,12)
+
+for (maf_patients in mut_filtered@clinical.data$submitter_id ) {
+  if (maf_patients  %in% rownames(cms_filtered_common)) {
+    mut_filtered@clinical.data[which(mut_filtered@clinical.data$submitter_id == maf_patients),]$CMS = cms_filtered_common[which(rownames(cms_filtered_common) == maf_patients),]$RF.details.RF.nearestCMS
+  } 
+  
+} 
+mut_filtered@clinical.data = mut_filtered@clinical.data[which(!is.na(mut_filtered@clinical.data$CMS)),]
+
+png(filename = paste0(CancerType,"_mut_oncoplot_CMS.png"),
+    width = 30, height = 30,  units = "cm" ,pointsize = 12,
+    bg = "white", res = 1200, family = "")
+
+
+tmp4 = oncoplot(maf = mut_filtered,
+                genes = cms_genes_sym,
+                clinicalFeatures = "CMS",
+                sortByAnnotation = TRUE)
+
+print(tmp4)
+dev.off()
+
 ## net
 net_cms = net[which(rownames(net) %in% cms_genes_sym),]
 

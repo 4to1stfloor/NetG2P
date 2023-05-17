@@ -194,6 +194,23 @@ if (all.equal(rownames(sce_data_filt_w) , rownames(mut_count_filtered_tdf))) {
   
 }
 mut_count_filtered_tdf = mut_count_filtered_tdf[which(!is.na(mut_count_filtered_tdf$pam50)),]
+
+mut_count_filtered_tdf = mut_count_filtered_tdf[order(mut_count_filtered_tdf$pam50),]
+
+# Convert the matrix to a numeric matrix
+# mut_pam50_numeric <- matrix(as.numeric(unlist(mut_pam50_wo_pam50)), nrow = nrow(mut_pam50_wo_pam50))
+# 
+# # Convert the numeric matrix to a vector
+# vec <- as.vector(mut_pam50_numeric)
+# 
+# # Create the histogram
+# hist(vec)
+
+mut_tmp_pam50 = mut_count_filtered_tdf[,c("pam50")]
+mut_pam50_wo_pam50 = mut_count_filtered_tdf[,which(!colnames(mut_count_filtered_tdf) %in% "pam50")]
+mut_pam50_wo_pam50[mut_pam50_wo_pam50 >= 1] <- 1
+mut_count_filtered_tdf = cbind(mut_pam50_wo_pam50 , pam50 = mut_tmp_pam50)
+
 annotation_df <- data.frame(pam50 = mut_count_filtered_tdf$pam50)
 rownames(annotation_df) <- rownames(mut_count_filtered_tdf)
 
@@ -238,6 +255,33 @@ tmp3 = ComplexHeatmap::pheatmap(as.matrix(t(mut_count_filtered_tdf[,-ncol(mut_co
 print(tmp3)
 dev.off()
 
+
+mut_filtered@clinical.data$pam50 = NA
+mut_filtered@clinical.data$pam50 = as.character(mut_filtered@clinical.data$pam50)
+
+mut_filtered@clinical.data$submitter_id = substr(mut_filtered@clinical.data$Tumor_Sample_Barcode,1,12)
+
+for (maf_patients in mut_filtered@clinical.data$submitter_id ) {
+  if (maf_patients  %in% sce_data_filt_w$submitter_id) {
+    mut_filtered@clinical.data[which(mut_filtered@clinical.data$submitter_id == maf_patients),]$pam50 = sce_data_filt_w[which(sce_data_filt_w$submitter_id == maf_patients),]$paper_BRCA_Subtype_PAM50
+  } 
+  
+} 
+mut_filtered@clinical.data = mut_filtered@clinical.data[which(!is.na(mut_filtered@clinical.data$pam50)),]
+
+png(filename = paste0(CancerType,"_mut_oncoplot_pam50.png"),
+    width = 30, height = 30,  units = "cm" ,pointsize = 12,
+    bg = "white", res = 1200, family = "")
+
+
+tmp4 = oncoplot(maf = mut_filtered,
+                genes = pam50genes,
+                clinicalFeatures = "pam50",
+                sortByAnnotation = TRUE)
+
+print(tmp4)
+dev.off()
+
 # net
 
 net_pam50 = net[which(rownames(net) %in% pam50genes),]
@@ -278,6 +322,24 @@ if (all.equal(rownames(sce_data_filt_w) , rownames(net_pam50_filtered_tdf))) {
   
 }
 net_pam50_filtered_tdf = net_pam50_filtered_tdf[which(!is.na(net_pam50_filtered_tdf$pam50)),]
+net_pam50_filtered_tdf = net_pam50_filtered_tdf[order(net_pam50_filtered_tdf$pam50),]
+
+
+# Convert the matrix to a numeric matrix
+net_pam50_numeric <- matrix(as.numeric(unlist(net_pam50_wo_pam50)), nrow = nrow(net_pam50_wo_pam50))
+
+# Convert the numeric matrix to a vector
+vec <- as.vector(net_pam50_numeric)
+
+# Create the histogram
+hist(vec)
+
+tmp_pam50 = net_pam50_filtered_tdf[,c("pam50")]
+net_pam50_wo_pam50 = net_pam50_filtered_tdf[,which(!colnames(net_pam50_filtered_tdf) %in% "pam50")]
+net_pam50_wo_pam50[net_pam50_wo_pam50 > 0.005] <- 0.005
+net_pam50_filtered_tdf = cbind(net_pam50_wo_pam50 , pam50 = tmp_pam50)
+
+
 annotation_df <- data.frame(pam50 = net_pam50_filtered_tdf$pam50)
 rownames(annotation_df) <- rownames(net_pam50_filtered_tdf)
 
