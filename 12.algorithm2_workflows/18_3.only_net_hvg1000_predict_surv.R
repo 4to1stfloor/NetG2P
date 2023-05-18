@@ -180,6 +180,21 @@ for (num_CancerType in Cancerlist) {
   
   net_filt2_df = cbind(net_filt_hvgs_df,vital_status = net_filt2_df[,c("vital_status")])
   net_filt2_df = net_filt2_df[order(net_filt2_df$vital_status),]
+  
+  # # Convert the matrix to a numeric matrix
+  # net_filt2_numeric <- matrix(as.numeric(unlist(net_surv_wo_surv)), nrow = nrow(net_surv_wo_surv))
+  # 
+  # # Convert the numeric matrix to a vector
+  # vec <- as.vector(net_filt2_numeric)
+  # 
+  # # Create the histogram
+  # hist(vec)
+  
+  net_surv_tmp= net_filt2_df[,c("vital_status")]
+  net_surv_wo_surv = net_filt2_df[,which(!colnames(net_filt2_df) %in% "vital_status")]
+  net_surv_wo_surv[net_surv_wo_surv >= 0.001] <- 0.001
+  net_filt2_df = cbind(net_surv_wo_surv , vital_status = net_surv_tmp)
+  
   annotation_df <- data.frame(vital_status = net_filt2_df$vital_status)
   rownames(annotation_df) <- rownames(net_filt2_df)
   
