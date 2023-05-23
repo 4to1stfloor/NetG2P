@@ -20,7 +20,7 @@ for (num_CancerType in Cancerlist) {
   CancerType = gsub('[.]','',gsub('\\d','', num_CancerType))
   
   # call input
-  annotate_best_features =  read.csv(paste0(filepath,"13.analysis/",CancerType,"_best_features.csv"))
+  annotate_best_features =  read.csv(paste0(filepath,"04.Results/bestfeatures",CancerType,"_best_features.csv"))
   duration_log_df = readRDS(paste0(main.path_tc, "/", CancerType,"_dual_add_duration_log.rds"))
   
   # fig_folder_create
@@ -40,18 +40,21 @@ for (num_CancerType in Cancerlist) {
   best_features_df$status[which(best_features_df$vitalstatus == "Dead")] = 1
   best_features_df$status[which(best_features_df$vitalstatus == "Alive")] = 0
   
-  
   for (last_num in 2:length(annotate_best_features$variable)) {
     
-    out = pheatmap((best_features_df[,1:last_num] > -log(0.05))*1 , cluster_cols = T,
-                   cluster_rows = T, labels_cols = "",
-                   show_rownames = T)
+    out = pheatmap((best_features_df[,1:last_num] > -log(0.05))*1 , 
+                   cluster_cols = T,
+                   cluster_rows = T, 
+                   labels_cols = "",
+                   show_rownames = T,
+                   silent = T)
     print(paste0(CancerType , "_start : ",last_num ))
     print("----------------------------------------")
     # print(table(cutree(out$tree_row, 2)))
     
     tmp_pheat_cut = as.data.frame (cutree(out$tree_row, 2) , out[["tree_row"]][["labels"]])
     colnames(tmp_pheat_cut) = "cluster"
+    
     best_features_df$cluster = tmp_pheat_cut$cluster
     fit = survfit(Surv(duration, status) ~ cluster, data = best_features_df)
     
