@@ -10,6 +10,7 @@ require(TCGAbiolinks)
 require(SummarizedExperiment)
 require(SingleCellExperiment)
 library(dplyr)
+library(RColorBrewer)
 setwd("~/nas/04.Results/subtypes/")
 
 # zscore normalization
@@ -57,6 +58,7 @@ CancerType = gsub('[.]','',gsub('\\d','', num_CancerType))
 sce = readRDS(paste0(sce_path,num_CancerType,"/", CancerType,".sce_raw_snv_cnv.rds"))
 mut = readRDS(paste0(sce_path,num_CancerType,"/", CancerType,"_maf.rds"))
 net = readRDS(paste0(main.path_tc, "/net_prop_total_966.rds"))
+short_long = readRDS(paste0(filepath,"04.Results/short_long/",CancerType,"_best_features_short_long.rds"))
 
 # call pam50 genes
 library(genefu)
@@ -71,14 +73,14 @@ pam50genes = c(pam50genes , "BRCA1", "BRCA2", "NUF2", "NDC80", "ORC6")
 sce_exp = tcga.calc.zscore(sce = sce, pam50genes)
 sce_exp = as.data.frame(sce_exp)
 
-# Convert the matrix to a numeric matrix
-sce_exp_numeric <- matrix(as.numeric(unlist(sce_exp)), nrow = nrow(sce_exp))
-
-# Convert the numeric matrix to a vector
-vec <- as.vector(sce_exp_numeric)
-
-# Create the histogram
-hist(vec)
+# # Convert the matrix to a numeric matrix
+# sce_exp_numeric <- matrix(as.numeric(unlist(sce_exp)), nrow = nrow(sce_exp))
+# 
+# # Convert the numeric matrix to a vector
+# vec <- as.vector(sce_exp_numeric)
+# 
+# # Create the histogram
+# hist(vec)
 
 sce_exp[sce_exp > 5] <- 5
 sce_exp[sce_exp < -5] <- -5
@@ -109,47 +111,58 @@ if (all.equal(rownames(sce_exp_filt_df) , rownames(sce_data_filt)) ) {
   sce_exp_filt_df$pam50 = sce_data_filt$paper_BRCA_Subtype_PAM50
 }
 sce_exp_filt_df_wona = sce_exp_filt_df[!is.na(sce_exp_filt_df$pam50),]
+rownames(sce_exp_filt_df_wona) = substr(rownames(sce_exp_filt_df_wona), 1,12)
+sce_exp_filt_df_wona = sce_exp_filt_df_wona[intersect(rownames(sce_exp_filt_df_wona), rownames(short_long)),]
+short_long_filt = short_long[intersect(rownames(sce_exp_filt_df_wona), rownames(short_long)),]
+
+if (all.equal(rownames(sce_exp_filt_df_wona), rownames(short_long_filt))) {
+  sce_exp_filt_df_wona$cluster = short_long_filt$cluster
+}
 
 sce_exp_filt_df_wona = sce_exp_filt_df_wona[order(sce_exp_filt_df_wona$pam50),]
 
-annotation_df <- data.frame(pam50 = sce_exp_filt_df_wona$pam50)
+annotation_df <- data.frame(pam50 = sce_exp_filt_df_wona$pam50,
+                            cluster = sce_exp_filt_df_wona$cluster)
 rownames(annotation_df) <- rownames(sce_exp_filt_df_wona)
 
 # Create a named color vector for the unique values of vital_status
-pam50_colors <- c("Basal" = "yellow", "Her2" = "black", "LumA" = "green", "LumB" = "red","Normal" = "blue" )
-names(pam50_colors) <- unique(annotation_df$pam50)
+num_pam50 = brewer.pal(length(unique(sce_exp_filt_df_wona$pam50)), "Spectral")
+col_pam50 = setNames(num_pam50, unique(sce_exp_filt_df_wona$pam50))
 
-png(filename = paste0(CancerType,"_exp_clusterT_pam50.png"),
+cluster_colors <- c("short" = "yellow", "long" = "black")
+subtypes_colors = list(pam50 = col_pam50 , cluster = cluster_colors)
+
+png(filename = paste0(CancerType,"_exp_w_short_long_clusterT_pam50.png"),
     width = 25, height = 25,  units = "cm" ,pointsize = 12,
     bg = "white", res = 1200, family = "")
 
-tmp = pheatmap::pheatmap(as.matrix(t(sce_exp_filt_df_wona[,-ncol(sce_exp_filt_df_wona)])),
+tmp = pheatmap::pheatmap(as.matrix(t(sce_exp_filt_df_wona[,which(!colnames(sce_exp_filt_df_wona) %in% c("pam50","cluster"))])),
                          annotation_col = annotation_df,
-                         annotation_colors = list(pam50 = pam50_colors),
+                         annotation_colors = subtypes_colors,
                          cluster_cols = T)
 print(tmp)
 
 dev.off()
 
-png(filename = paste0(CancerType,"_exp_clusterF_pam50.png"),
+png(filename = paste0(CancerType,"_exp_w_short_long_clusterF_pam50.png"),
     width = 25, height = 25,  units = "cm" ,pointsize = 12,
     bg = "white", res = 1200, family = "")
 
-tmp2 = pheatmap::pheatmap(as.matrix(t(sce_exp_filt_df_wona[,-ncol(sce_exp_filt_df_wona)])),
+tmp2 = pheatmap::pheatmap(as.matrix(t(sce_exp_filt_df_wona[,which(!colnames(sce_exp_filt_df_wona) %in% c("pam50","cluster"))])),
                           annotation_col = annotation_df,
-                          annotation_colors = list(pam50 = pam50_colors),
+                          annotation_colors = subtypes_colors,
                           cluster_cols = F)
 print(tmp2)
 
 dev.off()
 
-png(filename = paste0(CancerType,"_exp_cluster_complex_pam50.png"),
+png(filename = paste0(CancerType,"_exp_w_short_long_cluster_complex_pam50.png"),
     width = 25, height = 25,  units = "cm" ,pointsize = 12,
     bg = "white", res = 1200, family = "")
-tmp3 = ComplexHeatmap::pheatmap(as.matrix(t(sce_exp_filt_df_wona[,-ncol(sce_exp_filt_df_wona)])),
+tmp3 = ComplexHeatmap::pheatmap(as.matrix(t(sce_exp_filt_df_wona[,which(!colnames(sce_exp_filt_df_wona) %in% c("pam50","cluster"))])),
                                 column_split = annotation_df$pam50,
                                 annotation_col = annotation_df,
-                                annotation_colors = list(pam50 = pam50_colors),
+                                annotation_colors = subtypes_colors,
                                 cluster_cols = T)
 
 print(tmp3)
@@ -157,7 +170,34 @@ dev.off()
 
 ## mut
 mut_filtered <- subsetMaf(maf = mut, query = "Variant_Classification != 'Nonsense_Mutation'")
+mut_filtered@clinical.data$pam50 = NA
+mut_filtered@clinical.data$pam50= as.character(mut_filtered@clinical.data$pam50)
+mut_filtered@clinical.data$cluster = NA
+mut_filtered@clinical.data$cluster= as.character(mut_filtered@clinical.data$cluster)
 
+mut_filtered@clinical.data$submitter_id = substr(mut_filtered@clinical.data$Tumor_Sample_Barcode,1,12)
+
+for (maf_patients in substr(mut_filtered@clinical.data$Tumor_Sample_Barcode,1,12)) {
+  if (maf_patients  %in% rownames(sce_exp_filt_df_wona)) {
+    mut_filtered@clinical.data[which(mut_filtered@clinical.data$submitter_id == maf_patients),]$pam50 = sce_exp_filt_df_wona[which(rownames(sce_exp_filt_df_wona) == maf_patients),]$pam50
+    mut_filtered@clinical.data[which(mut_filtered@clinical.data$submitter_id == maf_patients),]$cluster = sce_exp_filt_df_wona[which(rownames(sce_exp_filt_df_wona) == maf_patients),]$cluster
+  } 
+  
+}
+
+png(filename = paste0(CancerType,"_mut_w_short_long_onco_pam50.png"),
+    width = 25, height = 25,  units = "cm" ,pointsize = 12,
+    bg = "white", res = 1200, family = "")
+
+tmp_onco = oncoplot(maf = mut_filtered,
+                    genes = pam50genes,
+                    clinicalFeatures = c("pam50","cluster"),
+                    sortByAnnotation = TRUE
+                    )
+print(tmp_onco)
+dev.off()
+
+#
 mut_count = mutCountMatrix(mut_filtered)
 
 mut_count_filtered = mut_count[which(rownames(mut_count) %in% pam50genes),]
@@ -197,7 +237,7 @@ mut_count_filtered_tdf = mut_count_filtered_tdf[which(!is.na(mut_count_filtered_
 
 mut_count_filtered_tdf = mut_count_filtered_tdf[order(mut_count_filtered_tdf$pam50),]
 
-# Convert the matrix to a numeric matrix
+# # Convert the matrix to a numeric matrix
 # mut_pam50_numeric <- matrix(as.numeric(unlist(mut_pam50_wo_pam50)), nrow = nrow(mut_pam50_wo_pam50))
 # 
 # # Convert the numeric matrix to a vector
@@ -210,76 +250,62 @@ mut_tmp_pam50 = mut_count_filtered_tdf[,c("pam50")]
 mut_pam50_wo_pam50 = mut_count_filtered_tdf[,which(!colnames(mut_count_filtered_tdf) %in% "pam50")]
 mut_pam50_wo_pam50[mut_pam50_wo_pam50 >= 1] <- 1
 mut_count_filtered_tdf = cbind(mut_pam50_wo_pam50 , pam50 = mut_tmp_pam50)
+rownames(mut_count_filtered_tdf) = substr(rownames(mut_count_filtered_tdf), 1,12)
+mut_count_filtered_tdf$cluster = NA
 
-annotation_df <- data.frame(pam50 = mut_count_filtered_tdf$pam50)
+for (maf_patients in rownames(mut_count_filtered_tdf)) {
+  if (maf_patients  %in% rownames(sce_exp_filt_df_wona)) {
+    mut_count_filtered_tdf[which(rownames(mut_count_filtered_tdf) == maf_patients),]$cluster = sce_exp_filt_df_wona[which(rownames(sce_exp_filt_df_wona) == maf_patients),]$cluster
+  } 
+  
+}
+mut_count_filtered_tdf = mut_count_filtered_tdf[which(!is.na(mut_count_filtered_tdf$cluster)),]
+
+annotation_df <- data.frame(pam50 = mut_count_filtered_tdf$pam50,
+                            cluster = mut_count_filtered_tdf$cluster)
 rownames(annotation_df) <- rownames(mut_count_filtered_tdf)
 
 # Create a named color vector for the unique values of vital_status
-pam50_colors <- c("Basal" = "yellow", "Her2" = "black", "LumA" = "green", "LumB" = "red","Normal" = "blue" )
-names(pam50_colors) <- unique(annotation_df$pam50)
+num_pam50 = brewer.pal(length(unique(mut_count_filtered_tdf$pam50)), "Spectral")
+col_pam50 = setNames(num_pam50, unique(mut_count_filtered_tdf$pam50))
 
+cluster_colors <- c("short" = "yellow", "long" = "black")
+subtypes_colors = list(pam50 = col_pam50 , cluster = cluster_colors)
 
-png(filename = paste0(CancerType,"_mut_clusterT_pam50.png"),
+png(filename = paste0(CancerType,"_mut_w_short_long_pam50.png"),
     width = 25, height = 25,  units = "cm" ,pointsize = 12,
     bg = "white", res = 1200, family = "")
 
-tmp = pheatmap::pheatmap(as.matrix(t(mut_count_filtered_tdf[,-ncol(mut_count_filtered_tdf)])),
+tmp = pheatmap::pheatmap(as.matrix(t(mut_count_filtered_tdf[,which(!colnames(mut_count_filtered_tdf) %in% c("pam50","cluster"))])),
                          annotation_col = annotation_df,
-                         annotation_colors = list(pam50 = pam50_colors),
+                         annotation_colors = subtypes_colors,
                          cluster_cols = T)
 print(tmp)
 
 dev.off()
 
-png(filename = paste0(CancerType,"_mut_clusterF_pam50.png"),
+png(filename = paste0(CancerType,"_mut_w_short_long_clusterF_pam50.png"),
     width = 25, height = 25,  units = "cm" ,pointsize = 12,
     bg = "white", res = 1200, family = "")
 
-tmp2 = pheatmap::pheatmap(as.matrix(t(mut_count_filtered_tdf[,-ncol(mut_count_filtered_tdf)])),
+tmp2 = pheatmap::pheatmap(as.matrix(t(mut_count_filtered_tdf[,which(!colnames(mut_count_filtered_tdf) %in% c("pam50","cluster"))])),
                           annotation_col = annotation_df,
-                          annotation_colors = list(pam50 = pam50_colors),
+                          annotation_colors = subtypes_colors,
                           cluster_cols = F)
 print(tmp2)
 
 dev.off()
 
-png(filename = paste0(CancerType,"_mut_cluster_complex_pam50.png"),
+png(filename = paste0(CancerType,"_mut_w_short_long_cluster_complex_pam50.png"),
     width = 25, height = 25,  units = "cm" ,pointsize = 12,
     bg = "white", res = 1200, family = "")
-tmp3 = ComplexHeatmap::pheatmap(as.matrix(t(mut_count_filtered_tdf[,-ncol(mut_count_filtered_tdf)])),
+tmp3 = ComplexHeatmap::pheatmap(as.matrix(t(mut_count_filtered_tdf[,which(!colnames(mut_count_filtered_tdf) %in% c("pam50","cluster"))])),
                                 column_split = annotation_df$pam50,
                                 annotation_col = annotation_df,
-                                annotation_colors = list(pam50 = pam50_colors),
+                                annotation_colors = subtypes_colors,
                                 cluster_cols = T)
 
 print(tmp3)
-dev.off()
-
-
-mut_filtered@clinical.data$pam50 = NA
-mut_filtered@clinical.data$pam50 = as.character(mut_filtered@clinical.data$pam50)
-
-mut_filtered@clinical.data$submitter_id = substr(mut_filtered@clinical.data$Tumor_Sample_Barcode,1,12)
-
-for (maf_patients in mut_filtered@clinical.data$submitter_id ) {
-  if (maf_patients  %in% sce_data_filt_w$submitter_id) {
-    mut_filtered@clinical.data[which(mut_filtered@clinical.data$submitter_id == maf_patients),]$pam50 = sce_data_filt_w[which(sce_data_filt_w$submitter_id == maf_patients),]$paper_BRCA_Subtype_PAM50
-  } 
-  
-} 
-mut_filtered@clinical.data = mut_filtered@clinical.data[which(!is.na(mut_filtered@clinical.data$pam50)),]
-
-png(filename = paste0(CancerType,"_mut_oncoplot_pam50.png"),
-    width = 30, height = 30,  units = "cm" ,pointsize = 12,
-    bg = "white", res = 1200, family = "")
-
-
-tmp4 = oncoplot(maf = mut_filtered,
-                genes = pam50genes,
-                clinicalFeatures = "pam50",
-                sortByAnnotation = TRUE)
-
-print(tmp4)
 dev.off()
 
 # net
@@ -338,47 +364,57 @@ tmp_pam50 = net_pam50_filtered_tdf[,c("pam50")]
 net_pam50_wo_pam50 = net_pam50_filtered_tdf[,which(!colnames(net_pam50_filtered_tdf) %in% "pam50")]
 net_pam50_wo_pam50[net_pam50_wo_pam50 > 0.005] <- 0.005
 net_pam50_filtered_tdf = cbind(net_pam50_wo_pam50 , pam50 = tmp_pam50)
+rownames(net_pam50_filtered_tdf) = substr(rownames(net_pam50_filtered_tdf),1,12)
+net_pam50_filtered_tdf$cluster = NA
+for (net_patients in rownames(net_pam50_filtered_tdf)) {
+  if (net_patients  %in% rownames(sce_exp_filt_df_wona)) {
+    net_pam50_filtered_tdf[which(rownames(net_pam50_filtered_tdf) == net_patients),]$cluster = sce_exp_filt_df_wona[which(rownames(sce_exp_filt_df_wona) == net_patients),]$cluster
+  } 
+  
+}
 
-
-annotation_df <- data.frame(pam50 = net_pam50_filtered_tdf$pam50)
+annotation_df <- data.frame(pam50 = net_pam50_filtered_tdf$pam50,
+                            cluster = net_pam50_filtered_tdf$cluster)
 rownames(annotation_df) <- rownames(net_pam50_filtered_tdf)
 
 # Create a named color vector for the unique values of vital_status
-pam50_colors <- c("Basal" = "yellow", "Her2" = "black", "LumA" = "green", "LumB" = "red","Normal" = "blue" )
-names(pam50_colors) <- unique(annotation_df$pam50)
+num_pam50 = brewer.pal(length(unique(net_pam50_filtered_tdf$pam50)), "Spectral")
+col_pam50 = setNames(num_pam50, unique(net_pam50_filtered_tdf$pam50))
 
+cluster_colors <- c("short" = "yellow", "long" = "black")
+subtypes_colors = list(pam50 = col_pam50 , cluster = cluster_colors)
 
-png(filename = paste0(CancerType,"_net_clusterT_pam50.png"),
+png(filename = paste0(CancerType,"_net_w_short_long_clusterT_pam50.png"),
     width = 25, height = 25,  units = "cm" ,pointsize = 12,
     bg = "white", res = 1200, family = "")
 
-tmp = pheatmap::pheatmap(as.matrix(t(net_pam50_filtered_tdf[,-ncol(net_pam50_filtered_tdf)])),
+tmp = pheatmap::pheatmap(as.matrix(t(net_pam50_filtered_tdf[,which(!colnames(net_pam50_filtered_tdf) %in% c("pam50","cluster"))])),
                          annotation_col = annotation_df,
-                         annotation_colors = list(pam50 = pam50_colors),
+                         annotation_colors = subtypes_colors,
                          cluster_cols = T)
 print(tmp)
 
 dev.off()
 
-png(filename = paste0(CancerType,"_net_clusterF_pam50.png"),
+png(filename = paste0(CancerType,"_net_w_short_long_clusterF_pam50.png"),
     width = 25, height = 25,  units = "cm" ,pointsize = 12,
     bg = "white", res = 1200, family = "")
 
-tmp2 = pheatmap::pheatmap(as.matrix(t(net_pam50_filtered_tdf[,-ncol(net_pam50_filtered_tdf)])),
+tmp2 = pheatmap::pheatmap(as.matrix(t(net_pam50_filtered_tdf[,which(!colnames(net_pam50_filtered_tdf) %in% c("pam50","cluster"))])),
                           annotation_col = annotation_df,
-                          annotation_colors = list(pam50 = pam50_colors),
+                          annotation_colors = subtypes_colors,
                           cluster_cols = F)
 print(tmp2)
 
 dev.off()
 
-png(filename = paste0(CancerType,"_net_cluster_complex_pam50.png"),
+png(filename = paste0(CancerType,"_net_w_short_long_cluster_complex_pam50.png"),
     width = 25, height = 25,  units = "cm" ,pointsize = 12,
     bg = "white", res = 1200, family = "")
-tmp3 = ComplexHeatmap::pheatmap(as.matrix(t(net_pam50_filtered_tdf[,-ncol(net_pam50_filtered_tdf)])),
+tmp3 = ComplexHeatmap::pheatmap(as.matrix(t(net_pam50_filtered_tdf[,which(!colnames(net_pam50_filtered_tdf) %in% c("pam50","cluster"))])),
                                 column_split = annotation_df$pam50,
                                 annotation_col = annotation_df,
-                                annotation_colors = list(pam50 = pam50_colors),
+                                annotation_colors = subtypes_colors,
                                 cluster_cols = T)
 
 print(tmp3)
