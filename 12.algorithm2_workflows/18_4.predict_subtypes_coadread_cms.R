@@ -8,6 +8,7 @@ library(scran)
 library(pheatmap)
 library(dplyr)
 library(stringr)
+library(RColorBrewer)
 setwd("~/nas/04.Results/subtypes/")
 
 # zscore normalization
@@ -44,7 +45,8 @@ sce_path = "/mnt/gluster_server/data/raw/TCGA_data/00.data/"
 cli = fread("~/nas/99.reference/all_clin_indexed.csv")
 
 cms_genes = read_xlsx("~/nas/00.data/filtered_TCGA/34.TCGA-COADREAD/CMS_genes_merge.xlsx")
-cms = readRDS("~/nas/00.data/filtered_TCGA/34.TCGA-COADREAD/TCGA-COADREAD_CMS.rds")
+# cms = readRDS("~/nas/00.data/filtered_TCGA/34.TCGA-COADREAD/TCGA-COADREAD_CMS.rds")
+cms = readRDS('/mnt/gluster_server/data/raw/TCGA_data/00.data/34.TCGA-COADREAD/TCGA-COADREAD.cms.tbl.rds')
 
 num_CancerType = "34.TCGA-COADREAD"
 
@@ -58,6 +60,7 @@ CancerType = gsub('[.]','',gsub('\\d','', num_CancerType))
 sce = readRDS(paste0(sce_path,num_CancerType,"/", CancerType,".sce_raw_snv_cnv.rds"))
 mut = readRDS(paste0(sce_path,num_CancerType,"/", CancerType,"_maf.rds"))
 net = readRDS(paste0(main.path_tc, "/net_prop_total_587.rds"))
+short_long = readRDS(paste0(filepath,"04.Results/short_long/",CancerType,"_best_features_short_long.rds"))
 
 cms_genes_sym = cms_genes$SYMBOL
 
@@ -81,50 +84,64 @@ hist(vec)
 sce_exp = sce_exp[complete.cases(sce_exp),]
 
 sce_exp_df = as.data.frame(t(sce_exp))
-if (all.equal(rownames(sce_exp_df) , rownames(cms)) ) {
-  sce_exp_df$CMS = cms$RF.details.RF.nearestCMS
+
+rownames(cms) = cms$barcode
+sce_exp_ordered_df = sce_exp_df[match( rownames(cms) , rownames(sce_exp_df)),]
+
+if (all.equal(rownames(sce_exp_ordered_df) , rownames(cms)) ) {
+  sce_exp_ordered_df$CMS = cms$CMStype
 }
+sce_exp_ordered_df$barcode = substr(rownames(sce_exp_ordered_df),1,12)
+sce_exp_ordered_filted_df = sce_exp_ordered_df[which(sce_exp_ordered_df$barcode %in% rownames(short_long)),]
+sce_exp_ordered_filted_df = sce_exp_ordered_filted_df[match(rownames(short_long), sce_exp_ordered_filted_df$barcode),]
 
-sce_exp_df = sce_exp_df[order(sce_exp_df$CMS),]
+if (all.equal(rownames(short_long), sce_exp_ordered_filted_df$barcode)) {
+  sce_exp_ordered_filted_df$cluster = short_long$cluster
+}
+sce_exp_ordered_filted_df = sce_exp_ordered_filted_df[which(!is.na(sce_exp_ordered_filted_df$CMS)),]
+sce_exp_ordered_filted_df = sce_exp_ordered_filted_df[order(sce_exp_ordered_filted_df$CMS),]
 
-annotation_df <- data.frame(CMS = sce_exp_df$CMS)
-rownames(annotation_df) <- rownames(sce_exp_df)
+annotation_df <- data.frame(CMS = sce_exp_ordered_filted_df$CMS,
+                            cluster = sce_exp_ordered_filted_df$cluster)
+rownames(annotation_df) <- rownames(sce_exp_ordered_filted_df)
 
 # Create a named color vector for the unique values of vital_status
-CMS_colors <- c("CMS1" = "yellow", "CMS2" = "black", "CMS3" = "green", "CMS4" = "red")
-names(CMS_colors) <- unique(annotation_df$CMS)
+num_CMS = brewer.pal(length(unique(sce_exp_ordered_filted_df$CMS)), "Spectral")
+col_CMS = setNames(num_CMS, unique(sce_exp_ordered_filted_df$CMS))
 
+cluster_colors <- c("short" = "yellow", "long" = "black")
+subtypes_colors = list(CMS = col_CMS , cluster = cluster_colors)
 
-png(filename = paste0(CancerType,"_exp_clusterT_CMS.png"),
-    width = 35, height = 35,  units = "cm" ,pointsize = 12,
+png(filename = paste0(CancerType,"_exp_w_short_long_clusterT_CMS.png"),
+    width = 25, height = 25,  units = "cm" ,pointsize = 12,
     bg = "white", res = 1200, family = "")
 
-tmp = pheatmap::pheatmap(as.matrix(t(sce_exp_df[,-ncol(sce_exp_df)])),
+tmp = pheatmap::pheatmap(as.matrix(t(sce_exp_ordered_filted_df[,which(!colnames(sce_exp_ordered_filted_df) %in% c("barcode","CMS","cluster"))])),
                          annotation_col = annotation_df,
-                         annotation_colors = list(CMS = CMS_colors),
+                         annotation_colors = subtypes_colors,
                          cluster_cols = T)
 print(tmp)
 dev.off()
 
-png(filename = paste0(CancerType,"_exp_column_clusterF_CMS.png"),
+png(filename = paste0(CancerType,"_exp_w_short_long_clusterF_CMS.png"),
     width = 35, height = 35,  units = "cm" ,pointsize = 12,
     bg = "white", res = 1200, family = "")
 
-tmp2 = pheatmap::pheatmap(as.matrix(t(sce_exp_df[,-ncol(sce_exp_df)])),
+tmp2 = pheatmap::pheatmap(as.matrix(t(sce_exp_ordered_filted_df[,which(!colnames(sce_exp_ordered_filted_df) %in% c("barcode","CMS","cluster"))])),
                           annotation_col = annotation_df,
-                          annotation_colors = list(CMS = CMS_colors),
+                          annotation_colors = subtypes_colors,
                           cluster_cols = F)
 print(tmp2)
 
 dev.off()
 
-png(filename = paste0(CancerType,"_exp_cluster_complex_CMS.png"),
+png(filename = paste0(CancerType,"_exp_w_short_long_complex_CMS.png"),
     width = 35, height = 35,  units = "cm" ,pointsize = 12,
     bg = "white", res = 1200, family = "")
-tmp3 = ComplexHeatmap::pheatmap(as.matrix(t(sce_exp_df[,-ncol(sce_exp_df)])),
+tmp3 = ComplexHeatmap::pheatmap(as.matrix(t(sce_exp_ordered_filted_df[,which(!colnames(sce_exp_ordered_filted_df) %in% c("barcode","CMS","cluster"))])),
                                 column_split = annotation_df$CMS,
                                 annotation_col = annotation_df,
-                                annotation_colors = list(CMS = CMS_colors),
+                                annotation_colors = subtypes_colors,
                                 cluster_cols = T)
 
 print(tmp3)
@@ -164,31 +181,45 @@ cms$submitter_id = substr(rownames(cms), 1, 16)
 cms$forfilt =  rownames(cms)
 cms_01A = cms %>% filter(str_detect(forfilt, "-01A-")) 
 cms_01A$forfilt = NULL
+cms$patient = substr(cms$barcode,1,12)
 
 dup_cms_df = cms_01A[which(duplicated(substr(rownames(cms_01A),1,12))),]
 cms_filtered = cms_01A
 
 for (dup_pat in rownames(dup_cms_df)) {
   tmp_mut = grep(paste0(substr(dup_pat,1,12),"-*"), rownames(cms_01A), value = TRUE)
-  if (cms_filtered[tmp_mut,][1,]$RF.details.RF.nearestCMS == cms_filtered[tmp_mut,][2,]$RF.details.RF.nearestCMS) {
+  if (cms_filtered[tmp_mut,][1,]$CMStype == cms_filtered[tmp_mut,][2,]$CMStype) {
     cms_filtered <- subset(cms_filtered, rownames(cms_filtered) != tmp_mut[2])
   } else {
     print(tmp_mut)
   }
 }
 
+duplicated(cms_filtered$patient)
 
-rownames(cms_filtered) = substr(rownames(cms_filtered),1,12)
+mut_count_filtered_tdf_common = mut_count_filtered_tdf[which(rownames(mut_count_filtered_tdf) %in% cms_filtered$patient),]
+cms_filtered_common = cms_filtered[which(cms_filtered$patient %in% rownames(mut_count_filtered_tdf)),]
 
-common_pat = intersect(rownames(mut_count_filtered_tdf) , rownames(cms_filtered))
-mut_count_filtered_tdf_common = mut_count_filtered_tdf[common_pat,]
-cms_filtered_common = cms_filtered[common_pat,]
 mut_count_filtered_tdf_common[mut_count_filtered_tdf_common >5] = 5 
-if (all.equal(rownames(mut_count_filtered_tdf_common), rownames(cms_filtered_common))) {
-  mut_count_filtered_tdf_common$CMS = cms_filtered_common$RF.details.RF.nearestCMS
+mut_count_filtered_tdf_common = mut_count_filtered_tdf_common[order(rownames(mut_count_filtered_tdf_common)),]
+
+if (all.equal(rownames(mut_count_filtered_tdf_common), cms_filtered_common$patient)) {
+  mut_count_filtered_tdf_common$CMS = cms_filtered_common$CMStype
 }
 
-mut_count_filtered_tdf_common = mut_count_filtered_tdf_common[order(mut_count_filtered_tdf_common$CMS),]
+# short_long
+
+mut_count_filtered_short_long = mut_count_filtered_tdf_common[which(rownames(mut_count_filtered_tdf_common) %in% rownames(short_long)),]
+short_long_filtered = short_long[which(rownames(short_long) %in% rownames(mut_count_filtered_tdf_common) ),]
+mut_count_filtered_short_long = mut_count_filtered_short_long[order(rownames(mut_count_filtered_short_long)),]
+short_long_filtered = short_long_filtered[order(rownames(short_long_filtered)),]
+
+if (all.equal(rownames(mut_count_filtered_short_long), rownames(short_long_filtered))) {
+  mut_count_filtered_short_long$cluster = short_long_filtered$cluster
+}
+
+mut_count_filtered_short_long_wona = mut_count_filtered_short_long[which(!is.na(mut_count_filtered_short_long$CMS)),]
+mut_count_filtered_short_long_wona = mut_count_filtered_short_long_wona[order(mut_count_filtered_short_long_wona$CMS),]
 
 # Convert the matrix to a numeric matrix
 mut_CMS_numeric <- matrix(as.numeric(unlist(mut_CMS_wo_CMS)), nrow = nrow(mut_CMS_wo_CMS))
@@ -199,50 +230,54 @@ vec <- as.vector(mut_CMS_numeric)
 # Create the histogram
 hist(vec)
 
-mut_tmp_CMS= mut_count_filtered_tdf_common[,c("CMS")]
-mut_CMS_wo_CMS = mut_count_filtered_tdf_common[,which(!colnames(mut_count_filtered_tdf_common) %in% "CMS")]
+mut_tmp_CMS= mut_count_filtered_short_long_wona[,c("CMS","cluster")]
+mut_CMS_wo_CMS = mut_count_filtered_short_long_wona[,which(!colnames(mut_count_filtered_short_long_wona) %in% c("CMS","cluster"))]
 mut_CMS_wo_CMS[mut_CMS_wo_CMS >= 1] <- 1
-mut_count_filtered_tdf_common = cbind(mut_CMS_wo_CMS , CMS = mut_tmp_CMS)
+mut_count_filtered_short_long_wona = cbind(mut_CMS_wo_CMS , mut_tmp_CMS)
 
-annotation_df <- data.frame(CMS = mut_count_filtered_tdf_common$CMS)
-rownames(annotation_df) <- rownames(mut_count_filtered_tdf_common)
+annotation_df <- data.frame(CMS = mut_count_filtered_short_long_wona$CMS,
+                            cluster = mut_count_filtered_short_long_wona$cluster)
+rownames(annotation_df) <- rownames(mut_count_filtered_short_long_wona)
 
 # Create a named color vector for the unique values of vital_status
-CMS_colors <- c("CMS1" = "yellow", "CMS2" = "black", "CMS3" = "green", "CMS4" = "red")
-names(CMS_colors) <- unique(annotation_df$CMS)
+num_CMS = brewer.pal(length(unique(mut_count_filtered_short_long_wona$CMS)), "Spectral")
+col_CMS = setNames(num_CMS, unique(mut_count_filtered_short_long_wona$CMS))
 
+cluster_colors <- c("short" = "yellow", "long" = "black")
+subtypes_colors = list(CMS = col_CMS , cluster = cluster_colors)
 
-png(filename = paste0(CancerType,"_mut_clusterT_CMS.png"),
+png(filename = paste0(CancerType,"_mut_short_long_clusterT_CMS.png"),
     width = 25, height = 25,  units = "cm" ,pointsize = 12,
     bg = "white", res = 1200, family = "")
 
-tmp = pheatmap::pheatmap(as.matrix(t(mut_count_filtered_tdf_common[,-ncol(mut_count_filtered_tdf_common)])),
+
+tmp = pheatmap::pheatmap(as.matrix(t(mut_count_filtered_short_long_wona[,which(!colnames(mut_count_filtered_short_long_wona) %in% c("CMS","cluster"))])),
                          annotation_col = annotation_df,
-                         annotation_colors = list(CMS = CMS_colors),
+                         annotation_colors = subtypes_colors,
                          cluster_cols = T)
 print(tmp)
 
 dev.off()
 
-png(filename = paste0(CancerType,"_mut_clusterF_CMS.png"),
+png(filename = paste0(CancerType,"_mut_short_long_clusterF_CMS.png"),
     width = 25, height = 25,  units = "cm" ,pointsize = 12,
     bg = "white", res = 1200, family = "")
 
-tmp2 = pheatmap::pheatmap(as.matrix(t(mut_count_filtered_tdf_common[,-ncol(mut_count_filtered_tdf_common)])),
+tmp2 = pheatmap::pheatmap(as.matrix(t(mut_count_filtered_short_long_wona[,which(!colnames(mut_count_filtered_short_long_wona) %in% c("CMS","cluster"))])),
                           annotation_col = annotation_df,
-                          annotation_colors = list(CMS = CMS_colors),
+                          annotation_colors = subtypes_colors,
                           cluster_cols = F)
 print(tmp2)
 
 dev.off()
 
-png(filename = paste0(CancerType,"_mut_cluster_complex_CMS.png"),
+png(filename = paste0(CancerType,"_mut_short_long_complex_CMS.png"),
     width = 25, height = 25,  units = "cm" ,pointsize = 12,
     bg = "white", res = 1200, family = "")
-tmp3 = ComplexHeatmap::pheatmap(as.matrix(t(mut_count_filtered_tdf_common[,-ncol(mut_count_filtered_tdf_common)])),
+tmp3 = ComplexHeatmap::pheatmap(as.matrix(t(mut_count_filtered_short_long_wona[,which(!colnames(mut_count_filtered_short_long_wona) %in% c("CMS","cluster"))])),
                                 column_split = annotation_df$CMS,
                                 annotation_col = annotation_df,
-                                annotation_colors = list(CMS = CMS_colors),
+                                annotation_colors = subtypes_colors,
                                 cluster_cols = T)
 
 print(tmp3)
@@ -250,25 +285,41 @@ dev.off()
 
 mut_filtered@clinical.data$CMS = NA
 mut_filtered@clinical.data$CMS = as.character(mut_filtered@clinical.data$CMS)
+mut_filtered@clinical.data$cluster = NA
+mut_filtered@clinical.data$cluster = as.character(mut_filtered@clinical.data$cluster)
 
 mut_filtered@clinical.data$submitter_id = substr(mut_filtered@clinical.data$Tumor_Sample_Barcode,1,12)
 
 for (maf_patients in mut_filtered@clinical.data$submitter_id ) {
-  if (maf_patients  %in% rownames(cms_filtered_common)) {
-    mut_filtered@clinical.data[which(mut_filtered@clinical.data$submitter_id == maf_patients),]$CMS = cms_filtered_common[which(rownames(cms_filtered_common) == maf_patients),]$RF.details.RF.nearestCMS
+  if (maf_patients  %in% cms_filtered_common$patient) {
+    mut_filtered@clinical.data[which(mut_filtered@clinical.data$submitter_id == maf_patients),]$CMS =
+      cms_filtered_common[which(cms_filtered_common$patient == maf_patients),]$CMStype
+    
   } 
   
 } 
-mut_filtered@clinical.data = mut_filtered@clinical.data[which(!is.na(mut_filtered@clinical.data$CMS)),]
 
-png(filename = paste0(CancerType,"_mut_oncoplot_CMS.png"),
+for (maf_patients in mut_filtered@clinical.data$submitter_id ) {
+  if (maf_patients  %in% rownames(short_long_filtered)) {
+    mut_filtered@clinical.data[which(mut_filtered@clinical.data$submitter_id == maf_patients),]$cluster =
+      short_long_filtered[which(rownames(short_long_filtered) == maf_patients),]$cluster
+    
+  } 
+  
+} 
+
+
+mut_filtered@clinical.data = mut_filtered@clinical.data[which(!is.na(mut_filtered@clinical.data$CMS)),]
+mut_filtered@clinical.data = mut_filtered@clinical.data[which(!is.na(mut_filtered@clinical.data$cluster)),]
+
+png(filename = paste0(CancerType,"_mut_short_long_oncoplot_CMS.png"),
     width = 30, height = 30,  units = "cm" ,pointsize = 12,
     bg = "white", res = 1200, family = "")
 
 
 tmp4 = oncoplot(maf = mut_filtered,
                 genes = cms_genes_sym,
-                clinicalFeatures = "CMS",
+                clinicalFeatures = c("CMS","cluster"),
                 sortByAnnotation = TRUE)
 
 print(tmp4)
@@ -300,13 +351,21 @@ for (dup_pat in rownames(dup_net_df)) {
 
 rownames(net_cms_tdf) = substr(rownames(net_cms_tdf),1,12) 
 
-common_net_pat = intersect(rownames(net_cms_tdf) , rownames(cms_filtered))
-net_cms_tdf_common = net_cms_tdf[common_net_pat,]
-cms_net_filtered_common = cms_filtered[common_net_pat,]
+net_cms_tdf_common = net_cms_tdf[which(rownames(net_cms_tdf) %in% cms_filtered_common$patient),]
+cms_net_filtered_common = cms_filtered_common[which(cms_filtered_common$patient %in% rownames(net_cms_tdf)),]
+net_cms_tdf_common = net_cms_tdf_common[order(rownames(net_cms_tdf_common)),]
 
-if (all.equal(rownames(net_cms_tdf_common), rownames(cms_net_filtered_common))) {
-  net_cms_tdf_common$CMS = cms_net_filtered_common$RF.details.RF.nearestCMS
+
+if (all.equal(rownames(net_cms_tdf_common), cms_net_filtered_common$patient)) {
+  net_cms_tdf_common$CMS = cms_net_filtered_common$CMStype
 }
+net_cms_tdf_common = net_cms_tdf_common[which(rownames(net_cms_tdf_common) %in% rownames(short_long_filtered)),]
+short_long_filtered = short_long_filtered[which(rownames(short_long_filtered) %in% rownames(net_cms_tdf_common)),]
+
+if (all.equal(rownames(net_cms_tdf_common), rownames(short_long_filtered))) {
+  net_cms_tdf_common$cluster = short_long_filtered$cluster
+}
+
 
 net_cms_tdf_common = net_cms_tdf_common[order(net_cms_tdf_common$CMS),]
 
@@ -319,100 +378,58 @@ vec <- as.vector(net_cms_numeric)
 # Create the histogram
 hist(vec)
 
-tmp_CMS = net_cms_tdf_common[,c("CMS")]
-net_cms_wo_cms = net_cms_tdf_common[,which(!colnames(net_cms_tdf_common) %in% "CMS")]
-net_cms_wo_cms[net_cms_wo_cms > 0.03] <- 0.03
-net_cms_tdf_common = cbind(net_cms_wo_cms , CMS = tmp_CMS)
+tmp_CMS = net_cms_tdf_common[,c("CMS","cluster")]
+net_cms_wo_cms = net_cms_tdf_common[,which(!colnames(net_cms_tdf_common) %in% c("CMS","cluster"))]
+net_cms_wo_cms[net_cms_wo_cms > 0.006] <- 0.006
+net_cms_tdf_common = cbind(net_cms_wo_cms , tmp_CMS)
 
+net_cms_tdf_common = net_cms_tdf_common[which(!is.na(net_cms_tdf_common$CMS)),]
+net_cms_tdf_common = net_cms_tdf_common[which(!is.na(net_cms_tdf_common$cluster)),]
 
-annotation_df <- data.frame(CMS = net_cms_tdf_common$CMS)
+annotation_df <- data.frame(CMS = net_cms_tdf_common$CMS,
+                            cluster = net_cms_tdf_common$cluster)
 rownames(annotation_df) <- rownames(net_cms_tdf_common)
 
 # Create a named color vector for the unique values of vital_status
-CMS_colors <- c("CMS1" = "yellow", "CMS2" = "black", "CMS3" = "green", "CMS4" = "red")
-names(CMS_colors) <- unique(annotation_df$CMS)
+num_CMS = brewer.pal(length(unique(net_cms_tdf_common$CMS)), "Spectral")
+col_CMS = setNames(num_CMS, unique(net_cms_tdf_common$CMS))
 
-png(filename = paste0(CancerType,"_n222.png"),
+cluster_colors <- c("short" = "yellow", "long" = "black")
+subtypes_colors = list(CMS = col_CMS , cluster = cluster_colors)
+
+png(filename = paste0(CancerType,"_net_w_short_long_clusterT_CMS.png"),
     width = 35, height = 35,  units = "cm" ,pointsize = 12,
     bg = "white", res = 1200, family = "")
 
-tmp2 = pheatmap::pheatmap(as.matrix(t(net_cms_tdf_common[,-ncol(net_cms_tdf_common)])),
-                         annotation_col = annotation_df,
-                         annotation_colors = list(CMS = CMS_colors),
-                         cluster_cols = T)
-print(tmp2)
-
-dev.off()
-
-png(filename = paste0(CancerType,"_net_clusterT_CMS.png"),
-    width = 35, height = 35,  units = "cm" ,pointsize = 12,
-    bg = "white", res = 1200, family = "")
-
-tmp = pheatmap::pheatmap(as.matrix(t(net_cms_tdf_common[,-ncol(net_cms_tdf_common)])),
-                         annotation_col = annotation_df,
-                         annotation_colors = list(CMS = CMS_colors),
-                         cluster_cols = T)
+tmp = pheatmap::pheatmap(as.matrix(t(net_cms_tdf_common[,which(!colnames(net_cms_tdf_common) %in% c("CMS","cluster"))])),
+                          annotation_col = annotation_df,
+                          annotation_colors = subtypes_colors,
+                          cluster_cols = T)
 print(tmp)
 
 dev.off()
 
-png(filename = paste0(CancerType,"_net_clusterF_CMS.png"),
+
+png(filename = paste0(CancerType,"_net_w_short_long_clusterF_CMS.png"),
     width = 35, height = 35,  units = "cm" ,pointsize = 12,
     bg = "white", res = 1200, family = "")
 
-tmp2 = pheatmap::pheatmap(as.matrix(t(net_cms_tdf_common[,-ncol(net_cms_tdf_common)])),
+tmp2 = pheatmap::pheatmap(as.matrix(t(net_cms_tdf_common[,which(!colnames(net_cms_tdf_common) %in% c("CMS","cluster"))])),
                           annotation_col = annotation_df,
-                          annotation_colors = list(CMS = CMS_colors),
+                          annotation_colors = subtypes_colors,
                           cluster_cols = F)
 print(tmp2)
 
 dev.off()
 
-png(filename = paste0(CancerType,"_net_cluster_complex_CMS.png"),
+png(filename = paste0(CancerType,"_net_w_short_long_cluster_complex_CMS.png"),
     width = 35, height = 35,  units = "cm" ,pointsize = 12,
     bg = "white", res = 1200, family = "")
-tmp3 = ComplexHeatmap::pheatmap(as.matrix(t(net_cms_tdf_common[,-ncol(net_cms_tdf_common)])),
+tmp3 = ComplexHeatmap::pheatmap(as.matrix(t(net_cms_tdf_common[,which(!colnames(net_cms_tdf_common) %in% c("CMS","cluster"))])),
                                 column_split = annotation_df$CMS,
                                 annotation_col = annotation_df,
-                                annotation_colors = list(CMS = CMS_colors),
+                                annotation_colors = subtypes_colors,
                                 cluster_cols = T)
-
-print(tmp3)
-dev.off()
-
-#
-png(filename = paste0(CancerType,"_net_clusterT_CMS_rowgenes_colpat.png"),
-    width = 25, height = 25,  units = "cm" ,pointsize = 12,
-    bg = "white", res = 1200, family = "")
-
-tmp = pheatmap::pheatmap(as.matrix(t(net_cms_tdf_common[,-ncol(net_cms_tdf_common)])),
-                         annotation_col = annotation_df,
-                         annotation_colors = list(CMS = CMS_colors),
-                         cluster_cols = T,show_rownames = F,show_colnames = F)
-print(tmp)
-
-dev.off()
-
-png(filename = paste0(CancerType,"_net_clusterF_CMS_rowgenes_colpat.png"),
-    width = 35, height = 35,  units = "cm" ,pointsize = 12,
-    bg = "white", res = 1200, family = "")
-
-tmp2 = pheatmap::pheatmap(as.matrix(t(net_cms_tdf_common[,-ncol(net_cms_tdf_common)])),
-                          annotation_col = annotation_df,
-                          annotation_colors = list(CMS = CMS_colors),
-                          cluster_cols = F,show_rownames = F,show_colnames = F)
-print(tmp2)
-
-dev.off()
-
-png(filename = paste0(CancerType,"_net_cluster_complex_CMS_rowgenes_colpat.png"),
-    width = 35, height = 35,  units = "cm" ,pointsize = 12,
-    bg = "white", res = 1200, family = "")
-tmp3 = ComplexHeatmap::pheatmap(as.matrix(t(net_cms_tdf_common[,-ncol(net_cms_tdf_common)])),
-                                column_split = annotation_df$CMS,
-                                annotation_col = annotation_df,
-                                annotation_colors = list(CMS = CMS_colors),
-                                cluster_cols = T,show_rownames = F,show_colnames = F)
 
 print(tmp3)
 dev.off()
