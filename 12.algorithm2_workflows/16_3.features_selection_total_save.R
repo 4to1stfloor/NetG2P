@@ -9,11 +9,13 @@ library(cluster)
 library(factoextra) 
 library(dplyr)
 library(stringr)
+library(readxl)
+
 setwd("/home/seokwon/nas/04.Results/")
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
-set.seed(13524)
+
 total_results_pval = data.frame()
 for (num_CancerType in Cancerlist) {
   
@@ -38,6 +40,7 @@ for (num_CancerType in Cancerlist) {
   
   result_surv_pval$CancerType = NA
   result_surv_pval$num_of_features = NA
+  result_surv_pval$diff_balance_ratio = NA
 
   for (last_num in 2:length(annotate_best_features$variable)) {
     
@@ -62,6 +65,14 @@ for (num_CancerType in Cancerlist) {
     result_surv_pval[last_num,"num_of_features"] = last_num
     result_surv_pval[last_num,"pval"] = surv_pvalue(fit)$pval
     result_surv_pval[last_num,"CancerType"] = CancerType
+    # result_surv_pval[last_num,"balance_ratio_1"] = round(fit$n[1] / (fit$n[1] + fit$n[2]), 2)
+    # result_surv_pval[last_num,"balance_ratio_2"] = round(fit$n[2] / (fit$n[1] + fit$n[2]), 2)
+    
+    if (round(fit$n[1] / (fit$n[1] + fit$n[2]), 2) > round(fit$n[2] / (fit$n[1] + fit$n[2]), 2) ) {
+      result_surv_pval[last_num,"diff_balance_ratio"] = round(fit$n[1] / (fit$n[1] + fit$n[2]), 2) - round(fit$n[2] / (fit$n[1] + fit$n[2]), 2)
+    } else {
+      result_surv_pval[last_num,"diff_balance_ratio"] = round(fit$n[2] / (fit$n[1] + fit$n[2]), 2) - round(fit$n[1] / (fit$n[1] + fit$n[2]), 2) 
+    }
     
     if (round(fit$n[1] / (fit$n[1] + fit$n[2]), 2) <= 0.7 && round(fit$n[1] / (fit$n[1] + fit$n[2]), 2) >= 0.3) {
       result_surv_pval[last_num,"bias"] = "balanced"
@@ -74,21 +85,36 @@ for (num_CancerType in Cancerlist) {
   
   result_surv_pval = na.omit(result_surv_pval)
   result_surv_pval_spe = result_surv_pval[which(result_surv_pval$pval < 0.05),]
-
+  
   if (length(result_surv_pval_spe$pval) == 0) {
-    total_results_pval = rbind(total_results_pval, result_surv_pval[which(result_surv_pval$pval == min(result_surv_pval$pval)),])
+    
+    tmp_diff = result_surv_pval[which(result_surv_pval$diff_balance_ratio < 0.4),]
+    
+    if (nrow(tmp_diff[which(tmp_diff$pval == min(tmp_diff$pval)),]) > 1) {
+      tmp_diff_pval =tmp_diff[which(tmp_diff$pval == min(tmp_diff$pval)),]
+      total_results_pval = rbind(total_results_pval, tmp_diff_pval[which(tmp_diff_pval$num_of_features == max(tmp_diff_pval$num_of_features)),])
+    } else {
+      total_results_pval = rbind(total_results_pval, tmp_diff[which(tmp_diff$pval == min(tmp_diff$pval)),])
+    }
     
   } else if (length(unique(result_surv_pval_spe$bias)) == 1 && unique(result_surv_pval_spe$bias == "not balanced") ) {
+    # total_results_pval = rbind(total_results_pval, result_surv_pval_spe[which(result_surv_pval_spe$pval == min(result_surv_pval_spe$pval)),])
     
-    total_results_pval = rbind(total_results_pval, result_surv_pval_spe[which(result_surv_pval_spe$pval == min(result_surv_pval_spe$pval)),])
-    
+    if (nrow(result_surv_pval_spe[which(result_surv_pval_spe$diff_balance_ratio == min(result_surv_pval_spe$diff_balance_ratio)),]) > 1) {
+      tmp_diff = result_surv_pval_spe[which(result_surv_pval_spe$diff_balance_ratio == min(result_surv_pval_spe$diff_balance_ratio)),]
+      total_results_pval = rbind(total_results_pval, tmp_diff[which(tmp_diff$pval == min(tmp_diff$pval)),])
+    } else {
+      total_results_pval = rbind(total_results_pval, result_surv_pval_spe[which(result_surv_pval_spe$diff_balance_ratio == min(result_surv_pval_spe$diff_balance_ratio)),])
+    }
+
   } else {
     tmp_bias_pval = result_surv_pval_spe[which(result_surv_pval_spe$bias == "balanced"),]
     total_results_pval = rbind(total_results_pval, tmp_bias_pval[which(tmp_bias_pval$pval == min(tmp_bias_pval$pval)),])
   }
   
-  write.csv(result_surv_pval_spe, paste0(CancerType, "_results_spe_survpval.csv"))
-  remove(best_features_df,annotate_best_features,duration_log_df,result_surv_pval_spe,result_surv_pval)
+  write.csv(result_surv_pval, paste0(CancerType, "_rawdata_survpval.csv"))
+  remove(best_features_df,annotate_best_features,duration_log_df,result_surv_pval)
 }
+library(openxlsx)
+write.xlsx(total_results_pval, paste0("Total_results_survpval.xlsx"))
 
-write.csv(total_results_pval, paste0("Total_results_survpval.csv"))
