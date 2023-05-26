@@ -13,7 +13,7 @@ library(stringr)
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
-Cancerlist = Cancerlist[1:11]
+
 for (num_CancerType in Cancerlist) {
   
   main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)
