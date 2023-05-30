@@ -20,7 +20,7 @@ for (num_CancerType in Cancerlist) {
   CancerType = gsub('[.]','',gsub('\\d','', num_CancerType))
   
   # call input
-  annotate_best_features =  read.csv(paste0(filepath,"04.Results/bestfeatures",CancerType,"_best_features.csv"))
+  annotate_best_features =  read.csv(paste0(filepath,"04.Results/bestfeatures/",CancerType,"_best_features.csv"))
   duration_log_df = readRDS(paste0(main.path_tc, "/", CancerType,"_dual_add_duration_log.rds"))
   
   # fig_folder_create
