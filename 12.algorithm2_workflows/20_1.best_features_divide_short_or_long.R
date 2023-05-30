@@ -5,11 +5,12 @@ library(pheatmap)
 library(RColorBrewer)
 library(readxl)
 library(openxlsx)
+
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
 
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
-surv_total_results = read.csv("~/nas/04.Results/Total_results_survpval.csv")
+surv_total_results = read.xlsx("~/nas/04.Results/Total_results_survpval.xlsx")
 
 setwd("~/nas/04.Results/short_long/")
 
@@ -26,28 +27,23 @@ for (num_CancerType in Cancerlist) {
   
   # cut the number of best features 
   cancer_bf_cut = cancer_bf[1:surv_total_results[which(surv_total_results$CancerType == CancerType),]$num_of_features,]
+  best_features_df = duration_log_df[,cancer_bf_cut$variable]
   
-  data_tc_link = readRDS(file = paste0(main.path_tc,"/",CancerType,"_pathwaylink_all_log.rds"))
-  data_tc_each = readRDS(file = paste0(main.path_tc,"/",CancerType,"_pathwayeach_all_log.rds"))
-  
-  data_tc_link_filt = data_tc_link[,which(colSums(data_tc_link[-ncol(data_tc_link)]) != 0)]
-  data_tc_each_filt = data_tc_each[,which(colSums(data_tc_each[-ncol(data_tc_each)]) != 0)]
-  
-  data_tc_link_filt$vitalstatus = data_tc_link$vitalstatus
-  data_tc_each_filt$vitalstatus = data_tc_each$vitalstatus
-  
-  data_tc_link_filt = data_tc_link_filt[intersect(rownames(data_tc_link_filt), rownames(data_tc_each_filt)),]
-  data_tc_each_filt = data_tc_each_filt[intersect(rownames(data_tc_link_filt), rownames(data_tc_each_filt)),]
-  
-  if (all.equal(rownames(data_tc_link_filt), rownames(data_tc_each_filt))) {
-    data_tc_link_filt$vitalstatus = NULL
-    data_tc = cbind(data_tc_link_filt,data_tc_each_filt)
+  if (all.equal(rownames(best_features_df), rownames(duration_log_df))) {
+    
+    best_features_df$vitalstatus = duration_log_df$vitalstatus
+    best_features_df$duration = duration_log_df$duration
+    
+    best_features_df$status = NA
+    best_features_df$status[which(best_features_df$vitalstatus == "Dead")] = 1
+    best_features_df$status[which(best_features_df$vitalstatus == "Alive")] = 0
+    
   }
-  
-  data_bf =  data_tc[,cancer_bf_cut$variable]
+  data_bf = best_features_df
   # annotation cluster 1 or 2 (long or short) by best pval score
   # 18 means best p-value when devide two cluster
-  out = pheatmap::pheatmap((data_bf > -log(0.05))*1 ,
+  
+  out = pheatmap::pheatmap((data_bf[,which(!colnames(data_bf) %in% c("vitalstatus","duration","status"))] > -log(0.05))*1 ,
                            cluster_cols = T,
                            cluster_rows = T,
                            labels_cols = "", 
@@ -60,31 +56,7 @@ for (num_CancerType in Cancerlist) {
   if (all.equal(rownames(data_bf), rownames(tmp_pheat_cut))) {
     data_bf$cluster = tmp_pheat_cut$cluster 
   }
-  
-  if (nrow(data_bf) == nrow(duration_log_df)) {
-    if (all.equal(rownames(data_bf), rownames(duration_log_df))) {
-      data_bf$vital_status = duration_log_df$vitalstatus
-      data_bf$duration = duration_log_df$duration
-    }
-    
-  } else {
-    common_pat2 = intersect(rownames(data_bf), rownames(duration_log_df))
-    data_bf = data_bf[common_pat2,]
-    duration_log_df = duration_log_df[common_pat2,]
-    if (all.equal(rownames(data_bf), rownames(duration_log_df))) {
-      data_bf$vital_status = duration_log_df$vitalstatus
-      data_bf$duration = duration_log_df$duration
-    }
-    
-  }
-  
-  data_bf$status = NA
-  data_bf$status = ifelse(data_bf$vital_status == "Alive", 0 , 1)
-  data_bf$vital_status = NULL
-  data_bf = na.omit(data_bf)
-  
-  data_bf = data_bf[which(data_bf$duration >= 0),]
-  
+
   fit = survfit(Surv(duration, status) ~ cluster, data = data_bf)
   # ggsurvplot(fit, data = data_bf, risk.table = TRUE,
   #            palette = "jco", pval = TRUE, surv.median.line = "hv", xlab = "days")
@@ -106,7 +78,7 @@ for (num_CancerType in Cancerlist) {
   } else {
     print("I don't know")
   }
-  
+
   short_group = na.omit(short_group)
   long_group = na.omit(long_group)
   
@@ -119,7 +91,7 @@ for (num_CancerType in Cancerlist) {
   
   total_group = rbind(long_group,short_group)
 
-  saveRDS(total_group, paste0("~/nas/04.Results/short_long/",CancerType,"_best_features_short_long.rds"))
+  # saveRDS(total_group, paste0("~/nas/04.Results/short_long/",CancerType,"_best_features_short_long.rds"))
 
   wo_num = ncol(total_group) - length(grep("*P", colnames(total_group)))
 
@@ -207,7 +179,7 @@ for (num_CancerType in Cancerlist) {
     cancer_short_long[which(cancer_short_long$variable %in% short_cluster_path),]$classification = "short"
   }
 
-  write.xlsx(cancer_short_long , paste0("~/nas/04.Results/short_long/",CancerType,"_best_features_short_long.xlsx"))
+  # write.xlsx(cancer_short_long , paste0("~/nas/04.Results/short_long/",CancerType,"_best_features_short_long.xlsx"))
 
   # fig
   short_group_for_fig$cluster = "short"
@@ -243,11 +215,15 @@ for (num_CancerType in Cancerlist) {
       width = 25, height = 25,  units = "cm" ,pointsize = 12,
       bg = "white", res = 1200, family = "")
 
-  total_out = ComplexHeatmap::pheatmap(as.matrix(t(total_group_for_fig %>% dplyr::select(-cluster,-duration,-status))),
+  total_out = ComplexHeatmap::pheatmap(as.matrix(t(total_group_for_fig %>% 
+                                                     dplyr::select_if(is.numeric) %>%  
+                                                     dplyr::select(-duration,-status) %>%
+                                                     as.matrix())),
                                        column_split = annotation_df$short_long,
                                        annotation_col = annotation_df,
                                        annotation_colors = short_long_colors,
-                                       cluster_cols = T)
+                                       cluster_cols = T,
+                                       legend = F)
 
   print(total_out)
 
@@ -257,15 +233,17 @@ for (num_CancerType in Cancerlist) {
       width = 25, height = 25,  units = "cm" ,pointsize = 12,
       bg = "white", res = 1200, family = "")
 
-  total_out2 = pheatmap::pheatmap(as.matrix(t(total_group_for_fig %>% dplyr::select(-cluster,-duration,-status))),
-                           annotation_col = annotation_df,
-                           annotation_colors = short_long_colors,
-                           cluster_cols = T)
+  total_out2 = pheatmap::pheatmap(as.matrix(t(total_group_for_fig %>% 
+                                                dplyr::select_if(is.numeric) %>%  
+                                                dplyr::select(-duration,-status) %>%
+                                                as.matrix())),
+                                  annotation_col = annotation_df,
+                                  annotation_colors = short_long_colors,
+                                  cluster_cols = TRUE,
+                                  legend = F)
   print(total_out2)
 
   dev.off()
 
   
 }  
-
-

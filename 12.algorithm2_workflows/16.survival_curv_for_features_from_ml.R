@@ -39,7 +39,7 @@ for (num_CancerType in Cancerlist) {
   best_features_df$status = NA
   best_features_df$status[which(best_features_df$vitalstatus == "Dead")] = 1
   best_features_df$status[which(best_features_df$vitalstatus == "Alive")] = 0
-  
+ 
   for (last_num in 2:length(annotate_best_features$variable)) {
     
     out = pheatmap((best_features_df[,1:last_num] > -log(0.05))*1 , 
