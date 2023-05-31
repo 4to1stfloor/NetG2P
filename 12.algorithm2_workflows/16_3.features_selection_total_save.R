@@ -116,5 +116,5 @@ for (num_CancerType in Cancerlist) {
   remove(best_features_df,annotate_best_features,duration_log_df,result_surv_pval)
 }
 library(openxlsx)
-write.xlsx(total_results_pval, paste0("Total_results_survpval.xlsx"))
+write.xlsx(total_results_pval, paste0("Total_results_survpval2.xlsx"))
 
