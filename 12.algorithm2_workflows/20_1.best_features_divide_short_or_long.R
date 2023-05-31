@@ -157,7 +157,12 @@ for (num_CancerType in Cancerlist) {
       if (length(short_cluster_path) != 0 && length(long_cluster_path) != 0) {
         print(paste0("The least pvalue that are divided by short and long is ",not_spe))
         break
-      }
+      } 
+      
+    }
+    
+    if (length(short_cluster_path) == 0 || length(long_cluster_path) == 0) {
+      print(CancerType)
     }
   }
 
@@ -179,7 +184,7 @@ for (num_CancerType in Cancerlist) {
     cancer_short_long[which(cancer_short_long$variable %in% short_cluster_path),]$classification = "short"
   }
 
-  # write.xlsx(cancer_short_long , paste0("~/nas/04.Results/short_long/",CancerType,"_best_features_short_long.xlsx"))
+  write.xlsx(cancer_short_long , paste0("~/nas/04.Results/short_long/",CancerType,"_best_features_short_long.xlsx"))
 
   # fig
   short_group_for_fig$cluster = "short"
@@ -215,8 +220,8 @@ for (num_CancerType in Cancerlist) {
       width = 25, height = 25,  units = "cm" ,pointsize = 12,
       bg = "white", res = 1200, family = "")
 
-  total_out = ComplexHeatmap::pheatmap(as.matrix(t(total_group_for_fig %>% 
-                                                     dplyr::select_if(is.numeric) %>%  
+  total_out = ComplexHeatmap::pheatmap(as.matrix(t(total_group_for_fig %>%
+                                                     dplyr::select_if(is.numeric) %>%
                                                      dplyr::select(-duration,-status) %>%
                                                      as.matrix())),
                                        column_split = annotation_df$short_long,
@@ -233,8 +238,8 @@ for (num_CancerType in Cancerlist) {
       width = 25, height = 25,  units = "cm" ,pointsize = 12,
       bg = "white", res = 1200, family = "")
 
-  total_out2 = pheatmap::pheatmap(as.matrix(t(total_group_for_fig %>% 
-                                                dplyr::select_if(is.numeric) %>%  
+  total_out2 = pheatmap::pheatmap(as.matrix(t(total_group_for_fig %>%
+                                                dplyr::select_if(is.numeric) %>%
                                                 dplyr::select(-duration,-status) %>%
                                                 as.matrix())),
                                   annotation_col = annotation_df,
