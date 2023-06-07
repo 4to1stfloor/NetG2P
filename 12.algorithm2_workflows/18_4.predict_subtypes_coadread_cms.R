@@ -290,3 +290,5 @@ tmp3 = ComplexHeatmap::pheatmap(as.matrix(t(mut_bf_filt_inter_sl[,which(!colname
 
 print(tmp3)
 dev.off()
+
+# mut has data -> 0
