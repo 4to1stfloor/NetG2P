@@ -15,7 +15,6 @@ library(DOSE)
 library(UpSetR)
 library(enrichplot)
 library(dplyr)
-library(readxl)
 
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
@@ -52,15 +51,17 @@ Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 sce_path = "/mnt/gluster_server/data/raw/TCGA_data/00.data/"
 
 surv_total_results = read_xlsx("~/nas/04.Results/Total_results_survpval2.xlsx")
-
+# num_CancerType = "04.TCGA-CESC"
 # for all
+top_genes_group = list()
+
 for (num_CancerType in Cancerlist) {
   
   main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)
   CancerType = gsub('[.]','',gsub('\\d','', num_CancerType))
   
   # call input
- 
+  
   sce = readRDS(paste0(sce_path,num_CancerType,"/", CancerType,".sce_raw_snv_cnv.rds"))
   short_long_features = read_xlsx(paste0(filepath, "04.Results/short_long/",CancerType, "_best_features_short_long.xlsx"))
   bf_short_long = readRDS(paste0(filepath, "04.Results/short_long/",CancerType,"_best_features_short_long.rds"))
@@ -130,174 +131,53 @@ for (num_CancerType in Cancerlist) {
   bf_zs_shared_exp_filt_df = as.data.frame(t(bf_zs_shared_exp_filt_df))
   
   bf_zs_shared_exp_filt_df$cluster  = NA
- 
+  
   bf_zs_shared_exp_filt_df[intersect(rownames(bf_zs_shared_exp_filt_df) , rownames(bf_short_long)),]$cluster = 
     bf_short_long[intersect(rownames(bf_zs_shared_exp_filt_df) , rownames(bf_short_long)),]$cluster
-
+  
   bf_zs_shared_exp_filt_df = bf_zs_shared_exp_filt_df[which(!is.na(bf_zs_shared_exp_filt_df$cluster)),]
   
   short_gene = c()
   long_gene = c()
-  
-  # pvalue 일단 ㄴ (features 수준에서 pvalue컷 한거라)
-  for (colnum in 1:(ncol(bf_zs_shared_exp_filt_df)-1)) {
-    if (colMeans(bf_zs_shared_exp_filt_df[which(bf_zs_shared_exp_filt_df$cluster == "short"),][colnum]) >
-        colMeans(bf_zs_shared_exp_filt_df[which(bf_zs_shared_exp_filt_df$cluster == "long"),][colnum])) {
-      short_gene = c(short_gene , colnames(bf_zs_shared_exp_filt_df)[colnum])
+
+  # 
+  for (pval_gene in colnames(bf_zs_shared_exp_filt_df)[!colnames(bf_zs_shared_exp_filt_df) %in% "cluster"]) {
+    if (colMeans(bf_zs_shared_exp_filt_df[which(bf_zs_shared_exp_filt_df$cluster == "short"),][pval_gene]) >
+        colMeans(bf_zs_shared_exp_filt_df[which(bf_zs_shared_exp_filt_df$cluster == "long"),][pval_gene])) {
+      short_gene = c(short_gene , pval_gene)
     } else {
-      long_gene =  c(long_gene,colnames(bf_zs_shared_exp_filt_df)[colnum])
+      long_gene =  c(long_gene,pval_gene)
     }
   }
   
-  short_gene_en = AnnotationDbi::select(org.Hs.eg.db, short_gene, 'ENTREZID', 'SYMBOL')[
-    which(!is.na(AnnotationDbi::select(org.Hs.eg.db, short_gene, 'ENTREZID', 'SYMBOL')$ENTREZID)),]
-  short_gene_en <- data.frame(short_gene_en, row.names = NULL)
-  
-  long_cluster2_gene_en = AnnotationDbi::select(org.Hs.eg.db, long_gene, 'ENTREZID', 'SYMBOL')[
-    which(!is.na(AnnotationDbi::select(org.Hs.eg.db, long_gene, 'ENTREZID', 'SYMBOL')$ENTREZID)),]
-  long_cluster2_gene_en <- data.frame(long_cluster2_gene_en, row.names = NULL)
-
-  top_genes_group = list(short_cluster = short_gene_en$ENTREZID,long_cluster = long_cluster2_gene_en$ENTREZID)
-  
-  ck <- compareCluster(geneCluster = top_genes_group, fun = "enrichKEGG")
-  ck <- setReadable(ck, OrgDb = org.Hs.eg.db, keyType="ENTREZID")
-  
-  # for top300 (from heatmap)
-  fig_path = paste0(filepath,"04.Results/short_long/analysis_pathway_from_features/",CancerType,"_analysis_exp_bf/")
-  if(!dir.exists(fig_path)){
-    dir.create(fig_path)
-    print(paste0("Created folder: ", fig_path))
-  } else {
-    print(paste0("Folder already exists: ", fig_path))
+  if (length(short_gene) != 0) {
+    short_gene_en = AnnotationDbi::select(org.Hs.eg.db, short_gene, 'ENTREZID', 'SYMBOL')[
+      which(!is.na(AnnotationDbi::select(org.Hs.eg.db, short_gene, 'ENTREZID', 'SYMBOL')$ENTREZID)),]
+    short_gene_en <- data.frame(short_gene_en, row.names = NULL)
+    
   }
-  setwd(fig_path)
   
-  png(filename = paste0(CancerType,"_cnetplot.png"),
-      width = 25, height = 25,  units = "cm" ,pointsize = 12,
-      bg = "white", res = 1200, family = "")
+  if (length(long_gene) != 0) {
+    long_gene_en = AnnotationDbi::select(org.Hs.eg.db, long_gene, 'ENTREZID', 'SYMBOL')[
+      which(!is.na(AnnotationDbi::select(org.Hs.eg.db, long_gene, 'ENTREZID', 'SYMBOL')$ENTREZID)),]
+    long_gene_en <- data.frame(long_gene_en, row.names = NULL)
+    
+  } else {
+    long_gene_en$ENTREZID
+  }
   
-  exp_cnet = cnetplot(ck)
   
-  print(exp_cnet)
-  dev.off()
+  tmp_genes_group = list( short_gene_en$ENTREZID, long_gene_en$ENTREZID)
+  names(tmp_genes_group) = c(paste0(CancerType,"_short_cluster") , paste0(CancerType, "_long_cluster"))
+  top_genes_group = append(top_genes_group, tmp_genes_group)
   
-  png(filename = paste0(CancerType,"_dotplot.png"),
-      width = 25, height = 25,  units = "cm" ,pointsize = 12,
-      bg = "white", res = 1200, family = "")
-  
-  exp_dot = dotplot(ck) 
-  
-  print(exp_dot)
-  dev.off()
-  
-  # for disease enrichment
-  
-  edo_short <- enrichDGN(top_genes_group$short_cluster)
-  edo_long <- enrichDGN(top_genes_group$long_cluster)
-  
-  edox_short <- setReadable(edo_short, OrgDb = org.Hs.eg.db, keyType="ENTREZID")
-  edox_long <- setReadable(edo_long, OrgDb = org.Hs.eg.db, keyType="ENTREZID")
-  
-  # barplot
-  png(filename = paste0(CancerType,"_DGN_long_barplot.png"),
-      width = 25, height = 25,  units = "cm" ,pointsize = 12,
-      bg = "white", res = 1200, family = "")
-  
-  disease_good = barplot(edo_long, showCategory=25)  + ggtitle("top 25")
-  
-  print(disease_good)
-  dev.off()
-  
-  png(filename = paste0(CancerType,"_DGN_short_barplot.png"),
-      width = 25, height = 25,  units = "cm" ,pointsize = 12,
-      bg = "white", res = 1200, family = "")
-  
-  disease_bad = barplot(edo_short, showCategory=25)  + ggtitle("top 25")
-  
-  print(disease_bad)
-  dev.off()
-  
-  # dotplot
-  png(filename = paste0(CancerType,"_DGN_long_dotplot.png"),
-      width = 25, height = 25,  units = "cm" ,pointsize = 12,
-      bg = "white", res = 1200, family = "")
-  
-  disease_dot_good = dotplot(edo_long, showCategory=30) + ggtitle("dotplot for good")
-  
-  print(disease_dot_good)
-  dev.off()
-  
-  png(filename = paste0(CancerType,"_DGN_short_dotplot.png"),
-      width = 25, height = 25,  units = "cm" ,pointsize = 12,
-      bg = "white", res = 1200, family = "")
-  
-  disease_dot_bad =  dotplot(edo_short, showCategory=30) + ggtitle("dotplot for bad")
-  
-  print(disease_dot_bad)
-  dev.off()
-  
-  # tree plot
-  edox_long <- pairwise_termsim(edo_long)
-  png(filename = paste0(CancerType,"_DGN_long_treeplot.png"),
-      width = 25, height = 25,  units = "cm" ,pointsize = 12,
-      bg = "white", res = 1200, family = "")
-  
-  disease_tree_good =  treeplot(edox_long) + ggtitle("treeplot for good")
-  
-  print(disease_tree_good)
-  dev.off()
-  
-  edox_short <- pairwise_termsim(edo_short)
-  
-  png(filename = paste0(CancerType,"_DGN_short_treeplot.png"),
-      width = 25, height = 25,  units = "cm" ,pointsize = 12,
-      bg = "white", res = 1200, family = "")
-  
-  disease_tree_bad =  treeplot(edox_short) + ggtitle("treeplot for bad")
-  
-  print(disease_tree_bad)
-  dev.off()
-  
-  # emapplot
-  
-  png(filename = paste0(CancerType,"_DGN_long_emapplot.png"),
-      width = 25, height = 25,  units = "cm" ,pointsize = 12,
-      bg = "white", res = 1200, family = "")
-  
-  disease_emap_good = emapplot(edox_long) + ggtitle("emapplot for long")
-  
-  print(disease_emap_good)
-  dev.off()
-  
-  png(filename = paste0(CancerType,"_DGN_short_emapplot.png"),
-      width = 25, height = 25,  units = "cm" ,pointsize = 12,
-      bg = "white", res = 1200, family = "")
-  
-  disease_emap_bad = emapplot(edox_short) + ggtitle("emapplot for short")
-  
-  print(disease_emap_bad)
-  dev.off()
-  
-  # upsetplot
-  png(filename = paste0(CancerType,"_DGN_long_upsetplot.png"),
-      width = 25, height = 25,  units = "cm" ,pointsize = 12,
-      bg = "white", res = 1200, family = "")
-  
-  disease_upset_good = upsetplot(edox_long) + ggtitle("upsetplot for long")
-  
-  print(disease_upset_good)
-  dev.off()
-  
-  png(filename = paste0(CancerType,"_DGN_short_upsetplot.png"),
-      width = 25, height = 25,  units = "cm" ,pointsize = 12,
-      bg = "white", res = 1200, family = "")
-  
-  disease_upset_bad = upsetplot(edox_short) + ggtitle("usetplot for short")
-  
-  print(disease_upset_bad)
-  dev.off()
-  
-  remove(ck,top_genes_group,bf_zs_shared_exp_filt_df,bf_sh_zs_exp_wo_filt)
+  remove(tmp_genes_group)
+  # remove(ck,top_genes_group,bf_zs_shared_exp_filt_df,bf_sh_zs_exp_wo_filt)
 }  
 
 
+ck <- compareCluster(geneCluster = top_genes_group, fun = "enrichKEGG")
+ck <- setReadable(ck, OrgDb = org.Hs.eg.db, keyType="ENTREZID")
+
+
+cnetplot(ck)
