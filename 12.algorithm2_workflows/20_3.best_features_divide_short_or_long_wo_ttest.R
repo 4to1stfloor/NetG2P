@@ -73,8 +73,8 @@ for (num_CancerType in Cancerlist) {
     short_group = data_bf[which(data_bf$cluster == 1),]
     long_group = data_bf[which(data_bf$cluster == 2),]
     
-    # short_group_for_fig = data_bf[which(data_bf$cluster == 2),]
-    # long_group_for_fig = data_bf[which(data_bf$cluster == 1),]
+    # short_group_for_fig = data_bf[which(data_bf$cluster == 1),]
+    # long_group_for_fig = data_bf[which(data_bf$cluster == 2),]
   } else {
     print("I don't know")
   }

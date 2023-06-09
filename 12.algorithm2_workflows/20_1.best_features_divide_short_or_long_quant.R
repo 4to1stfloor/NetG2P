@@ -73,8 +73,8 @@ for (num_CancerType in Cancerlist) {
     short_group = data_bf[which(data_bf$cluster == 1),]
     long_group = data_bf[which(data_bf$cluster == 2),]
     
-    short_group_for_fig = data_bf[which(data_bf$cluster == 2),]
-    long_group_for_fig = data_bf[which(data_bf$cluster == 1),]
+    short_group_for_fig = data_bf[which(data_bf$cluster == 1),]
+    long_group_for_fig = data_bf[which(data_bf$cluster == 2),]
   } else {
     print("I don't know")
   }
@@ -205,13 +205,13 @@ for (num_CancerType in Cancerlist) {
   total_group_for_fig = cbind(total_group_for_tmp,total_group_meta)
 
   # pic
-  annotation_df <- data.frame(short_long = total_group_for_fig$cluster)
+  annotation_df <- data.frame(cluster = total_group_for_fig$cluster)
   rownames(annotation_df) <- rownames(total_group_for_fig)
 
   short_long_colors <- c("short" = "red", "long" = "#009E73")
-  names(short_long_colors) <- unique(annotation_df$short_long)
+  # names(short_long_colors) <- unique(annotation_df$cluster)
 
-  short_long_colors = list(short_long = short_long_colors )
+  short_long_colors = list(cluster = short_long_colors )
 
   png(filename = paste0(CancerType,"_short_long_complex_pval_quant.png"),
       width = 25, height = 25,  units = "cm" ,pointsize = 12,
@@ -221,7 +221,7 @@ for (num_CancerType in Cancerlist) {
                                                      dplyr::select_if(is.numeric) %>%
                                                      dplyr::select(-duration,-status) %>%
                                                      as.matrix())),
-                                       column_split = factor(annotation_df$short_long, levels = c("short","long")),
+                                       column_split = factor(annotation_df$cluster, levels = c("short","long")),
                                        annotation_col = annotation_df,
                                        annotation_colors = short_long_colors,
                                        cluster_cols = T,
