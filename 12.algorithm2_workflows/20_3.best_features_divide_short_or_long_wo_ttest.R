@@ -10,7 +10,7 @@ filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
 
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
-surv_total_results = read.xlsx("~/nas/04.Results/Total_results_survpval.xlsx")
+surv_total_results = read_xlsx("~/nas/04.Results/Total_results_survpval2.xlsx")
 
 setwd("~/nas/04.Results/short_long/")
 
