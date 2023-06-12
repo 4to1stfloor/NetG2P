@@ -312,131 +312,154 @@ for (num_CancerType in Cancerlist) {
   dev.off()
   
   # exp
-  annotation_df <- data.frame(pat_t = exp_bf_filt_inter_sl$pat_t,
-                              pat_n = exp_bf_filt_inter_sl$pat_n,
-                              pat_m = exp_bf_filt_inter_sl$pat_m,
-                              cluster = exp_bf_filt_inter_sl$cluster)
-  rownames(annotation_df) <- rownames(exp_bf_filt_inter_sl)
   
-  # Create a named color vector for the unique values of vital_status
+  if (sum(colSums(exp_bf_filt_inter_sl[,which(!colnames(exp_bf_filt_inter_sl) %in%c("pat_t","pat_n","pat_m","cluster"))]) == 0) == 
+      ncol(exp_bf_filt_inter_sl[,which(!colnames(exp_bf_filt_inter_sl) %in% c("pat_t","pat_n","pat_m","cluster"))])) {
+    next
+    
+    } else {
+    
+      annotation_df <- data.frame(pat_t = exp_bf_filt_inter_sl$pat_t,
+                                  pat_n = exp_bf_filt_inter_sl$pat_n,
+                                  pat_m = exp_bf_filt_inter_sl$pat_m,
+                                  cluster = exp_bf_filt_inter_sl$cluster)
+      rownames(annotation_df) <- rownames(exp_bf_filt_inter_sl)
+      
+      # Create a named color vector for the unique values of vital_status
+      
+      num_pat_t = brewer.pal(length(unique(exp_bf_filt_inter_sl$pat_t)), "RdGy")
+      col_pat_t = setNames(num_pat_t, unique(exp_bf_filt_inter_sl$pat_t))
+      
+      num_pat_n = brewer.pal(length(unique(exp_bf_filt_inter_sl$pat_n)), "Spectral")
+      col_pat_n = setNames(num_pat_n, unique(exp_bf_filt_inter_sl$pat_n))
+      
+      num_pat_m = brewer.pal(length(unique(exp_bf_filt_inter_sl$pat_m)), "Set3")
+      col_pat_m = setNames(num_pat_m, unique(exp_bf_filt_inter_sl$pat_m))
+      
+      cluster_colors <- c("short" = "yellow", "long" = "black")
+      subtypes_colors = list(pat_t = col_pat_t , pat_n = col_pat_n, pat_m = col_pat_m , cluster = cluster_colors)
+      
+      png(filename = paste0(CancerType,"_exp_features_w_short_long_clusterT_tmn.png"),
+          width = 35, height = 35,  units = "cm" ,pointsize = 12,
+          bg = "white", res = 1200, family = "")
+      
+      tmp = pheatmap::pheatmap(as.matrix(t(exp_bf_filt_inter_sl[,which(!colnames(exp_bf_filt_inter_sl) %in% c("pat_t","pat_n","pat_m","cluster"))])),
+                               annotation_col = annotation_df,
+                               annotation_colors = subtypes_colors,
+                               cluster_cols = T)
+      print(tmp)
+      dev.off()
+      
+      png(filename = paste0(CancerType,"_exp_features_w_short_long_clusterF_tmn.png"),
+          width = 35, height = 35,  units = "cm" ,pointsize = 12,
+          bg = "white", res = 1200, family = "")
+      
+      tmp2 = pheatmap::pheatmap(as.matrix(t(exp_bf_filt_inter_sl[,which(!colnames(exp_bf_filt_inter_sl) %in% c("pat_t","pat_n","pat_m","cluster"))])),
+                                annotation_col = annotation_df,
+                                annotation_colors = subtypes_colors,
+                                cluster_cols = F)
+      print(tmp2)
+      
+      dev.off()
+      
+      png(filename = paste0(CancerType,"_exp_features_w_short_long_complex_t.png"),
+          width = 35, height = 35,  units = "cm" ,pointsize = 12,
+          bg = "white", res = 1200, family = "")
+      tmp3 = ComplexHeatmap::pheatmap(as.matrix(t(exp_bf_filt_inter_sl[,which(!colnames(exp_bf_filt_inter_sl) %in% c("pat_t","pat_n","pat_m","cluster"))])),
+                                      column_split = annotation_df$pat_t,
+                                      annotation_col = annotation_df,
+                                      annotation_colors = subtypes_colors,
+                                      cluster_cols = T)
+      
+      print(tmp3)
+      dev.off()
+      
+      png(filename = paste0(CancerType,"_exp_features_w_short_long_complex_n.png"),
+          width = 35, height = 35,  units = "cm" ,pointsize = 12,
+          bg = "white", res = 1200, family = "")
+      tmp4 = ComplexHeatmap::pheatmap(as.matrix(t(exp_bf_filt_inter_sl[,which(!colnames(exp_bf_filt_inter_sl) %in% c("pat_t","pat_n","pat_m","cluster"))])),
+                                      column_split = annotation_df$pat_n,
+                                      annotation_col = annotation_df,
+                                      annotation_colors = subtypes_colors,
+                                      cluster_cols = T)
+      
+      print(tmp4)
+      dev.off()
+      
+      png(filename = paste0(CancerType,"_exp_features_w_short_long_complex_m.png"),
+          width = 35, height = 35,  units = "cm" ,pointsize = 12,
+          bg = "white", res = 1200, family = "")
+      tmp5 = ComplexHeatmap::pheatmap(as.matrix(t(exp_bf_filt_inter_sl[,which(!colnames(exp_bf_filt_inter_sl) %in% c("pat_t","pat_n","pat_m","cluster"))])),
+                                      column_split = annotation_df$pat_m,
+                                      annotation_col = annotation_df,
+                                      annotation_colors = subtypes_colors,
+                                      cluster_cols = T)
+      
+      print(tmp5)
+      dev.off()
+    }
   
-  num_pat_t = brewer.pal(length(unique(exp_bf_filt_inter_sl$pat_t)), "RdGy")
-  col_pat_t = setNames(num_pat_t, unique(exp_bf_filt_inter_sl$pat_t))
-  
-  num_pat_n = brewer.pal(length(unique(exp_bf_filt_inter_sl$pat_n)), "Spectral")
-  col_pat_n = setNames(num_pat_n, unique(exp_bf_filt_inter_sl$pat_n))
-  
-  num_pat_m = brewer.pal(length(unique(exp_bf_filt_inter_sl$pat_m)), "Set3")
-  col_pat_m = setNames(num_pat_m, unique(exp_bf_filt_inter_sl$pat_m))
-  
-  cluster_colors <- c("short" = "yellow", "long" = "black")
-  subtypes_colors = list(pat_t = col_pat_t , pat_n = col_pat_n, pat_m = col_pat_m , cluster = cluster_colors)
-  
-  png(filename = paste0(CancerType,"_exp_features_w_short_long_clusterT_tmn.png"),
-      width = 35, height = 35,  units = "cm" ,pointsize = 12,
-      bg = "white", res = 1200, family = "")
-  
-  tmp = pheatmap::pheatmap(as.matrix(t(exp_bf_filt_inter_sl[,which(!colnames(exp_bf_filt_inter_sl) %in% c("pat_t","pat_n","pat_m","cluster"))])),
-                           annotation_col = annotation_df,
-                           annotation_colors = subtypes_colors,
-                           cluster_cols = T)
-  print(tmp)
-  dev.off()
-  
-  png(filename = paste0(CancerType,"_exp_features_w_short_long_clusterF_tmn.png"),
-      width = 35, height = 35,  units = "cm" ,pointsize = 12,
-      bg = "white", res = 1200, family = "")
-  
-  tmp2 = pheatmap::pheatmap(as.matrix(t(exp_bf_filt_inter_sl[,which(!colnames(exp_bf_filt_inter_sl) %in% c("pat_t","pat_n","pat_m","cluster"))])),
-                            annotation_col = annotation_df,
-                            annotation_colors = subtypes_colors,
-                            cluster_cols = F)
-  print(tmp2)
-  
-  dev.off()
-  
-  png(filename = paste0(CancerType,"_exp_features_w_short_long_complex_t.png"),
-      width = 35, height = 35,  units = "cm" ,pointsize = 12,
-      bg = "white", res = 1200, family = "")
-  tmp3 = ComplexHeatmap::pheatmap(as.matrix(t(exp_bf_filt_inter_sl[,which(!colnames(exp_bf_filt_inter_sl) %in% c("pat_t","pat_n","pat_m","cluster"))])),
-                                  column_split = annotation_df$pat_t,
-                                  annotation_col = annotation_df,
-                                  annotation_colors = subtypes_colors,
-                                  cluster_cols = T)
-  
-  print(tmp3)
-  dev.off()
-  
-  png(filename = paste0(CancerType,"_exp_features_w_short_long_complex_n.png"),
-      width = 35, height = 35,  units = "cm" ,pointsize = 12,
-      bg = "white", res = 1200, family = "")
-  tmp4 = ComplexHeatmap::pheatmap(as.matrix(t(exp_bf_filt_inter_sl[,which(!colnames(exp_bf_filt_inter_sl) %in% c("pat_t","pat_n","pat_m","cluster"))])),
-                                  column_split = annotation_df$pat_n,
-                                  annotation_col = annotation_df,
-                                  annotation_colors = subtypes_colors,
-                                  cluster_cols = T)
-  
-  print(tmp4)
-  dev.off()
-  
-  png(filename = paste0(CancerType,"_exp_features_w_short_long_complex_m.png"),
-      width = 35, height = 35,  units = "cm" ,pointsize = 12,
-      bg = "white", res = 1200, family = "")
-  tmp5 = ComplexHeatmap::pheatmap(as.matrix(t(exp_bf_filt_inter_sl[,which(!colnames(exp_bf_filt_inter_sl) %in% c("pat_t","pat_n","pat_m","cluster"))])),
-                                  column_split = annotation_df$pat_m,
-                                  annotation_col = annotation_df,
-                                  annotation_colors = subtypes_colors,
-                                  cluster_cols = T)
-  
-  print(tmp5)
-  dev.off()
-  # 
-  # # mut
-  # annotation_df <- data.frame(vital_status = mut_bf_filt_inter_sl$vital_status,
-  #                             cluster = mut_bf_filt_inter_sl$cluster)
-  # rownames(annotation_df) <- rownames(mut_bf_filt_inter_sl)
-  # 
-  # # Create a named color vector for the unique values of vital_status
-  # num_vital_status = brewer.pal(3, "Spectral")[c(1,3)]
-  # col_vital_status = setNames(num_vital_status, unique(mut_bf_filt_inter_sl$vital_status))
-  # 
-  # cluster_colors <- c("short" = "yellow", "long" = "black")
-  # subtypes_colors = list(vital_status = col_vital_status , cluster = cluster_colors)
-  # 
-  # png(filename = paste0(CancerType,"_mut_features_w_short_long_clusterT_surv.png"),
-  #     width = 25, height = 25,  units = "cm" ,pointsize = 12,
-  #     bg = "white", res = 1200, family = "")
-  # 
-  # tmp = pheatmap::pheatmap(as.matrix(t(mut_bf_filt_inter_sl[,which(!colnames(mut_bf_filt_inter_sl) %in% c("vital_status","cluster"))])),
-  #                          annotation_col = annotation_df,
-  #                          annotation_colors = subtypes_colors,
-  #                          cluster_cols = T)
-  # print(tmp)
-  # dev.off()
-  # 
-  # png(filename = paste0(CancerType,"_mut_features_w_short_long_clusterF_surv.png"),
-  #     width = 35, height = 35,  units = "cm" ,pointsize = 12,
-  #     bg = "white", res = 1200, family = "")
-  # 
-  # tmp2 = pheatmap::pheatmap(as.matrix(t(mut_bf_filt_inter_sl[,which(!colnames(mut_bf_filt_inter_sl) %in% c("vital_status","cluster"))])),
-  #                           annotation_col = annotation_df,
-  #                           annotation_colors = subtypes_colors,
-  #                           cluster_cols = F)
-  # print(tmp2)
-  # 
-  # dev.off()
-  # 
-  # png(filename = paste0(CancerType,"_mut_features_w_short_long_complex_surv.png"),
-  #     width = 35, height = 35,  units = "cm" ,pointsize = 12,
-  #     bg = "white", res = 1200, family = "")
-  # tmp3 = ComplexHeatmap::pheatmap(as.matrix(t(mut_bf_filt_inter_sl[,which(!colnames(mut_bf_filt_inter_sl) %in% c("vital_status","cluster"))])),
-  #                                 column_split = annotation_df$vital_status,
-  #                                 annotation_col = annotation_df,
-  #                                 annotation_colors = subtypes_colors,
-  #                                 cluster_cols = T)
-  # 
-  # print(tmp3)
-  # dev.off()
-  
+  if (sum(colSums(mut_bf_filt_inter_sl[,which(!colnames(mut_bf_filt_inter_sl) %in%c("pat_t","pat_n","pat_m","cluster"))]) == 0) == 
+      ncol(mut_bf_filt_inter_sl[,which(!colnames(mut_bf_filt_inter_sl) %in% c("pat_t","pat_n","pat_m","cluster"))])) {
+    next
+    
+    } else {
+      
+      # mut
+      annotation_df <- data.frame(pat_t = mut_bf_filt_inter_sl$pat_t,
+                                  pat_n = mut_bf_filt_inter_sl$pat_n,
+                                  pat_m = mut_bf_filt_inter_sl$pat_m,
+                                  cluster = mut_bf_filt_inter_sl$cluster)
+      rownames(annotation_df) <- rownames(mut_bf_filt_inter_sl)
+      
+      # Create a named color vector for the unique values of vital_status
+      
+      num_pat_t = brewer.pal(length(unique(mut_bf_filt_inter_sl$pat_t)), "RdGy")
+      col_pat_t = setNames(num_pat_t, unique(mut_bf_filt_inter_sl$pat_t))
+      
+      num_pat_n = brewer.pal(length(unique(mut_bf_filt_inter_sl$pat_n)), "Spectral")
+      col_pat_n = setNames(num_pat_n, unique(mut_bf_filt_inter_sl$pat_n))
+      
+      num_pat_m = brewer.pal(length(unique(mut_bf_filt_inter_sl$pat_m)), "Set3")
+      col_pat_m = setNames(num_pat_m, unique(mut_bf_filt_inter_sl$pat_m))
+      
+      cluster_colors <- c("short" = "yellow", "long" = "black")
+      subtypes_colors = list(pat_t = col_pat_t , pat_n = col_pat_n, pat_m = col_pat_m , cluster = cluster_colors)
+      
+      png(filename = paste0(CancerType,"_mut_features_w_short_long_clusterT_surv.png"),
+          width = 25, height = 25,  units = "cm" ,pointsize = 12,
+          bg = "white", res = 1200, family = "")
+      
+      tmp = pheatmap::pheatmap(as.matrix(t(mut_bf_filt_inter_sl[,which(!colnames(mut_bf_filt_inter_sl) %in% c("pat_t","pat_n","pat_m","cluster"))])),
+                               annotation_col = annotation_df,
+                               annotation_colors = subtypes_colors,
+                               cluster_cols = T)
+      print(tmp)
+      dev.off()
+      
+      png(filename = paste0(CancerType,"_mut_features_w_short_long_clusterF_surv.png"),
+          width = 35, height = 35,  units = "cm" ,pointsize = 12,
+          bg = "white", res = 1200, family = "")
+      
+      tmp2 = pheatmap::pheatmap(as.matrix(t(mut_bf_filt_inter_sl[,which(!colnames(mut_bf_filt_inter_sl) %in% c("pat_t","pat_n","pat_m","cluster"))])),
+                                annotation_col = annotation_df,
+                                annotation_colors = subtypes_colors,
+                                cluster_cols = F)
+      print(tmp2)
+      
+      dev.off()
+      
+      png(filename = paste0(CancerType,"_mut_features_w_short_long_complex_surv.png"),
+          width = 35, height = 35,  units = "cm" ,pointsize = 12,
+          bg = "white", res = 1200, family = "")
+      tmp3 = ComplexHeatmap::pheatmap(as.matrix(t(mut_bf_filt_inter_sl[,which(!colnames(mut_bf_filt_inter_sl) %in% c("pat_t","pat_n","pat_m","cluster"))])),
+                                      column_split = annotation_df$vital_status,
+                                      annotation_col = annotation_df,
+                                      annotation_colors = subtypes_colors,
+                                      cluster_cols = T)
+      
+      print(tmp3)
+      dev.off()
+    }
 }
 
