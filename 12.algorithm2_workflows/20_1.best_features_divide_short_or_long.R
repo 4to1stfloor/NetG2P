@@ -73,8 +73,8 @@ for (num_CancerType in Cancerlist) {
     short_group = data_bf[which(data_bf$cluster == 1),]
     long_group = data_bf[which(data_bf$cluster == 2),]
     
-    short_group_for_fig = data_bf[which(data_bf$cluster == 2),]
-    long_group_for_fig = data_bf[which(data_bf$cluster == 1),]
+    short_group_for_fig = data_bf[which(data_bf$cluster == 1),]
+    long_group_for_fig = data_bf[which(data_bf$cluster == 2),]
   } else {
     print("I don't know")
   }
@@ -91,7 +91,7 @@ for (num_CancerType in Cancerlist) {
   
   total_group = rbind(long_group,short_group)
 
-  # saveRDS(total_group, paste0("~/nas/04.Results/short_long/",CancerType,"_best_features_short_long.rds"))
+  saveRDS(total_group, paste0("~/nas/04.Results/short_long/",CancerType,"_best_features_short_long.rds"))
 
   wo_num = ncol(total_group) - length(grep("*P", colnames(total_group)))
 
