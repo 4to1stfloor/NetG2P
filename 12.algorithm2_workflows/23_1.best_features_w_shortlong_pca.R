@@ -64,7 +64,7 @@ rownames(total_pca_df) = total_pca_df$features
 total_pca_df$features = NULL 
 total_pca_df_filt = total_pca_df[,which(colSums(total_pca_df) != 0)]
 
-pca <- prcomp(total_pca_df_filt , scale. = TRUE)
+# pca <- prcomp(total_pca_df_filt , scale. = TRUE)
 pca <- prcomp(total_pca_df_filt, scale. = TRUE, retx = TRUE, rank. = 2)
 
 pca_rank2 = as.data.frame(pca$rotation)
@@ -81,7 +81,7 @@ pca_rank2_add_meta = pca_rank2_add_meta[which(!is.na(pca_rank2_add_meta$PC1)),]
 num_pat_n = brewer.pal(length(unique(pca_rank2_add_meta$cancertype.x)), "Paired")
 col_pat_n = setNames(num_pat_n, unique(pca_rank2_add_meta$cancertype.x))
 
-p = ggplot(pca_rank2_add_meta, aes(PC1, PC2 ,shape = factor(cluster), color = factor(cancertype.x) ))+
+ggplot(pca_rank2_add_meta, aes(PC1, PC2 ,shape = factor(cluster), color = factor(cancertype.x) ))+
   geom_point() +
   scale_color_manual(values = col_pat_n)
   # stat_ellipse(aes(color = factor(cancertype.x)), geom = "path", linewidth = 1, alpha = 0.5)
