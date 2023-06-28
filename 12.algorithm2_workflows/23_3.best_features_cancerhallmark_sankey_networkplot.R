@@ -38,7 +38,6 @@ if(!dir.exists(fig_path)){
 }
 setwd(fig_path)
 
-
 # for all
 for (num_CancerType in Cancerlist) {
   
@@ -55,15 +54,25 @@ for (num_CancerType in Cancerlist) {
   cancerhallmark = read_xlsx(paste0(ref_path, "kegg_gene_set_w_cancer_hallmarks_edit.xlsx"))
   
   # 일단 short long 합쳐서 진행 -> short long ttest전 features
+  # cut 100
+  # if (surv_total_results[which(surv_total_results$CancerType == CancerType),]$num_of_features > 100) {
+  #   cancer_bf_cut = cancer_bf[1:100,]
+  #   cancer_bf_cut$minmax = best_features_importance[1:100,]$min_max
+  # }else {
+  #   cancer_bf_cut = cancer_bf[1:surv_total_results[which(surv_total_results$CancerType == CancerType),]$num_of_features,]
+  #   cancer_bf_cut$minmax = best_features_importance[1:surv_total_results[which(surv_total_results$CancerType == CancerType),]$num_of_features,]$min_max
+  # }
+  
   cancer_bf_cut = cancer_bf[1:surv_total_results[which(surv_total_results$CancerType == CancerType),]$num_of_features,]
   cancer_bf_cut$minmax = best_features_importance[1:surv_total_results[which(surv_total_results$CancerType == CancerType),]$num_of_features,]$min_max
+  
   cancer_logp = bf_short_long[,cancer_bf_cut$variable]
   
-  # 일단 unique gene으로 해봄 
-  total_link_genes = link_genes_filtered_df[which(link_genes_filtered_df$Pathway %in% cancer_bf_cut$variable),]$Genes
-  total_single_genes = single_genes[which(single_genes$Pathway %in% cancer_bf_cut$variable),]$Genes
-  total_bf_genes = c(total_link_genes,total_single_genes)
-  total_uni_bf_genes = unique(total_bf_genes)
+  # # 일단 unique gene으로 해봄 
+  # total_link_genes = link_genes_filtered_df[which(link_genes_filtered_df$Pathway %in% cancer_bf_cut$variable),]$Genes
+  # total_single_genes = single_genes[which(single_genes$Pathway %in% cancer_bf_cut$variable),]$Genes
+  # total_bf_genes = c(total_link_genes,total_single_genes)
+  # total_uni_bf_genes = unique(total_bf_genes)
 
   split_elements <- strsplit(cancer_bf_cut$variable, "P")
   divide_features = c()
@@ -95,26 +104,28 @@ for (num_CancerType in Cancerlist) {
       first_pathwaylink = data.frame(source = tmp_cancer_feature , 
                                      target = cancerhallmark_filt[which(cancerhallmark_filt$pathway == paste0("P", tmp_features[[1]][2])),]$no_cancer_hallmark,
                                      value = as.numeric(colSums(cancer_logp)[tmp_cancer_feature]) * cancer_bf_cut[which(cancer_bf_cut$variable == tmp_cancer_feature),]$minmax )
-      
+                 
       second_pathwaylink = data.frame(source =  tmp_cancer_feature , 
                                       target = cancerhallmark_filt[which(cancerhallmark_filt$pathway == paste0("P", tmp_features[[1]][3])),]$no_cancer_hallmark,
                                       value = as.numeric(colSums(cancer_logp)[tmp_cancer_feature]) * cancer_bf_cut[which(cancer_bf_cut$variable == tmp_cancer_feature),]$minmax )
       
       tmp_edge_df = rbind(first_pathwaylink,second_pathwaylink)
       
+      # duplication mulitiple method
+
       if (length(unique(tmp_edge_df$target)) != length(tmp_edge_df$target) ) {
         dup_target = tmp_edge_df[which(duplicated(tmp_edge_df$target)),]
-       
+
         for (dup_tar in dup_target$target) {
           dup_filt = tmp_edge_df[which(tmp_edge_df$target == dup_tar),]
-          multiple_num = length(dup_filt$target)
+          # multiple_num = length(dup_filt$target)
           dup_filt = dup_filt[1,]
-          dup_filt$value = dup_filt$value * multiple_num
+          # dup_filt$value = dup_filt$value * multiple_num
           tmp_edge_df = tmp_edge_df[which(!tmp_edge_df$target %in% dup_tar),]
           tmp_edge_df = rbind(tmp_edge_df, dup_filt)
           }
-      } 
-      
+      }
+
     } else {
       
       tmp_edge_df = data.frame(source = tmp_cancer_feature , 
