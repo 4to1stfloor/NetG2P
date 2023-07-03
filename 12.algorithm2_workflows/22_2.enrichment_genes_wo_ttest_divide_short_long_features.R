@@ -84,7 +84,7 @@ scatterPlot_edit <- function (simMatrix, reducedTerms, algorithm = c("pca", "uma
 }
 
 # for fic
-fig_path = paste0(filepath,"04.Results/GOenrichment_test/sperate_short_long")
+fig_path = paste0(filepath,"04.Results/GOenrichment_test/sperate_short_long/BP/")
 if(!dir.exists(fig_path)){
   dir.create(fig_path)
   print(paste0("Created folder: ", fig_path))
@@ -149,23 +149,20 @@ for (num_CancerType in Cancerlist) {
       which(!is.na(AnnotationDbi::select(org.Hs.eg.db, long_gene, 'ENTREZID', 'SYMBOL')$ENTREZID)),]
     long_gene_en <- data.frame(long_gene_en, row.names = NULL)
     
-    short_genes_group = list(short_cluster = short_gene_en$ENTREZID)
-    long_genes_group = list(long_cluster = long_gene_en$ENTREZID)
+    short_enrichGO = enrichGO(short_gene_en$ENTREZID ,OrgDb = org.Hs.eg.db , keyType = "ENTREZID" , ont = "BP" )
+    long_enrichGO = enrichGO(long_gene_en$ENTREZID ,OrgDb = org.Hs.eg.db , keyType = "ENTREZID" , ont = "BP" )
     
-    short_enrichGO = compareCluster(geneCluster = short_genes_group, fun = "enrichGO", OrgDb = org.Hs.eg.db)
     short_enrichGO_df = as.data.frame(short_enrichGO)
-    
-    long_enrichGO = compareCluster(geneCluster = long_genes_group, fun = "enrichGO", OrgDb = org.Hs.eg.db)
     long_enrichGO_df = as.data.frame(long_enrichGO)
     
     simMatrix_short <- calculateSimMatrix(short_enrichGO_df$ID,
                                           orgdb=org.Hs.eg.db,
-                                          ont="MF",
+                                          ont="BP",
                                           method="Rel")
     
     simMatrix_long <- calculateSimMatrix(long_enrichGO_df$ID,
                                          orgdb=org.Hs.eg.db,
-                                         ont="MF",
+                                         ont="BP",
                                          method="Rel")
     
     scores_short <- setNames(-log10(short_enrichGO_df$qvalue), short_enrichGO_df$ID)
@@ -181,12 +178,12 @@ for (num_CancerType in Cancerlist) {
     
     if (sum(scores_short) == 0) {
       reducedTerms_short <- reduceSimMatrix(simMatrix_short,
-                                            scores_short,
                                             threshold=0.7,
                                             orgdb="org.Hs.eg.db")
     } else {
       reducedTerms_short <- reduceSimMatrix(simMatrix_short,
                                             threshold=0.7,
+                                            scores_short,
                                             orgdb="org.Hs.eg.db")
     }
     
@@ -200,10 +197,10 @@ for (num_CancerType in Cancerlist) {
                                            threshold=0.7,
                                            orgdb="org.Hs.eg.db")
     }
-    
+ 
     # fiq
     for (prognosis in c("short","long")) {
-      png(filename = paste0(CancerType,"_simmat_",prognosis,"_heatmap_wo_ttest_not_exp.png"),
+      png(filename = paste0(CancerType,"_simmat_",prognosis,"_heatmap_wo_ttest_not_exp_BP.png"),
           width = 35, height = 35,  units = "cm" ,pointsize = 12,
           bg = "white", res = 1200, family = "")
       
@@ -216,7 +213,7 @@ for (num_CancerType in Cancerlist) {
       print(heatmap_sim)
       dev.off()
       
-      png(filename = paste0(CancerType,"_scatter_",prognosis,"_wo_ttest_not_exp.png"),
+      png(filename = paste0(CancerType,"_scatter_",prognosis,"_wo_ttest_not_exp_BP.png"),
           width = 35, height = 35,  units = "cm" ,pointsize = 12,
           bg = "white", res = 1200, family = "")
       
@@ -225,7 +222,7 @@ for (num_CancerType in Cancerlist) {
       print(scatter_mat)
       dev.off()
       
-      png(filename = paste0(CancerType,"_tree_",prognosis,"_wo_ttest_not_exp.png"),
+      png(filename = paste0(CancerType,"_tree_",prognosis,"_wo_ttest_not_exp_BP.png"),
           width = 35, height = 35,  units = "cm" ,pointsize = 12,
           bg = "white", res = 1200, family = "")
       
@@ -240,14 +237,13 @@ for (num_CancerType in Cancerlist) {
       which(!is.na(AnnotationDbi::select(org.Hs.eg.db, short_gene, 'ENTREZID', 'SYMBOL')$ENTREZID)),]
     short_gene_en <- data.frame(short_gene_en, row.names = NULL)
     
-    short_genes_group = list(short_cluster = short_gene_en$ENTREZID)
     
-    short_enrichGO = compareCluster(geneCluster = short_genes_group, fun = "enrichGO", OrgDb = org.Hs.eg.db)
+    short_enrichGO = enrichGO(short_gene_en$ENTREZID ,OrgDb = org.Hs.eg.db , keyType = "ENTREZID" , ont = "BP" )
     short_enrichGO_df = as.data.frame(short_enrichGO)
-    
+   
     simMatrix_short <- calculateSimMatrix(short_enrichGO_df$ID,
                                           orgdb=org.Hs.eg.db,
-                                          ont="MF",
+                                          ont="BP",
                                           method="Rel")
     
     scores_short <- setNames(-log10(short_enrichGO_df$qvalue), short_enrichGO_df$ID)
@@ -258,18 +254,18 @@ for (num_CancerType in Cancerlist) {
     
     if (sum(scores_short) == 0) {
       reducedTerms_short <- reduceSimMatrix(simMatrix_short,
-                                            scores_short,
                                             threshold=0.7,
                                             orgdb="org.Hs.eg.db")
     } else {
       reducedTerms_short <- reduceSimMatrix(simMatrix_short,
+                                            scores_short,
                                             threshold=0.7,
                                             orgdb="org.Hs.eg.db")
     }
     
     # fiq
     
-    png(filename = paste0(CancerType,"_simmat_short_heatmap_wo_ttest_not_exp.png"),
+    png(filename = paste0(CancerType,"_simmat_short_heatmap_wo_ttest_not_exp_BP.png"),
         width = 35, height = 35,  units = "cm" ,pointsize = 12,
         bg = "white", res = 1200, family = "")
     
@@ -282,7 +278,7 @@ for (num_CancerType in Cancerlist) {
     print(heatmap_sim)
     dev.off()
     
-    png(filename = paste0(CancerType,"_scatter_short_wo_ttest_not_exp.png"),
+    png(filename = paste0(CancerType,"_scatter_short_wo_ttest_not_exp_BP.png"),
         width = 35, height = 35,  units = "cm" ,pointsize = 12,
         bg = "white", res = 1200, family = "")
     
@@ -291,7 +287,7 @@ for (num_CancerType in Cancerlist) {
     print(scatter_mat)
     dev.off()
     
-    png(filename = paste0(CancerType,"_tree_short_wo_ttest_not_exp.png"),
+    png(filename = paste0(CancerType,"_tree_short_wo_ttest_not_exp_BP.png"),
         width = 35, height = 35,  units = "cm" ,pointsize = 12,
         bg = "white", res = 1200, family = "")
     
@@ -304,16 +300,13 @@ for (num_CancerType in Cancerlist) {
   } else if (length(short_gene) == 0 ) {
     long_gene_en = AnnotationDbi::select(org.Hs.eg.db, long_gene, 'ENTREZID', 'SYMBOL')[
       which(!is.na(AnnotationDbi::select(org.Hs.eg.db, long_gene, 'ENTREZID', 'SYMBOL')$ENTREZID)),]
-    long_gene_en <- data.frame(long_gene_en, row.names = NULL)
     
-    long_genes_group = list(long_cluster = long_gene_en$ENTREZID)
-    
-    long_enrichGO = compareCluster(geneCluster = long_genes_group ,fun = "enrichGO", OrgDb = org.Hs.eg.db)
+    long_enrichGO = enrichGO(long_gene_en$ENTREZID ,OrgDb = org.Hs.eg.db , keyType = "ENTREZID" , ont = "BP" )
     long_enrichGO_df = as.data.frame(long_enrichGO)
     
     simMatrix_long <- calculateSimMatrix(long_enrichGO_df$ID,
                                          orgdb=org.Hs.eg.db,
-                                         ont="MF",
+                                         ont="BP",
                                          method="Rel")
     
     scores_long <- setNames(-log10(long_enrichGO_df$qvalue), long_enrichGO_df$ID)
@@ -335,7 +328,7 @@ for (num_CancerType in Cancerlist) {
     
     # fiq
     
-    png(filename = paste0(CancerType,"_simmat_long_heatmap_wo_ttest_not_exp.png"),
+    png(filename = paste0(CancerType,"_simmat_long_heatmap_wo_ttest_not_exp_BP.png"),
         width = 35, height = 35,  units = "cm" ,pointsize = 12,
         bg = "white", res = 1200, family = "")
     
@@ -348,7 +341,7 @@ for (num_CancerType in Cancerlist) {
     print(heatmap_sim)
     dev.off()
     
-    png(filename = paste0(CancerType,"_scatter_long_wo_ttest_not_exp.png"),
+    png(filename = paste0(CancerType,"_scatter_long_wo_ttest_not_exp_BP.png"),
         width = 35, height = 35,  units = "cm" ,pointsize = 12,
         bg = "white", res = 1200, family = "")
     
@@ -357,7 +350,7 @@ for (num_CancerType in Cancerlist) {
     print(scatter_mat)
     dev.off()
     
-    png(filename = paste0(CancerType,"_tree_long_wo_ttest_not_exp.png"),
+    png(filename = paste0(CancerType,"_tree_long_wo_ttest_not_exp_BP.png"),
         width = 35, height = 35,  units = "cm" ,pointsize = 12,
         bg = "white", res = 1200, family = "")
     
