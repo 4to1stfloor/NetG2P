@@ -1,1 +1,1 @@
-# GP-mapper
+# NetGPT
