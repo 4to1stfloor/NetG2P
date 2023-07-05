@@ -30,7 +30,7 @@ surv_total_results = read_xlsx("~/nas/04.Results/Total_results_survpval2.xlsx")
 cancerhallmark = read_xlsx(paste0(ref_path, "kegg_gene_set_w_cancer_hallmarks_edit.xlsx"))  
 
 # for fic
-fig_path = paste0(filepath,"04.Results/sankey_cancerhallmark/short_long")
+fig_path = paste0(filepath,"04.Results/sankey_cancerhallmark/")
 if(!dir.exists(fig_path)){
   dir.create(fig_path)
   print(paste0("Created folder: ", fig_path))
@@ -38,7 +38,7 @@ if(!dir.exists(fig_path)){
   print(paste0("Folder already exists: ", fig_path))
 }
 setwd(fig_path)
-
+tmp_hallmark_links = data.frame()
 # for all
 for (num_CancerType in Cancerlist) {
   
@@ -52,7 +52,7 @@ for (num_CancerType in Cancerlist) {
   bf_short_long = readRDS(paste0(filepath, "04.Results/short_long/",CancerType,"_best_features_short_long.rds"))
   best_features_importance = readRDS(paste0(main.path_tc, "/h2o_bias_pval_dual_cut_50/network/",CancerType,"_best_features_links.rds"))
   cancer_bf = read.csv(paste0(filepath,"04.Results/bestfeatures/",CancerType, "_best_features.csv"))
-
+  
   # 일단 short long 합쳐서 진행 -> short long ttest전 features
   # cut 100
   # if (surv_total_results[which(surv_total_results$CancerType == CancerType),]$num_of_features > 100) {
@@ -88,10 +88,6 @@ for (num_CancerType in Cancerlist) {
   
   divide_features = unique(divide_features)
   cancerhallmark_filt = as.data.frame(cancerhallmark[which(cancerhallmark$pathway %in% divide_features),])
-  
-  tmp_cancer_nodes = as.data.frame(c(cancer_bf_cut$variable , unique(cancerhallmark_filt$no_cancer_hallmark)))
-  # tmp_cancer_nodes = as.data.frame(c(total_uni_bf_genes,cancer_bf_cut$variable , unique(cancerhallmark_filt$no_cancer_hallmark)))
-  colnames(tmp_cancer_nodes) = "name"
   
   tmp_cancer_links = data.frame(matrix(ncol = 3))
   colnames(tmp_cancer_links) = c("source", "target", "value")
@@ -147,75 +143,56 @@ for (num_CancerType in Cancerlist) {
   
   tmp_cancer_links = tmp_cancer_links[-1,]
   rownames(tmp_cancer_links) = NULL
-  
-  total_features_short_long = data.frame()
-  tmp_judge = data.frame(matrix(ncol = 2))
-  colnames(tmp_judge) =  c("source","cluster")
-  for (critical_feature in cancer_bf_cut$variable) {
-    if (sum(bf_short_long[which(bf_short_long$cluster == "long"),][,critical_feature]) >
-        sum(bf_short_long[which(bf_short_long$cluster == "short"),][,critical_feature])) {
-      tmp_judge$source = critical_feature
-      tmp_judge$cluster = "long"
-      
-    }else {
-      tmp_judge$source = critical_feature
-      tmp_judge$cluster = "short"
-    }
-    
-    total_features_short_long = rbind(total_features_short_long, tmp_judge)
-  }
- 
-  tmp_cancer_links_w_sl = merge(tmp_cancer_links,total_features_short_long)
 
-  # transfer num of node
-  for (tmp_source in unique(tmp_cancer_links_w_sl$source )) {
-    source_num = as.numeric(rownames(tmp_cancer_nodes)[which(tmp_cancer_nodes$name == tmp_source)])
-    tmp_cancer_links_w_sl[which(tmp_cancer_links_w_sl$source == tmp_source),]$source = source_num
-    
-  }
+  tmp_ch_num = table(tmp_cancer_links$target) / nrow(tmp_cancer_links)
   
-  for (tmp_target in unique(tmp_cancer_links_w_sl$target )) {
-    target_num = as.numeric(rownames(tmp_cancer_nodes)[which(tmp_cancer_nodes$name == tmp_target)])
-    tmp_cancer_links_w_sl[which(tmp_cancer_links_w_sl$target == tmp_target),]$target = target_num
-    
-  }
-  
-  tmp_cancer_links_w_sl$source = as.numeric(tmp_cancer_links_w_sl$source) -1
-  tmp_cancer_links_w_sl$target = as.numeric(tmp_cancer_links_w_sl$target) -1
-  
+  for (ch in unique(tmp_cancer_links$target)) {
+    tmp_hallmark = data.frame(source = ch , 
+                              target = CancerType,
+                              value =  sum(tmp_cancer_links[which(tmp_cancer_links$target == ch),]$value) *  tmp_ch_num[ch] )
  
-  
-  sankeyNetwork_li = list(nodes = tmp_cancer_nodes , links = tmp_cancer_links_w_sl)
-  
-  
-  
-  sankeyNetwork(Links = sankeyNetwork_li$links, Nodes = sankeyNetwork_li$nodes, Source = "source",
-                Target = "target", Value = "value", NodeID = "name",LinkGroup = "cluster",
-                fontSize = 12) %>%
-    saveNetwork(file = paste0(CancerType,"_sanketnet_ch_bf_short_long.html"), FALSE)
+    tmp_hallmark_links = rbind(tmp_hallmark_links,tmp_hallmark)
+  }
+
+  rownames(tmp_hallmark_links) = NULL
   
 }  
 
+tmp_hallmark_links_norm = data.frame()
+for (tmp_cancer_name in unique(tmp_hallmark_links$target)) {
+  tmp_minmax = tmp_hallmark_links[which(tmp_hallmark_links$target == tmp_cancer_name),] %>% 
+    mutate(minmax_value = (value - min(value))/(max(value)-min(value)))
+  
+  tmp_hallmark_links_norm = rbind(tmp_hallmark_links_norm , tmp_minmax)
+  
+}
 
+tmp_hallmark_node = data.frame(name = unique(c(tmp_hallmark_links_norm$source, tmp_hallmark_links_norm$target)))
 
+# transfer num of node
 
-# 
-# 
-# # Read data
-# URL <- paste0("https://cdn.rawgit.com/christophergandrud/networkD3/","master/JSONdata/energy.json")
-# 
-# # Convert to list format
-# Energy <- jsonlite::fromJSON("https://raw.githubusercontent.com/apache/incubator-echarts/master/test/data/energy.json")
-# Energy <- jsonlite::fromJSON(URL)
-# 
-# class(Energy)
-# # Create Sankey Chart and save to file          
-# sankeyNetwork(Links = Energy$links, Nodes = Energy$nodes, Source = "source", Target = "target", Value = "value", 
-#               NodeID = "name", units = "TWh", fontSize = 12, nodeWidth = 30) %>%
-#   saveNetwork(file = "Net2.html", FALSE)
-# 
-# 
-# 
-# sankeyNetwork(Links = Energy$links, Nodes = Energy$nodes, Source = "source",
-#               Target = "target", Value = "value", NodeID = "name",
-#               units = "TWh", fontSize = 12, nodeWidth = 30)
+for (tmp_source in unique(tmp_hallmark_links_norm$source )) {
+  source_num = as.numeric(rownames(tmp_hallmark_node)[which(tmp_hallmark_node$name == tmp_source)])
+  tmp_hallmark_links_norm[which(tmp_hallmark_links_norm$source == tmp_source),]$source = source_num
+}
+
+for (tmp_target in unique(tmp_hallmark_links_norm$target )) {
+  target_num = as.numeric(rownames(tmp_hallmark_node)[which(tmp_hallmark_node$name == tmp_target)])
+  tmp_hallmark_links_norm[which(tmp_hallmark_links_norm$target == tmp_target),]$target = target_num
+  
+}
+
+tmp_hallmark_links_norm$source = as.numeric(tmp_hallmark_links_norm$source) -1
+tmp_hallmark_links_norm$target = as.numeric(tmp_hallmark_links_norm$target) -1
+
+sankeyNetwork_li = list(nodes = tmp_hallmark_node , links = tmp_hallmark_links_norm)
+
+sankeyNetwork(Links = sankeyNetwork_li$links, 
+              Nodes = sankeyNetwork_li$nodes,
+              Source = "source",
+              Target = "target",
+              Value = "minmax_value", 
+              NodeID = "name",
+              fontSize = 12) %>%
+  saveNetwork(file = "Total_cancerhallmark_weight_ratio_sanketnet.html", FALSE)
+
