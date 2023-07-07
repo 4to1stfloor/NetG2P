@@ -7,7 +7,7 @@ library(ggforce)
 library(ggplot2)
 library(graphlayouts)
 library(ggraph)
-
+library(igraph)
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
 
@@ -156,7 +156,7 @@ V(total_network)$grp =  as.character(c(
 ))
 total_common
 # Simplify the graph
-total_network <- simplify(total_network)
+total_network <- igraph::simplify(total_network)
 
 # Convert edge data to a data frame
 edge_data <- get.data.frame(total_network, what = "edges")
@@ -181,7 +181,16 @@ for (num in 1:length(names(total_common))) {
 
 marked_edges_data <- data.frame(marked_edges_data, row.names = NULL)
 
-hidden_edges_index = as.numeric(rownames(edge_data)[!rownames(edge_data) %in% rownames(marked_edges_data)])
+# Split the "from" and "to" columns by "_"
+split_from <- strsplit(edge_data$from, "_")
+split_to <- strsplit(edge_data$to, "_")
+
+# Extract the first component after splitting
+first_component_from <- sapply(split_from, "[", 1)
+first_component_to <- sapply(split_to, "[", 1)
+
+hidden_edges_index <- which(first_component_from == first_component_to)
+
 total_modify_network = delete_edges(total_network, hidden_edges_index)
 
 bb <- layout_as_backbone(total_network, keep = 0.1)
