@@ -155,6 +155,7 @@ for (num_CancerType in Cancerlist) {
   
   cancer_exp_hvgs = cancer_exp_num_filt[,filt_genes]
   cancer_exp_hvgs_fin = cbind(cancer_exp_hvgs, cancer_exp_num_filt[,c("overall_survival", "status")])
+  cancer_exp_hvgs_fin = cancer_exp_hvgs_fin[which(cancer_exp_hvgs_fin$overall_survival >0 ),]
   
   saveRDS(cancer_exp_hvgs_fin, paste0("~/nas/hvgs/",CancerType,"_hvgs_exp.rds"))
   write.csv(cancer_exp_hvgs_fin, paste0("~/nas/hvgs/",CancerType,"_hvgs_exp.csv"))
@@ -165,6 +166,7 @@ for (num_CancerType in Cancerlist) {
   set.seed(13524)
   cancer_exp_rannum1_fin = cancer_exp_num_decreasing[,sample(x=1:ncol(cancer_exp_num_decreasing) ,size = nrow(cancer_exp_num_filt), replace=F)]
   cancer_exp_rannum1_fin = cbind(cancer_exp_rannum1_fin, cancer_exp_num_filt[,c("overall_survival", "status")])
+  cancer_exp_rannum1_fin = cancer_exp_rannum1_fin[which(cancer_exp_rannum1_fin$overall_survival >0 ),]
   
   saveRDS(cancer_exp_rannum1_fin, paste0("~/nas/randomly_selected_gene_cancer1/",CancerType,"_random_exp.rds"))
   write.csv(cancer_exp_rannum1_fin, paste0("~/nas/randomly_selected_gene_cancer1/",CancerType,"_random_exp.csv"))
@@ -174,6 +176,7 @@ for (num_CancerType in Cancerlist) {
   set.seed(23524)
   cancer_exp_rannum2_fin = cancer_exp_num_decreasing[,sample(x=1:ncol(cancer_exp_num_decreasing) ,size = nrow(cancer_exp_num_filt), replace=F)]
   cancer_exp_rannum2_fin = cbind(cancer_exp_rannum2_fin, cancer_exp_num_filt[,c("overall_survival", "status")])
+  cancer_exp_rannum2_fin = cancer_exp_rannum2_fin[which(cancer_exp_rannum2_fin$overall_survival >0 ),]
   
   saveRDS(cancer_exp_rannum2_fin, paste0("~/nas/randomly_selected_gene_cancer2/",CancerType,"_random_exp.rds"))
   write.csv(cancer_exp_rannum2_fin, paste0("~/nas/randomly_selected_gene_cancer2/",CancerType,"_random_exp.csv"))
