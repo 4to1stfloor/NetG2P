@@ -1,3 +1,5 @@
+#### this script has an error ####
+
 library(survival) 
 library(dplyr)
 library(survminer)
@@ -6,10 +8,10 @@ filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
 
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
-surv_total_results = read.csv("~/nas/04.Results/Total_results_survpval.csv")
+surv_total_results = read_xlsx("~/nas/04.Results/Total_results_survpval2.xlsx")
 
 setwd("~/nas/04.Results/short_long/")
-num_CancerType = "24.TCGA-OV"
+# num_CancerType = "24.TCGA-OV"
 # for all
 for (num_CancerType in Cancerlist) {
   
@@ -143,8 +145,8 @@ for (num_CancerType in Cancerlist) {
       short_group = data_cut[which(data_cut$cluster == 1),]
       long_group = data_cut[which(data_cut$cluster == 2),]
       
-      short_group_for_fig = data_bf_max_df[which(data_bf_max_df$cluster == 2),]
-      long_group_for_fig = data_bf_max_df[which(data_bf_max_df$cluster == 1),]
+      short_group_for_fig = data_bf_max_df[which(data_bf_max_df$cluster == 1),]
+      long_group_for_fig = data_bf_max_df[which(data_bf_max_df$cluster == 2),]
     } else {
       print("I don't know")
     }
