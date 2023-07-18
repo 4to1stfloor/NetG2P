@@ -44,7 +44,7 @@ if(!dir.exists(fig_path)){
 setwd(fig_path)
 Cancerlist
 
-num_CancerType = "35.TCGA-KIDNEY"  
+# num_CancerType = "35.TCGA-KIDNEY"  
 # for all
 for (num_CancerType in Cancerlist) {
   
