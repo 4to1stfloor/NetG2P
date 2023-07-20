@@ -196,6 +196,32 @@ total_modify_network = delete_edges(total_network, hidden_edges_index)
 bb <- layout_as_backbone(total_network, keep = 0.1)
 bb2 <- layout_as_backbone(total_network, keep = 0.8)
 
+shared_edges_data <- get.data.frame(total_modify_network, what = "edges")
+shared_edges_data
+
+# Split the "from" and "to" columns by "_"
+modi_split_from <- strsplit(shared_edges_data$from, "_")
+modi_split_to <- strsplit(shared_edges_data$to, "_")
+
+# Extract the first component after splitting
+second_component_from <- sapply(modi_split_from, "[", 2)
+second_component_to <- sapply(modi_split_to, "[", 2)
+
+freq_from = as.data.frame(table(second_component_from))
+
+shared_edges_data[which(second_component_from == "P42P48"),]
+
+
+# Perform a left join (노드 크기 하다 맘)
+merged_data <- left_join(shared_edges_data, freq_from, by = c("from" = "second_component_from"))
+shared_edges_data$node_weight = NA 
+shared_edges_data$node_weight = as.numeric(shared_edges_data$node_weight)
+
+for (shared_from in shared_edges_data$from) {
+  tmp_from = strsplit(shared_from, "_")
+  shared_edges_data[which(shared_edges_data$from == shared_from),]$node_weight = freq_from[which(tmp_from[[1]][2] == freq_from$second_component_from),]$Freq
+}
+
 ## need to test 
 # E(total_modify_network)$col = F
 # E(total_modify_network)$col[bb$backbone] = T

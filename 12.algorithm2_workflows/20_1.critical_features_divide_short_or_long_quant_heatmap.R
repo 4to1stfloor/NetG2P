@@ -217,6 +217,22 @@ for (num_CancerType in Cancerlist) {
       width = 25, height = 25,  units = "cm" ,pointsize = 12,
       bg = "white", res = 1200, family = "")
 
+  Colors = brewer.pal(9, "YlOrRd")
+  
+  ComplexHeatmap::pheatmap(as.matrix(t(total_group_for_fig %>%
+                                         dplyr::select_if(is.numeric) %>%
+                                         dplyr::select(-duration,-status) %>%
+                                         as.matrix())),
+                           column_split = factor(annotation_df$cluster, levels = c("short","long")),
+                           annotation_col = annotation_df,
+                           annotation_colors = short_long_colors,
+                           cluster_cols = T,
+                           legend = T,
+                           annotation_legend = F,
+                           show_colnames = F,
+                           cluster_column_slices = FALSE,
+                           color = Colors) 
+
   total_out = ComplexHeatmap::pheatmap(as.matrix(t(total_group_for_fig %>%
                                                      dplyr::select_if(is.numeric) %>%
                                                      dplyr::select(-duration,-status) %>%
@@ -225,10 +241,10 @@ for (num_CancerType in Cancerlist) {
                                        annotation_col = annotation_df,
                                        annotation_colors = short_long_colors,
                                        cluster_cols = T,
-                                       legend = F,
+                                       legend = T,
                                        annotation_legend = F,
                                        show_colnames = F,
-                                       cluster_column_slices = FALSE)
+                                       cluster_column_slices = FALSE,color = Colors) 
 
   print(total_out)
 
