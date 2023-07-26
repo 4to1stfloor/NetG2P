@@ -13,7 +13,7 @@ Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 surv_total_results = read_xlsx("~/nas/04.Results/Total_results_survpval2.xlsx")
 
 setwd("~/nas/04.Results/short_long/quantile")
-
+# num_CancerType = "04.TCGA-CESC"
 # for all
 for (num_CancerType in Cancerlist) {
   
@@ -59,12 +59,10 @@ for (num_CancerType in Cancerlist) {
   
   Colors = brewer.pal(9, "YlOrRd")
   
-  png(filename = paste0(CancerType,"_short_long_complex_pval_quant_critical_features.png"),
+  png(filename = paste0(CancerType,"_short_long_complex_pval_quant_cluster_row_critical_features.png"),
       width = 35, height = 35,  units = "cm" ,pointsize = 12,
       bg = "white", res = 1200, family = "")
   
-  ## start!!
-
   total_out =  ComplexHeatmap::pheatmap(as.matrix(t(total_group_for_fig_final %>%
                                                       dplyr::select(-cluster) %>%
                                                       as.matrix())),
@@ -73,6 +71,48 @@ for (num_CancerType in Cancerlist) {
                                         annotation_row = annotation_row,
                                         annotation_colors = ann_colors_sl,
                                         cluster_rows = T,
+                                        cluster_cols = T,
+                                        legend = T,
+                                        annotation_legend = T,
+                                        show_colnames = F,
+                                        cluster_column_slices = FALSE,
+                                        color = Colors) 
+  
+  print(total_out)
+  
+  dev.off()
+  
+  annotation_col <- data.frame(patients_group= total_group_for_fig_final$cluster)
+  rownames(annotation_col) <- rownames(total_group_for_fig_final)
+  
+  short_long_colors <- c("short" = "red", "long" = "#009E73")
+  
+  annotation_row = data.frame(types = cancer_bf$classification)
+  rownames(annotation_row) <- cancer_bf$variable
+  
+  custom_order <- c("short", "common", "long")
+  
+  annotation_row = annotation_row %>% arrange(factor(types, levels = custom_order))
+  
+  num_features = c("short" = "#E41A1C", "long" = "#4DAF4A" , common = "#377EB8")
+  
+  ann_colors_sl = list(patients_group = short_long_colors, types = num_features )
+  
+  Colors = brewer.pal(9, "YlOrRd")
+  total_group_for_fig_final = total_group_for_fig_final[,c(rownames(annotation_row),"cluster")]
+  
+  png(filename = paste0(CancerType,"_short_long_complex_pval_quant_critical_features.png"),
+      width = 35, height = 35,  units = "cm" ,pointsize = 12,
+      bg = "white", res = 1200, family = "")
+ 
+  total_out =  ComplexHeatmap::pheatmap(as.matrix(t(total_group_for_fig_final %>%
+                                                      dplyr::select(-cluster) %>%
+                                                      as.matrix())),
+                                        column_split = factor(annotation_col$patients_group, levels = c("short","long")),
+                                        annotation_col = annotation_col,
+                                        annotation_row = annotation_row,
+                                        annotation_colors = ann_colors_sl,
+                                        cluster_rows = F,
                                         cluster_cols = T,
                                         legend = T,
                                         annotation_legend = T,

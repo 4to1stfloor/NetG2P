@@ -9,7 +9,7 @@ library(graphlayouts)
 library(ggraph)
 library(igraph)
 library(tidyr)
-library(dplyr)
+
 
 
 filepath = "/home/seokwon/nas/"
@@ -19,6 +19,7 @@ Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 surv_total_results = read_xlsx("~/nas/04.Results/Total_results_survpval2.xlsx")
 # setwd("~/nas/04.Results/short_long/ttest")
 
+setwd("~/nas/04.Results/short_long/quantile")
 total_features = list()
 
 # for all
@@ -111,4 +112,21 @@ for (num_CancerType in Cancerlist) {
 features_importance_wo = feature_counts_with_importance[which(feature_counts_with_importance$which_cancer %in% c("TCGA-CESC","TCGA-OV", "TCGA-BRCA", "TCGA-UCEC")),]
 write.xlsx(features_importance_wo , "~/nas/04.Results/bestfeatures/critical_features_imp_in_woman_cancer.xlsx")
 
+#### add short_long 
+feature_counts_short_long = feature_counts
+for (num_CancerType in Cancerlist) {
+  
+  main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)
+  CancerType = gsub('[.]','',gsub('\\d','', num_CancerType))
+  cancer_bf = read.csv(paste0("~/nas/04.Results/short_long/ttest_common/",CancerType,"_critical_features_short_long_common.csv"))
+  feature_counts_short_long <- merge(feature_counts_short_long, cancer_bf[c("variable", "classification")], 
+                                     by.x = "features", by.y = "variable", all.x = TRUE)
+  names(feature_counts_short_long)[names(feature_counts_short_long) == "classification"] <- CancerType
+  
+}
 
+
+feature_counts_short_long = feature_counts_short_long %>%
+  arrange(desc(count))
+
+write.xlsx(feature_counts_short_long , "~/nas/04.Results/bestfeatures/most_common_with_short_long_critical_features.xlsx")
