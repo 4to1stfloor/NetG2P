@@ -75,7 +75,7 @@ sub.cancer.type.list <- c("KIDNEY", "COADREAD", "UCEC", "BRCA", "LGG", "OV", "LU
 
 default.link.weight <- 1 
 within.group.weight <- 100 ## link weight between a virtual node and other nodes in a cancer group 
-btw.group.weight <- 0.0001 ## link weight between virtual nodes
+btw.group.weight <- 0.01 ## link weight between virtual nodes
 
 group.ids <- list()
 
@@ -234,13 +234,15 @@ for (i in 1:length(cancer.type.list)){
 }
 names(sig.path_critical) <- cancer.type.list
 
-sub.cancer.type.list <- c("KIDNEY", "COADREAD", "UCEC", "BRCA", "LGG", "OV", "LUAD", "LIHC", "STAD", "BLCA", "CESC") # LUSC excluded
+# sub.cancer.type.list <- c("KIDNEY", "COADREAD", "UCEC", "BRCA", "LGG", "OV", "LUAD", "LIHC", "STAD", "BLCA", "CESC") # LUSC excluded
+sub.cancer.type.list <- c("KIDNEY", "UCEC", "BRCA", "LGG", "OV", "LUAD", "LIHC", "STAD", "BLCA", "CESC") # LUSC excluded
 # sub.cancer.type.list <- c("UCEC", "BRCA", "LGG", "OV", "LUAD", "STAD", "BLCA", "CESC") # KIDNEY, COADREDAD, LUSC, LIHC excluded
 # sub.cancer.type.list <- c("UCEC", "BRCA", "OV", "LIHC", "STAD", "BLCA") # 
 
 default.link.weight <- 1 
-within.group.weight <- 100 ## link weight between a virtual node and other nodes in a cancer group 
-btw.group.weight <- 0.001 ## link weight between virtual nodes
+within.group.weight <- 1000 ## link weight between a virtual node and other nodes in a cancer group 
+btw.group.weight <- 0.00001 ## link weight between virtual nodes
+
 
 group.ids_cri <- list()
 
@@ -340,9 +342,112 @@ tbl_count_ordered_cri <- as.numeric(tbl_count_cri[order(match(names(tbl_count_cr
 
 divided_list_filt_cri <- divided_list_cri[order(match(names(divided_list_cri), names(V(total.g_filt_cri))))]
 
-# plot(total.g_filt_cri, 
-#      layout=lay_filt_cri,  
-#      vertex.size = tbl_count_ordered_cri, 
+plot(total.g_filt_cri,
+     layout=lay_filt_cri,
+     vertex.size = tbl_count_ordered_cri,
+     vertex.label=NA,
+     edge.color = rgb(0.5, 0.5, 0.5, 0.2),
+     vertex.shape="pie",
+     vertex.pie=divided_list_filt_cri,
+     mark.groups = group.ids_cri.2,
+     mark.col = group_color_fill,
+     mark.border = group_color,
+     vertex.pie.color= list(group_color)
+     )
+
+legend('topright', legend=names(group.ids_cri.2), 
+       col = group_color,
+       pch=15, bty = "n", pt.cex = 1.5, cex = 0.8,
+       text.col = "black", horiz = FALSE)
+
+
+#################################################################
+##### critical features on a cut 100 network#####################
+#################################################################
+
+## Remove all the virtual nodes and related links
+# lay_cri <- layout_nicely(total.g_cri)
+# rownames(lay_cri) <- V(total.g_cri)$name
+# total.g_cri <- total.g_cri - vertices(sub.cancer.type.list)
+# lay_cri <- lay_cri[-which(rownames(lay_cri) %in% sub.cancer.type.list),]
+# group.ids_cri.2 <- lapply(1:length(group.ids_cri), function(x) setdiff(group.ids_cri[[x]], sub.cancer.type.list[x]))
+# names(group.ids_cri.2) <- names(group.ids_cri)
+
+
+communal_tmp = tbl_count[names(tbl_count) %in% names(tbl_count_cri)] +2
+only_cut_tmp = tbl_count[!names(tbl_count) %in% names(tbl_count_cri)]
+tbl_count_communal = c(communal_tmp,only_cut_tmp)
+
+order_name = V(total.g_filt)$name
+
+tbl_count_communal_ordered <- as.numeric(tbl_count_communal[order(match(names(tbl_count_communal), order_name))])
+total.g_filt_cri
+
+plot(total.g_filt, 
+     layout=lay_filt,  
+     vertex.size = tbl_count_communal_ordered, 
+     vertex.label=NA,
+     edge.color = rgb(0.5, 0.5, 0.5, 0.2),
+     vertex.shape="pie",
+     vertex.pie=divided_list_filt,
+     mark.groups = group.ids.2,
+     mark.col = group_color_fill,
+     mark.border = group_color,
+     vertex.pie.color= list(group_color))
+
+
+legend('topright', legend=names(group.ids.2), 
+       col = group_color,
+       pch=15, bty = "n", pt.cex = 1.5, cex = 0.8,
+       text.col = "black", horiz = FALSE)
+
+lay_cri <- layout_nicely(total.g_cri)
+rownames(lay_cri) <- V(total.g_cri)$name
+total.g_cri <- total.g_cri - vertices(sub.cancer.type.list)
+lay_cri <- lay_cri[-which(rownames(lay_cri) %in% sub.cancer.type.list),]
+group.ids_cri.2 <- lapply(1:length(group.ids_cri), function(x) setdiff(group.ids_cri[[x]], sub.cancer.type.list[x]))
+names(group.ids_cri.2) <- names(group.ids_cri)
+
+
+total.g_filt_communal = total.g_filt - names(V(total.g_filt))[which(!names(V(total.g_filt)) %in% names(V(total.g_filt_cri)))]
+divided_list_filt_cri
+group.ids_cri.2 %in% group.ids.2
+divided_list_filt_communal  <- divided_list_cri[order(match(names(divided_list_cri), names(V(total.g_filt_communal))))]
+
+plot(total.g_filt_communal,
+     layout=lay_filt,
+     vertex.size = tbl_count_communal,
+     vertex.label=NA,
+     edge.color = rgb(0.5, 0.5, 0.5, 0.2),
+     vertex.shape="pie",
+     vertex.pie=divided_list_filt_communal,
+     # mark.groups = group.ids.2,
+     mark.col = group_color_fill,
+     mark.border = group_color,
+     vertex.pie.color= list(group_color)
+)
+order_name_cri = V(total.g_filt_cri)$name
+tbl_count_communal_cri_ordered <- as.numeric(tbl_count_communal[order(match(names(tbl_count_communal), order_name_cri))])
+group.ids.2 <- lapply(1:length(group.ids), function(x) setdiff(group.ids[[x]], sub.cancer.type.list[x]))
+
+plot(total.g_filt_cri,
+     layout=lay_filt,
+     vertex.size = tbl_count_communal_cri_ordered,
+     vertex.label=NA,
+     edge.color = rgb(0.5, 0.5, 0.5, 0.2),
+     vertex.shape="pie",
+     vertex.pie=divided_list_filt_cri,
+     # mark.groups = group.ids_cri.2,
+     mark.col = group_color_fill,
+     mark.border = group_color,
+     vertex.pie.color= list(group_color)
+)
+
+
+# 
+# plot(total.g_filt_communal,
+#      layout=lay_filt_cri,
+#      vertex.size = tbl_count_communal ,
 #      vertex.label=NA,
 #      edge.color = rgb(0.5, 0.5, 0.5, 0.2),
 #      vertex.shape="pie",
@@ -351,27 +456,9 @@ divided_list_filt_cri <- divided_list_cri[order(match(names(divided_list_cri), n
 #      mark.col = group_color_fill,
 #      mark.border = group_color,
 #      vertex.pie.color= list(group_color)
-#      )
-# 
-
-
-plot(total.g_filt_cri,
-     layout=lay_filt_cri,
-     vertex.size = tbl_count_ordered_cri,
-     vertex.label=NA,
-     edge.color = rgb(0.5, 0.5, 0.5, 0.2),
-     vertex.shape="pie",
-     vertex.pie=divided_list_filt_cri,
-
-     mark.col = group_color_fill,
-     mark.border = group_color,
-     vertex.pie.color= list(group_color)
-)
-
+# )
 
 legend('topright', legend=names(group.ids_cri.2), 
        col = group_color,
        pch=15, bty = "n", pt.cex = 1.5, cex = 0.8,
        text.col = "black", horiz = FALSE)
-
-

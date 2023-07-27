@@ -6,6 +6,7 @@ library(RColorBrewer)
 library(readxl)
 library(openxlsx)
 
+
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
 
@@ -13,7 +14,7 @@ Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 surv_total_results = read_xlsx("~/nas/04.Results/Total_results_survpval2.xlsx")
 
 setwd("~/nas/04.Results/short_long/quantile")
-# num_CancerType = "04.TCGA-CESC"
+# num_CancerType = "10.TCGA-BLCA"
 # for all
 for (num_CancerType in Cancerlist) {
   
@@ -63,6 +64,7 @@ for (num_CancerType in Cancerlist) {
       width = 35, height = 35,  units = "cm" ,pointsize = 12,
       bg = "white", res = 1200, family = "")
   
+  
   total_out =  ComplexHeatmap::pheatmap(as.matrix(t(total_group_for_fig_final %>%
                                                       dplyr::select(-cluster) %>%
                                                       as.matrix())),
@@ -76,11 +78,19 @@ for (num_CancerType in Cancerlist) {
                                         annotation_legend = T,
                                         show_colnames = F,
                                         cluster_column_slices = FALSE,
-                                        color = Colors) 
+                                        color = Colors,
+                                        show_rownames = F
+                                        ) 
   
   print(total_out)
   
   dev.off()
+  
+  tmp_roworder = hclust(dist(as.matrix(t(total_group_for_fig_final %>%
+                                dplyr::select(-cluster) %>%
+                                as.matrix()))))
+  
+  write.csv(tmp_roworder$labels[ tmp_roworder$order ], paste0("~/nas/04.Results/short_long/quantile/",CancerType,"_clustering_ordered_rownames.csv"))
   
   annotation_col <- data.frame(patients_group= total_group_for_fig_final$cluster)
   rownames(annotation_col) <- rownames(total_group_for_fig_final)
@@ -118,10 +128,13 @@ for (num_CancerType in Cancerlist) {
                                         annotation_legend = T,
                                         show_colnames = F,
                                         cluster_column_slices = FALSE,
-                                        color = Colors) 
+                                        color = Colors,
+                                        show_rownames = F
+                                        ) 
   
   print(total_out)
   
   dev.off()
+  write.csv(annotation_row, paste0("~/nas/04.Results/short_long/quantile/",CancerType,"_ordered_rownames.csv"))
   
 }  
