@@ -9,6 +9,7 @@ library(colorspace)
 library(caret)
 library(tidygraph)
 library(correlation)
+library(ggnetwork)
 
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
@@ -26,7 +27,6 @@ if(!dir.exists(fig_path)){
 }
 setwd(fig_path)
 # pathway = as.data.frame(readxl::read_xlsx(paste0(ref_path ,"kegg_gene_set_w_cancer_hallmarks.xlsx")))
-# num_CancerType = "04.TCGA-CESC"
 
 for (num_CancerType in Cancerlist) {
   
@@ -55,14 +55,13 @@ for (num_CancerType in Cancerlist) {
   
   short_correleation = as.data.frame(correlation::correlation(short_group,
                                                               include_factors = TRUE,
-                                                              method = "auto")) %>% filter(p < 0.05)
+                                                              method = "auto")) %>% filter(p < 0.05) %>% arrange(, desc(r))
   short_correleation$cluster = "short"
   long_correleation = as.data.frame(correlation::correlation(long_group,
                                                              include_factors = TRUE,
-                                                             method = "auto")) %>% filter(p < 0.05)
+                                                             method = "auto")) %>% filter(p < 0.05) %>% arrange(, desc(r))
   long_correleation$cluster = "long"
   
-
   # Step 1: Classify short pairs (present in short_correlation but not in long_correlation)
   short_pairs <- anti_join(short_correleation , long_correleation, by = c("Parameter1", "Parameter2"))
   
@@ -91,10 +90,19 @@ for (num_CancerType in Cancerlist) {
   
   filtered_correlation <- arrange(filtered_correlation, desc(r))
   
-  if (nrow(filtered_correlation) > 50) {
-    filtered_correlation = filtered_correlation[1:50,]
+  if (nrow(filtered_correlation) > 100) {
+    filtered_correlation = filtered_correlation[1:100,]
   }
-
+  
+  if (nrow(short_correleation) > 100) {
+    short_correleation = short_correleation[1:100,]
+  }
+  
+  if (nrow(long_correleation) > 100) {
+    long_correleation = long_correleation[1:100,]
+  }
+  
+  
   #
   tmp_links = filtered_correlation %>% select(Parameter1, Parameter2 , r , cluster)
   colnames(tmp_links) = c("from" , "to" , "value", "cluster")
@@ -110,49 +118,57 @@ for (num_CancerType in Cancerlist) {
                                              directed=FALSE)
   
   cancer_short_network <- graph_from_data_frame(d=tmp_short_links,
-                                             vertices=tmp_cancer_nodes,
-                                             directed=FALSE)
+                                                vertices=tmp_cancer_nodes,
+                                                directed=FALSE)
   
   cancer_long_network <- graph_from_data_frame(d=tmp_long_links,
-                                             vertices=tmp_cancer_nodes,
-                                             directed=FALSE)
-  
-  # merge
-  png(filename = paste0(CancerType, "_merge_network.png"),
-      width = 35, height = 35,  units = "cm" ,pointsize = 12,
-      bg = "white", res = 1200, family = "")
+                                               vertices=tmp_cancer_nodes,
+                                               directed=FALSE)
   
   cluster_colors <- c("short" = "red", "long" = "darkgreen")
   
-  plort_merge = ggraph(cancer_sl_network, layout = 'circle')+
-    geom_edge_link(aes(width=value,alpha=value,color = cluster))+
-    geom_node_point(size=7)+
-    scale_size_continuous(range=c(2,7))+
-    theme_void()+
-    theme(legend.position='right')+
-    geom_node_text(aes(label=name),
-                   vjust=2.7)+
-    scale_edge_color_manual(values = cluster_colors) +
-    guides(col=guide_legend(ncol=1), fill=guide_legend(ncol=1))
+  nnode = length(tmp_cancer_nodes)
+  tmp_nodes = data.frame(name = tmp_cancer_nodes)
+  tmp_nodes$id<- seq(1:nnode)
+  tmp_nodes$angle <- 90 - 360 * tmp_nodes$id / nnode
   
-  print(plort_merge)
+  tmp_nodes$hjust <- ifelse(tmp_nodes$angle < -90, 1, 0)
+  tmp_nodes$angle <- ifelse(tmp_nodes$angle < -90, tmp_nodes$angle+180, tmp_nodes$angle)
   
-  dev.off()
-  # short
-  
-  png(filename = paste0(CancerType, "_short_network.png"),
+  # merge
+  png(filename = paste0(CancerType, "_cut_100_merge_network.png"),
       width = 35, height = 35,  units = "cm" ,pointsize = 12,
       bg = "white", res = 1200, family = "")
   
-  plot_circle_short = ggraph(cancer_short_network, layout = 'circle')+
-    geom_edge_link(aes(width=value,alpha=value),color = "red")+
-    geom_node_point(size=7)+
-    scale_size_continuous(range=c(2,7))+
+  plot_merge = ggraph(cancer_sl_network, layout = 'linear', circular = TRUE)+
+    # geom_edge_link(aes(width=value,alpha=value,color = cluster))+
+    geom_edge_arc(aes(colour = cluster, width = value, alpha = value)) + 
+    coord_fixed() +
+    geom_node_point(size=2)+
     theme_void()+
     theme(legend.position='right')+
-    geom_node_text(aes(label=name),
-                   vjust=2.7)+
-    # scale_fill_discrete_sequential(palette='Red-Blue')+
+    geom_node_text(aes(x = x*1.025, y=y*1.025,  label=name, angle = tmp_nodes$angle, hjust=tmp_nodes$hjust), size=2, alpha=1) +
+    scale_edge_color_manual(values = cluster_colors) +
+    guides(col=guide_legend(ncol=1), fill=guide_legend(ncol=1))
+  
+  print(plot_merge)
+  
+  dev.off()
+  
+  # short
+  
+  png(filename = paste0(CancerType, "_cut_100_short_network.png"),
+      width = 35, height = 35,  units = "cm" ,pointsize = 12,
+      bg = "white", res = 1200, family = "")
+  
+  plot_circle_short = ggraph(cancer_short_network, layout = 'linear', circular = TRUE)+
+    geom_edge_arc(aes(width = value, alpha = value),color = "red",) + 
+    coord_fixed() +
+    geom_node_point(size=2)+
+    theme_void()+
+    theme(legend.position='right')+
+    geom_node_text(aes(x = x*1.025, y=y*1.025,  label=name, angle = tmp_nodes$angle, hjust=tmp_nodes$hjust), size=2, alpha=1) +
+    scale_edge_color_manual(values = cluster_colors) +
     guides(col=guide_legend(ncol=1), fill=guide_legend(ncol=1))
   
   print(plot_circle_short)
@@ -161,24 +177,23 @@ for (num_CancerType in Cancerlist) {
   
   # long
   
-  png(filename = paste0(CancerType, "_long_network.png"),
+  png(filename = paste0(CancerType, "_cut_100_long_network.png"),
       width = 35, height = 35,  units = "cm" ,pointsize = 12,
       bg = "white", res = 1200, family = "")
-
-  plot_circle_long = ggraph(cancer_long_network, layout = 'circle')+
-    geom_edge_link(aes(width=value,alpha=value ),color = "darkgreen")+
-    geom_node_point(size=7)+
-    scale_size_continuous(range=c(2,7))+
+  
+  plot_circle_long = ggraph(cancer_long_network, layout = 'linear', circular = TRUE)+
+    geom_edge_arc(aes(width = value, alpha = value),color = "darkgreen",) + 
+    coord_fixed() +
+    geom_node_point(size=2)+
     theme_void()+
     theme(legend.position='right')+
-    geom_node_text(aes(label=name),
-                   vjust=2.7)+
-    # scale_fill_discrete_sequential(palette='Red-Blue')+
+    geom_node_text(aes(x = x*1.025, y=y*1.025,  label=name, angle = tmp_nodes$angle, hjust=tmp_nodes$hjust), size=2, alpha=1) +
+    scale_edge_color_manual(values = cluster_colors) +
     guides(col=guide_legend(ncol=1), fill=guide_legend(ncol=1))
   
   print(plot_circle_long)
   
   dev.off()
   
-  remove(plot_circle_long,plot_circle_short, plort_merge, cancer_long_network, cancer_short_network, cancer_sl_network, filtered_correlation)
+  remove(plot_circle_long,plot_circle_short, plot_merge, cancer_long_network, cancer_short_network, cancer_sl_network, filtered_correlation)
 }

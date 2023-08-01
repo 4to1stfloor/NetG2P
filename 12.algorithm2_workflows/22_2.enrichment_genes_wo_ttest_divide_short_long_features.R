@@ -152,6 +152,7 @@ for (num_CancerType in Cancerlist) {
     short_enrichGO = enrichGO(short_gene_en$ENTREZID ,OrgDb = org.Hs.eg.db , keyType = "ENTREZID" , ont = "BP" )
     long_enrichGO = enrichGO(long_gene_en$ENTREZID ,OrgDb = org.Hs.eg.db , keyType = "ENTREZID" , ont = "BP" )
     
+    # qval cut -> 
     short_enrichGO_df = as.data.frame(short_enrichGO)
     long_enrichGO_df = as.data.frame(long_enrichGO)
     
@@ -178,29 +179,29 @@ for (num_CancerType in Cancerlist) {
     
     if (sum(scores_short) == 0) {
       reducedTerms_short <- reduceSimMatrix(simMatrix_short,
-                                            threshold=0.7,
+                                            threshold=0.9,
                                             orgdb="org.Hs.eg.db")
     } else {
       reducedTerms_short <- reduceSimMatrix(simMatrix_short,
-                                            threshold=0.7,
+                                            threshold=0.9,
                                             scores_short,
                                             orgdb="org.Hs.eg.db")
     }
     
     if (sum(scores_long) == 0) {
       reducedTerms_long <- reduceSimMatrix(simMatrix_long,
-                                           threshold=0.7,
+                                           threshold=0.9,
                                            orgdb="org.Hs.eg.db")
     } else {
       reducedTerms_long <- reduceSimMatrix(simMatrix_long,
                                            scores_long,
-                                           threshold=0.7,
+                                           threshold=0.9,
                                            orgdb="org.Hs.eg.db")
     }
  
     # fiq
     for (prognosis in c("short","long")) {
-      png(filename = paste0(CancerType,"_simmat_",prognosis,"_heatmap_wo_ttest_not_exp_BP.png"),
+      png(filename = paste0(CancerType,"_simmat_",prognosis,"_heatmap_0.9_wo_ttest_not_exp_BP.png"),
           width = 35, height = 35,  units = "cm" ,pointsize = 12,
           bg = "white", res = 1200, family = "")
       
@@ -213,7 +214,7 @@ for (num_CancerType in Cancerlist) {
       print(heatmap_sim)
       dev.off()
       
-      png(filename = paste0(CancerType,"_scatter_",prognosis,"_wo_ttest_not_exp_BP.png"),
+      png(filename = paste0(CancerType,"_scatter_",prognosis,"_wo_0.9_ttest_not_exp_BP.png"),
           width = 35, height = 35,  units = "cm" ,pointsize = 12,
           bg = "white", res = 1200, family = "")
       
@@ -222,7 +223,7 @@ for (num_CancerType in Cancerlist) {
       print(scatter_mat)
       dev.off()
       
-      png(filename = paste0(CancerType,"_tree_",prognosis,"_wo_ttest_not_exp_BP.png"),
+      png(filename = paste0(CancerType,"_tree_",prognosis,"_wo_0.9_ttest_not_exp_BP.png"),
           width = 35, height = 35,  units = "cm" ,pointsize = 12,
           bg = "white", res = 1200, family = "")
       
@@ -254,18 +255,18 @@ for (num_CancerType in Cancerlist) {
     
     if (sum(scores_short) == 0) {
       reducedTerms_short <- reduceSimMatrix(simMatrix_short,
-                                            threshold=0.7,
+                                            threshold=0.9,
                                             orgdb="org.Hs.eg.db")
     } else {
       reducedTerms_short <- reduceSimMatrix(simMatrix_short,
                                             scores_short,
-                                            threshold=0.7,
+                                            threshold=0.9,
                                             orgdb="org.Hs.eg.db")
     }
     
     # fiq
     
-    png(filename = paste0(CancerType,"_simmat_short_heatmap_wo_ttest_not_exp_BP.png"),
+    png(filename = paste0(CancerType,"_simmat_0.9_short_heatmap_wo_ttest_not_exp_BP.png"),
         width = 35, height = 35,  units = "cm" ,pointsize = 12,
         bg = "white", res = 1200, family = "")
     
@@ -278,7 +279,7 @@ for (num_CancerType in Cancerlist) {
     print(heatmap_sim)
     dev.off()
     
-    png(filename = paste0(CancerType,"_scatter_short_wo_ttest_not_exp_BP.png"),
+    png(filename = paste0(CancerType,"_scatter_0.9_short_wo_ttest_not_exp_BP.png"),
         width = 35, height = 35,  units = "cm" ,pointsize = 12,
         bg = "white", res = 1200, family = "")
     
@@ -287,7 +288,7 @@ for (num_CancerType in Cancerlist) {
     print(scatter_mat)
     dev.off()
     
-    png(filename = paste0(CancerType,"_tree_short_wo_ttest_not_exp_BP.png"),
+    png(filename = paste0(CancerType,"_tree_0.9_short_wo_ttest_not_exp_BP.png"),
         width = 35, height = 35,  units = "cm" ,pointsize = 12,
         bg = "white", res = 1200, family = "")
     
@@ -317,18 +318,18 @@ for (num_CancerType in Cancerlist) {
     
     if (sum(scores_long) == 0) {
       reducedTerms_long <- reduceSimMatrix(simMatrix_long,
-                                           threshold=0.7,
+                                           threshold=0.9,
                                            orgdb="org.Hs.eg.db")
     } else {
       reducedTerms_long <- reduceSimMatrix(simMatrix_long,
                                            scores_long,
-                                           threshold=0.7,
+                                           threshold=0.9,
                                            orgdb="org.Hs.eg.db")
     }
     
     # fiq
     
-    png(filename = paste0(CancerType,"_simmat_long_heatmap_wo_ttest_not_exp_BP.png"),
+    png(filename = paste0(CancerType,"_simmat_0.9_long_heatmap_wo_ttest_not_exp_BP.png"),
         width = 35, height = 35,  units = "cm" ,pointsize = 12,
         bg = "white", res = 1200, family = "")
     
@@ -341,7 +342,7 @@ for (num_CancerType in Cancerlist) {
     print(heatmap_sim)
     dev.off()
     
-    png(filename = paste0(CancerType,"_scatter_long_wo_ttest_not_exp_BP.png"),
+    png(filename = paste0(CancerType,"_scatter_0.9_long_wo_ttest_not_exp_BP.png"),
         width = 35, height = 35,  units = "cm" ,pointsize = 12,
         bg = "white", res = 1200, family = "")
     
@@ -350,7 +351,7 @@ for (num_CancerType in Cancerlist) {
     print(scatter_mat)
     dev.off()
     
-    png(filename = paste0(CancerType,"_tree_long_wo_ttest_not_exp_BP.png"),
+    png(filename = paste0(CancerType,"_tree_0.9_long_wo_ttest_not_exp_BP.png"),
         width = 35, height = 35,  units = "cm" ,pointsize = 12,
         bg = "white", res = 1200, family = "")
     
