@@ -14,7 +14,7 @@ Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 surv_total_results = read_xlsx("~/nas/04.Results/Total_results_survpval2.xlsx")
 
 setwd("~/nas/04.Results/short_long/quantile")
-# num_CancerType = "10.TCGA-BLCA"
+# num_CancerType = "32.TCGA-UCEC"
 # for all
 for (num_CancerType in Cancerlist) {
   
@@ -119,18 +119,20 @@ for (num_CancerType in Cancerlist) {
                                                       dplyr::select(-cluster) %>%
                                                       as.matrix())),
                                         column_split = factor(annotation_col$patients_group, levels = c("short","long")),
+                                        row_split = factor(annotation_row$types , levels = c(unique(annotation_row$types))),
                                         annotation_col = annotation_col,
                                         annotation_row = annotation_row,
                                         annotation_colors = ann_colors_sl,
-                                        cluster_rows = F,
+                                        cluster_rows = T,
                                         cluster_cols = T,
                                         legend = T,
                                         annotation_legend = T,
                                         show_colnames = F,
                                         cluster_column_slices = FALSE,
+                                        cluster_row_slices = FALSE,
                                         color = Colors,
                                         show_rownames = F
-                                        ) 
+  ) 
   
   print(total_out)
   

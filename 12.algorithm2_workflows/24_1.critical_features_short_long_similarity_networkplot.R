@@ -55,11 +55,11 @@ for (num_CancerType in Cancerlist) {
   
   short_correleation = as.data.frame(correlation::correlation(short_group,
                                                               include_factors = TRUE,
-                                                              method = "auto")) %>% filter(p < 0.05) %>% arrange(, desc(r))
+                                                              method = "auto")) %>% filter(p < 0.05) %>% arrange(., desc(r))
   short_correleation$cluster = "short"
   long_correleation = as.data.frame(correlation::correlation(long_group,
                                                              include_factors = TRUE,
-                                                             method = "auto")) %>% filter(p < 0.05) %>% arrange(, desc(r))
+                                                             method = "auto")) %>% filter(p < 0.05) %>% arrange(., desc(r))
   long_correleation$cluster = "long"
   
   # Step 1: Classify short pairs (present in short_correlation but not in long_correlation)
