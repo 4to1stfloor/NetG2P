@@ -51,7 +51,7 @@ ge.tbl$cell_id <- rownames(ge.tbl)
 all_gene <- colnames(ge.tbl)
 match_gene <- sub("\\..*","",all_gene)
 colnames(ge.tbl) <- match_gene
-
+num_CancerType = "04.TCGA-CESC"
 for (num_CancerType in Cancerlist) {
   
   main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)
@@ -99,20 +99,19 @@ for (num_CancerType in Cancerlist) {
       bg = "white", res = 1200, family = "")
   
   ## Kenel Density Curve
-  total_out =  ggplot(ge.interest, aes(x = value, y = variable)) +
-    geom_density_ridges(
-      jittered_points = TRUE,
-      position = position_points_jitter(width = 0.05, height = 0),
-      point_shape = '|', point_size = 3, point_alpha = 1, alpha = 0.7,
-    ) +
+  total_out = ggplot(ge.interest, aes(x = value, y = variable, fill = after_stat(x))) +
+    geom_density_ridges_gradient(scale = 2, gradient_lwd = .5, color = "black",
+                                 jittered_points = TRUE,
+                                 position = position_points_jitter(width = 0.05, height = 0),
+                                 point_shape = '|', point_size = 3, point_alpha = 1, alpha = 0.7) +
+    scale_fill_viridis_c(option = "plasma", name = "Gene Effect") +
     geom_vline(xintercept = -1, color='darkred')+
     geom_vline(xintercept = c(1,0,-2), color = 'darkgrey') +
     geom_vline(xintercept = c(-2.5, -1.5, -0.5, 0.5), color = 'darkgrey', linetype = 'dashed') +
-    xlab('Gene Effect \n(Chronos score, 23Q2)') +
+    
     ylab('Gene') +
-    xlim(-2.5,1) +
+    xlab('Gene Effect \n(Chronos score, 23Q2)') +
     theme_bw()
-  
   
   print(total_out)
   
