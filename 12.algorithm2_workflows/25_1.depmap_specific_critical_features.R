@@ -51,7 +51,7 @@ ge.tbl$cell_id <- rownames(ge.tbl)
 all_gene <- colnames(ge.tbl)
 match_gene <- sub("\\..*","",all_gene)
 colnames(ge.tbl) <- match_gene
-num_CancerType = "04.TCGA-CESC"
+# num_CancerType = "04.TCGA-CESC"
 for (num_CancerType in Cancerlist) {
   
   main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)
