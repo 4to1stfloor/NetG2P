@@ -164,7 +164,8 @@ for (num_CancerType in Cancerlist) {
     
     count_short_head = names(tail(sort(table(reducedTerms_short$parentTerm)), n= 3))
     count_long_head = names(tail(sort(table(reducedTerms_long$parentTerm)), n= 3))
-    
+    total_short_imp = c()
+    total_long_imp = c()
     total_short_imp = unique(c(total_short_imp, score_short_head, count_short_head))
     total_long_imp = unique(c(total_long_imp, score_long_head, count_long_head))
     
@@ -314,7 +315,7 @@ for (num_CancerType in Cancerlist) {
     score_short_head = head(unique(reducedTerms_short[order(reducedTerms_short$score,decreasing = T),]$parentTerm), n= 3)
     
     count_short_head = names(tail(sort(table(reducedTerms_short$parentTerm)), n= 3))
-    
+    total_short_imp = c()
     total_short_imp = unique(c(total_short_imp, score_short_head, count_short_head))
     
     reducedTerms_short_edit = reducedTerms_short %>% 
@@ -401,6 +402,8 @@ for (num_CancerType in Cancerlist) {
     
     score_long_head = head(unique(reducedTerms_long[order(reducedTerms_long$score,decreasing = T),]$parentTerm), n= 3)
     count_long_head = names(tail(sort(table(reducedTerms_long$parentTerm)), n= 3))
+    
+    total_long_imp = c()
     total_long_imp = unique(c(total_long_imp, score_long_head, count_long_head))
     
     reducedTerms_long_edit = reducedTerms_long %>% 
