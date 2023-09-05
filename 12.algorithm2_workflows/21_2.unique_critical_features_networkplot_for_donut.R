@@ -42,7 +42,7 @@ setwd(fig_path)
 
 # num_CancerType = "10.TCGA-BLCA"
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
-num_CancerType = "29.TCGA-LGG"  
+# num_CancerType = "29.TCGA-LGG"  
 for (num_CancerType in Cancerlist) {
   
   main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)
