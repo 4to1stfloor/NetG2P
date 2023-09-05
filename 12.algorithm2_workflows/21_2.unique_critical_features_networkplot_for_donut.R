@@ -42,7 +42,7 @@ setwd(fig_path)
 
 # num_CancerType = "10.TCGA-BLCA"
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
-
+num_CancerType = "29.TCGA-LGG"  
 for (num_CancerType in Cancerlist) {
   
   main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)
@@ -84,7 +84,7 @@ for (num_CancerType in Cancerlist) {
   # 
   
   png(filename = paste0(CancerType,"_raw_network_critical_features.png"),
-      width = 35, height = 35,  units = "cm" ,pointsize = 12,
+      width = 10, height = 10,  units = "cm" ,pointsize = 12,
       bg = "white", res = 1200, family = "")
   
   raw_network = ggraph(edges %>% as_tbl_graph(), layout = "fr") + # 레이아웃
@@ -106,7 +106,7 @@ for (num_CancerType in Cancerlist) {
   dev.off()
   
   png(filename = paste0(CancerType,"_centrality_network_critical_features.png"),
-      width = 35, height = 35,  units = "cm" ,pointsize = 12,
+      width = 10, height = 10,  units = "cm" ,pointsize = 12,
       bg = "white", res = 1200, family = "")
   
   central_network = ggraph( edges %>%
