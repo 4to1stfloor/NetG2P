@@ -39,7 +39,7 @@ if(!dir.exists(fig_path)){
   print(paste0("Folder already exists: ", fig_path))
 }
 setwd(fig_path)
-num_CancerType = "04.TCGA-CESC"
+
 # for all
 for (num_CancerType in Cancerlist) {
   
@@ -159,8 +159,13 @@ for (num_CancerType in Cancerlist) {
                                            orgdb="org.Hs.eg.db")
     }
     
-    metabolism = c("metabolic", " ion ", "glycolytic ", "telomere", "tricarboxylic ", "glucose", "catabolic", "ATP", "epithelial to mesenchymal transition")
-    immune = c("cytokine", "leukocyte", "immune", "T cell", "lymphocyte", "Fc receptor")
+    metabolism = c("metabolic ", " ion ","cadmium ion", "glycolytic ", "tricarboxylic ",
+                   "glucose ", "catabolic ", "ATP ", "apoptotic ",
+                   "neuron death", "proton transmembrane ", "acetyl-CoA biosysthetic")
+    
+    immune = c("cytokine", "leukocyte", "immune", "T cell", "lymphocyte", "Fc receptor", "cell activation","mononuclear cell",
+               " lipopolysaccharide", " defense response", " antigen", "positive regulation of cell adhesion", " epithelial cell proliferation",
+               "phagocytosis", "response to virus")
     
     if (length(unique(reducedTerms_short$parentTerm)) > 25) {
       reducedTerms_short_edit = reducedTerms_short[which(reducedTerms_short$parentTerm %in% 
