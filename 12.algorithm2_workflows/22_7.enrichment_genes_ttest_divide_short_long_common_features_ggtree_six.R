@@ -67,7 +67,7 @@ apoptosis = c("cell death", "apoptosis","neuron death")
 
 
 color_category = c("#7E6148FF","#8491B4FF","#00A087FF","#4DBBD5FF","#E64B35FF","#3C5488FF")
-num_CancerType = "18.TCGA-LUAD"
+# num_CancerType = "18.TCGA-LUAD"
 for (num_CancerType in Cancerlist) {
   
   main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)
