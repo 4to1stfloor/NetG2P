@@ -67,20 +67,28 @@ wordcloudPlot_edit = function (reducedTerms, onlyParents = TRUE, ...)
   wordcloud::wordcloud(d$word, d$freq, ...)
 }
 
-metabolism = c("metabolic ", " ion ","cadmium ion", "glycolytic ", "tricarboxylic ",
+# cf.) cell-cell adhesion, protein complex assembly
+metabolism = c("metabolic ", " ion ","cadmium ion", "glycolytic ", "tricarboxylic acid",
                "glucose ", "catabolic ", "ATP ", 
-               "proton transmembrane ", "acetyl-CoA biosysthetic")
+               "proton transmembrane ", "acetyl-CoA", "electron transport","biosynthetic process","hexose","pentose-phosphate",
+               "NADH regeneration","urea cycle","hydroxylation","NADH regeneration")
 
 immune = c("cytokine", "leukocyte", "immune", "T cell", "lymphocyte", "Fc receptor", "cell activation","mononuclear cell",
-           " lipopolysaccharide", " defense response", " antigen", "positive regulation of cell adhesion", " epithelial cell proliferation",
-           "phagocytosis", "response to virus","hemopoiesis", "chemotaxis", "cell killing", "autophagy")
+           " lipopolysaccharide", " defense response", " antigen", 
+           "phagocytosis", "response to virus","hemopoiesis", "chemotaxis", "cell killing", "autophagy", "MHC","repair","immunity", "response to biotic stimulus",
+           "interferon","viral","inflammatory","bacterial origin","repair","complement activation")
 
 signaling = c("signaling", "kinase", "cascade", "autophosphorylation","phosphorylation", "dephosphorylation","cellular response", "protein binding",
-              "secretion","signal","signal transduction")
+              "secretion","signal","signal transduction", "transcription factor","GTPase","peptide transport",
+              "SMAD protein", "protein transport", "intracellular transport","zymogen","chemical synaptic transmission","immunoglobulin")
 
 cell_cycle_develop = c("cell cycle","nuclear division", "cell division", "proliferation", "cell growth", "gland development", "gilogenesis", "cell development"
-                       ,"renal system development", "protein localization", "angiogenesis","DNA replication")
-migration = c("migration", "actin", "lamellipodium")  
+                       ,"renal system development", "protein localization", "angiogenesis","DNA replication", "differentiation", "epithelial tube",
+                       "cell projection", "cellular component","pericardium development",
+                       "anterior/posterior pattern specification","ureteric bud development"," development","developmental growth","cell fate",
+                       "telomere")
+
+migration = c("migration", "actin", "lamellipodium", "epithelial to mesenchymal", "fiber assembly","mesenchyme development")  
 
 apoptosis = c("cell death", "apoptosis","neuron death")
 
@@ -171,14 +179,16 @@ for (num_CancerType in Cancerlist) {
                                             get(paste0("reducedTerms_",class_feature,"_edit"))$parentTerm[grep(paste(cell_cycle_develop, collapse = "|"), get(paste0("reducedTerms_",class_feature,"_edit"))$parentTerm)] ~ "cell_cycle_develop",
                                           parentTerm %in%
                                             get(paste0("reducedTerms_",class_feature,"_edit"))$parentTerm[grep(paste(migration, collapse = "|"), get(paste0("reducedTerms_",class_feature,"_edit"))$parentTerm)] ~ "migration",
+                                          parentTerm %in%
+                                            get(paste0("reducedTerms_",class_feature,"_edit"))$parentTerm[grep(paste(apoptosis, collapse = "|"), get(paste0("reducedTerms_",class_feature,"_edit"))$parentTerm)] ~ "apoptosis",
                                           .default = "not_include"))) 
     
-    assign(paste0("total_",class_feature,"_imp"),unique(get(paste0("reducedTerms_",class_feature,"_edit"))$total_short_imp))
+    assign(paste0("total_",class_feature,"_imp"),unique(get(paste0("reducedTerms_",class_feature,"_edit"))$total_imp))
     
-    color_category = c("#7E6148FF","#8491B4FF","#00A087FF","#4DBBD5FF","#E64B35FF")
+    color_category = c("#7E6148FF","#8491B4FF","#00A087FF","#4DBBD5FF","#E64B35FF","#3C5488FF")
     n=0
     # category = "meta"
-    for (category in c("meta", "immune","signaling","cell_cycle_develop","migration")) {
+    for (category in c("meta", "immune","signaling","cell_cycle_develop","migration","apoptosis")) {
       n = n+1
       
       assign(paste0("reducedTerms_",class_feature,"_add"),get(paste0("reducedTerms_",class_feature,"_edit")) %>%
@@ -229,6 +239,7 @@ for (num_CancerType in Cancerlist) {
       print(tree_mat)
       dev.off()
     }
+    
     
   }
 }
