@@ -12,7 +12,7 @@ library(RColorBrewer)
 
 ###### COADREAD, LUSC excluded ############### 
 cancer.type.list <- c("KIDNEY", "UCEC", "BRCA", "LGG", "OV", "LUAD", "LIHC", "STAD", "BLCA", "CESC")
-group_color <- brewer.pal(length(cancer.type.list), 'Set3')
+# group_color <- brewer.pal(length(cancer.type.list), 'Set3')
 
 pca.data <- readRDS("total_cancer_pat_for_PCA.rds")
 pca.data.meta <- readRDS("total_cancer_pat_for_PCA_meta.rds")
@@ -33,18 +33,20 @@ tsne_plot$status <- temp.meta.data$vitalstatus
 tsne_plot$prognosis <- temp.meta.data$cluster
 
 
+
+        
 ###
 color_map <- c(
-  "TCGA-KIDNEY" = "#8DD3C7",
-  "TCGA-UCEC" = "#FFFFB3",
-  "TCGA-BRCA" = "#BEBADA",
-  "TCGA-LGG" = "#FB8072",
-  "TCGA-OV" = "#80B1D3",
-  "TCGA-LUAD" = "#FDB462",
-  "TCGA-LIHC" = "#B3DE69",
-  "TCGA-STAD" = "#FCCDE5",
-  "TCGA-BLCA" = "#D9D9D9",
-  "TCGA-CESC" = "#BC80BD"
+  "TCGA-KIDNEY" = "#E64B35FF",
+  "TCGA-UCEC" =  "#4DBBD5FF",
+  "TCGA-BRCA" = "#00A087FF",
+  "TCGA-LGG" = "#3C5488FF",
+  "TCGA-OV" = "#F39B7FFF",
+  "TCGA-LUAD" = "#8491B4FF",
+  "TCGA-LIHC" = "#91D1C2FF",
+  "TCGA-STAD" = "#DC0000FF",
+  "TCGA-BLCA" = "#7E6148FF",
+  "TCGA-CESC" = "#B09C85FF"
 )
 
 setwd("~/nas/04.Results/bestfeatures/feature_network/")

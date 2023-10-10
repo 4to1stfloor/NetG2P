@@ -133,10 +133,15 @@ total.g <- graph_from_data_frame(total.line.graph.2, directed = FALSE)
 
 # setting colors
 library(RColorBrewer)
-group_color <- brewer.pal(length(group.ids), 'Set3') # 'Set3' 
+# group_color <- brewer.pal(length(group.ids), 'Set3') # 'Set3' 
+library(ggsci)
+# 
+# show_col(pal_npg("nrc")(10))
+# pal_npg("nrc")(10)
+group_color <- pal_npg("nrc")(length(group.ids))
 # the fill gets an additional alpha value for transparency:
-group_color_fill <- paste0(group_color, '20')
-
+# group_color_fill <- paste0(group_color, '20')
+group_color_fill <-pal_npg("nrc", alpha = 0.2)(length(group.ids))
 
 ## Remove all the virtual nodes and related links
 lay <- layout_nicely(total.g)
@@ -236,6 +241,18 @@ tbl_count_ordered <- as.numeric(tbl_count[order(match(names(tbl_count), order_na
 divided_list_filt <- divided_list[order(match(names(divided_list), names(V(total.g_filt))))]
 
 ## vertex size ~ sum of importance value/values
+# 
+# plot(total.g_filt, 
+#      layout=lay_filt,  
+#      vertex.size = tbl_count_ordered, 
+#      vertex.label=NA,
+#      edge.color = rgb(0.5, 0.5, 0.5, 0.2),
+#      vertex.shape="pie",
+#      vertex.pie=divided_list_filt,
+#      mark.groups = group.ids.2,
+#      mark.col = group_color_fill,
+#      mark.border = group_color,
+#      vertex.pie.color= list(group_color))
 
 plot(total.g_filt, 
      layout=lay_filt,  
@@ -245,9 +262,10 @@ plot(total.g_filt,
      vertex.shape="pie",
      vertex.pie=divided_list_filt,
      mark.groups = group.ids.2,
-     mark.col = group_color_fill,
+     # mark.col = group_color_fill,
      mark.border = group_color,
      vertex.pie.color= list(group_color))
+
 
 
 legend('topright', legend=names(group.ids.2), 
