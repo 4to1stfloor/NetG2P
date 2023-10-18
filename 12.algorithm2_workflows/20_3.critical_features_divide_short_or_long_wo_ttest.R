@@ -13,7 +13,7 @@ Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 surv_total_results = read_xlsx("~/nas/04.Results/Total_results_survpval2.xlsx")
 
 setwd("~/nas/04.Results/short_long/")
-
+# num_CancerType = "19.TCGA-LIHC"
 # for all
 for (num_CancerType in Cancerlist) {
   
@@ -33,12 +33,14 @@ for (num_CancerType in Cancerlist) {
     
     best_features_df$vitalstatus = duration_log_df$vitalstatus
     best_features_df$duration = duration_log_df$duration
+    best_features_df = best_features_df[which(!is.na(best_features_df$duration)),]
     
     best_features_df$status = NA
     best_features_df$status[which(best_features_df$vitalstatus == "Dead")] = 1
     best_features_df$status[which(best_features_df$vitalstatus == "Alive")] = 0
     
   }
+  
   data_bf = best_features_df
   # annotation cluster 1 or 2 (long or short) by best pval score
   # 18 means best p-value when devide two cluster
@@ -55,6 +57,15 @@ for (num_CancerType in Cancerlist) {
   
   if (all.equal(rownames(data_bf), rownames(tmp_pheat_cut))) {
     data_bf$cluster = tmp_pheat_cut$cluster 
+  }
+  
+  if (mean(data_bf[which(data_bf$cluster == 1),]$duration) <
+      mean(data_bf[which(data_bf$cluster == 2),]$duration)) {
+    data_bf[which(data_bf$cluster == 1),]$cluster = 3
+    data_bf[which(data_bf$cluster == 2),]$cluster = 1
+    data_bf[which(data_bf$cluster == 3),]$cluster = 2
+  } else {
+    data_bf = data_bf
   }
   
   fit = survfit(Surv(duration, status) ~ cluster, data = data_bf)
@@ -91,7 +102,7 @@ for (num_CancerType in Cancerlist) {
   
   total_group = rbind(long_group,short_group)
   
-  # saveRDS(total_group, paste0("~/nas/04.Results/short_long/",CancerType,"_best_features_short_long.rds"))
+  saveRDS(total_group, paste0("~/nas/04.Results/short_long/",CancerType,"_critical_features_short_long.rds"))
   
   short_cluster_path = c()
   long_cluster_path = c()
@@ -109,8 +120,8 @@ for (num_CancerType in Cancerlist) {
   
   if (length(short_cluster_path) != 0 && length(long_cluster_path) != 0) {
     print("There are well divided as short or long pathway")
-    }
- 
+  }
+  
   merge_short_long = c(short_cluster_path,long_cluster_path)
   
   cancer_short_long = cancer_bf[which(cancer_bf$variable %in% merge_short_long),]
@@ -129,7 +140,7 @@ for (num_CancerType in Cancerlist) {
     cancer_short_long[which(cancer_short_long$variable %in% short_cluster_path),]$classification = "short"
   }
   
-  write.xlsx(cancer_short_long , paste0("~/nas/04.Results/short_long/",CancerType,"_best_features_short_long_wo_ttest.xlsx"))
-
+  write.xlsx(cancer_short_long , paste0("~/nas/04.Results/short_long/",CancerType,"_critical_features_short_long_wo_ttest.xlsx"))
+  
   
 }  

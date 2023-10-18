@@ -13,7 +13,7 @@ Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 surv_total_results = read_xlsx("~/nas/04.Results/Total_results_survpval2.xlsx")
 
 setwd("~/nas/04.Results/short_long/ttest")
-
+# num_CancerType = "19.TCGA-LIHC"
 # for all
 for (num_CancerType in Cancerlist) {
   
@@ -22,7 +22,7 @@ for (num_CancerType in Cancerlist) {
   
   # call input
 
-  cancer_short_long_features = readRDS(paste0("~/nas/04.Results/short_long/",CancerType,"_best_features_short_long.rds"))
+  cancer_short_long_features = readRDS(paste0("~/nas/04.Results/short_long/",CancerType,"_critical_features_short_long.rds"))
   short_group = cancer_short_long_features[which(cancer_short_long_features$cluster == "short"),]
   long_group = cancer_short_long_features[which(cancer_short_long_features$cluster == "long"),]
   
