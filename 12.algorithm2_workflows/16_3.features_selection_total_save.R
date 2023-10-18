@@ -11,10 +11,22 @@ library(dplyr)
 library(stringr)
 library(readxl)
 
-setwd("/home/seokwon/nas/04.Results/")
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
+
+# for fic
+fig_path = "~/nas/04.Results/survival/"
+if(!dir.exists(fig_path)){
+  dir.create(fig_path)
+  print(paste0("Created folder: ", fig_path))
+} else {
+  print(paste0("Folder already exists: ", fig_path))
+}
+setwd(fig_path)
+set.seed(13524)
+
+# num_CancerType = "19.TCGA-LIHC"
 
 total_results_pval = data.frame()
 for (num_CancerType in Cancerlist) {
@@ -33,6 +45,7 @@ for (num_CancerType in Cancerlist) {
   best_features_df = duration_log_df[,annotate_best_features$variable]
   best_features_df$vitalstatus = duration_log_df$vitalstatus
   best_features_df$duration = duration_log_df$duration
+  best_features_df = best_features_df[which(!is.na(best_features_df$duration)),]
   
   best_features_df$status = NA
   best_features_df$status[which(best_features_df$vitalstatus == "Dead")] = 1
@@ -41,7 +54,7 @@ for (num_CancerType in Cancerlist) {
   result_surv_pval$CancerType = NA
   result_surv_pval$num_of_features = NA
   result_surv_pval$diff_balance_ratio = NA
-
+  
   for (last_num in 2:length(annotate_best_features$variable)) {
     
     out = pheatmap((best_features_df[,1:last_num] > -log(0.05))*1 , 
@@ -58,9 +71,36 @@ for (num_CancerType in Cancerlist) {
     colnames(tmp_pheat_cut) = "cluster"
     
     best_features_df$cluster = tmp_pheat_cut$cluster
+    
+    if (mean(best_features_df[which(best_features_df$cluster == 1),]$duration) <
+        mean(best_features_df[which(best_features_df$cluster == 2),]$duration)) {
+      best_features_df[which(best_features_df$cluster == 1),]$cluster = 3
+      best_features_df[which(best_features_df$cluster == 2),]$cluster = 1
+      best_features_df[which(best_features_df$cluster == 3),]$cluster = 2
+    } else {
+      best_features_df = best_features_df
+    }
+    
     fit = survfit(Surv(duration, status) ~ cluster, data = best_features_df)
-    # ggsurvplot(fit, data = best_features_df, risk.table = TRUE,
-    #            palette = "jco", pval = TRUE, surv.median.line = "hv", xlab = "days")
+    
+    png(filename = paste0(CancerType, "_",last_num,"_survival_plot_adjust.png"),
+        width = 35, height = 35,  units = "cm" ,pointsize = 12,
+        bg = "white", res = 1200, family = "")
+    
+    tmp_surv = ggsurvplot(
+      fit,    # survfit object with calculated statistics.
+      data = best_features_df,
+      pval = TRUE,             # show p-value of log-rank test.
+      conf.int = TRUE,         # show confidence intervals for 
+      ggtheme = RTCGA::theme_RTCGA(),
+      risk.table = TRUE,
+      xlab = "days",
+      surv.median.line = "hv"
+    )
+    
+    print(tmp_surv)
+    
+    dev.off()
     
     result_surv_pval[last_num,"num_of_features"] = last_num
     result_surv_pval[last_num,"pval"] = surv_pvalue(fit)$pval
@@ -106,7 +146,7 @@ for (num_CancerType in Cancerlist) {
     } else {
       total_results_pval = rbind(total_results_pval, result_surv_pval_spe[which(result_surv_pval_spe$diff_balance_ratio == min(result_surv_pval_spe$diff_balance_ratio)),])
     }
-
+    
   } else {
     tmp_bias_pval = result_surv_pval_spe[which(result_surv_pval_spe$bias == "balanced"),]
     total_results_pval = rbind(total_results_pval, tmp_bias_pval[which(tmp_bias_pval$pval == min(tmp_bias_pval$pval)),])
@@ -116,5 +156,6 @@ for (num_CancerType in Cancerlist) {
   remove(best_features_df,annotate_best_features,duration_log_df,result_surv_pval)
 }
 library(openxlsx)
-write.xlsx(total_results_pval, paste0("Total_results_survpval2.xlsx"))
+write.xlsx(total_results_pval, paste0("Total_results_survpval3.xlsx"))
+
 

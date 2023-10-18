@@ -7,7 +7,6 @@ library(data.table)
 library(pheatmap)
 library(readxl)
 library(dplyr)
-library(readxl)
 library(tidyverse)
 
 filepath = "/home/seokwon/nas/"
