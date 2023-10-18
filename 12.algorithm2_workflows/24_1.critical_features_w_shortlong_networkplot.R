@@ -57,7 +57,7 @@ for (num_CancerType in Cancerlist) {
   # call input
   
   cancer_bf = read.csv(paste0(filepath,"04.Results/bestfeatures/",CancerType, "_best_features.csv"))
-  
+ 
   cancer_bf_cut = cancer_bf[1:surv_total_results[which(surv_total_results$CancerType == CancerType),]$num_of_features,]
   cancer_bf_cut$variable
   
@@ -130,7 +130,7 @@ E(total_network)$col <- F
 E(total_network)$col[bb$backbone] <- T
 
 # Plot the graph with ggraph using the backbone layout
-ggraph(total_network,
+total_out = ggraph(total_network,
        layout = "manual",
        x = bb$xy[, 1],
        y = bb$xy[, 2]) +
@@ -149,3 +149,5 @@ ggraph(total_network,
   # + theme(legend.position = "none")
 
 
+print(total_out)
+# dev.off()
