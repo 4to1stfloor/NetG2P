@@ -8,6 +8,7 @@ library(ggplot2)
 library(graphlayouts)
 library(ggraph)
 library(igraph)
+library(stringr)
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
 
@@ -73,4 +74,4 @@ total_common_ratio$to_ratio = total_common_ratio$count  / surv_total_results$num
 total_common_ratio$mean_ratio = rowMeans(total_common_ratio[, c("from_ratio", "to_ratio")])
 
 
-write.xlsx(total_common_ratio, paste0(filepath, "04.Results/bestfeatures/shared_critical_features_each_cancer.xlsx"))
+write.xlsx(total_common_ratio, paste0(filepath, "04.Results/bestfeatures/shared_critical_features_each_cancer_fixed.xlsx"))

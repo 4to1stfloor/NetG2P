@@ -7,18 +7,21 @@
 ##    -->
 ##    V(line.g1)$name <- sapply(1:dim(sub.links.data)[1], function(x) paste(sub.links.data[x,1], sub.links.data[x,2],sep="")) 
 
-
-
-
+## change the top250 for the issue on survival analysis.
 
 rm(list = ls()) # remove all variables
 
-data.folder <- "/mnt/gluster_server/data/network"
+normalize <- function(x) {
+  return((x-min(x))/(max(x)-min(x)))
+}
+
+data.folder <- "/mnt/gluster_server/data/NetGPT/top250/"
 setwd(data.folder)
 
 library(igraph)
+library(dplyr)
 
-####################### original features (cut 50)######################
+####################### cut 250 ######################
 #################################################################
 #################################################################
 
@@ -27,39 +30,20 @@ cancer.type.list <- c("KIDNEY", "UCEC", "BRCA", "LGG", "LUSC", "OV", "LUAD", "LI
 sig.path <- list()
 
 for (i in 1:length(cancer.type.list)){
-  sig.path.gb <- read.table(paste("TCGA-",cancer.type.list[i],"_cut100_short_long_common.csv",sep=""), header = TRUE, sep = ",", quote="\"", dec=".",stringsAsFactors=FALSE)
+  sig.path.gb <- read.table(paste("TCGA-",cancer.type.list[i],"_top250_from_ml.csv",sep=""), header = TRUE, sep = ",", quote="\"", dec=".",stringsAsFactors=FALSE)
+  
   
   ss<-sapply(1:length(sig.path.gb$variable), function(x) ifelse(length(ttt<-unlist(strsplit(sig.path.gb$variable[x],"P")))==2, 
                                                                 paste0("P",ttt[2]),paste0("P",ttt[2]) ))
   tt<-sapply(1:length(sig.path.gb$variable), function(x) ifelse(length(ttt<-unlist(strsplit(sig.path.gb$variable[x],"P")))==2, 
                                                                 paste0("P",ttt[2]),paste0("P",ttt[3]) ))
+  sig.path.gb = sig.path.gb %>% mutate(minmax = normalize(relative_importance))
   
-  sig.path.class <- data.frame(from = ss, to = tt, min_max = sig.path.gb$minmax, class = sig.path.gb$classification)
+  # sig.path.class <- data.frame(from = ss, to = tt, min_max = sig.path.gb$minmax, class = sig.path.gb$classification)
+  sig.path.class <- data.frame(from = ss, to = tt, min_max = sig.path.gb$minmax)
   # sig.path.class$p.or.l <- sapply(1:dim(sig.path.class)[1], function(x) ifelse(sig.path.class$from[x] == sig.path.class$to[x], "path", "link"))
   
   sig.path[[i]] <- sig.path.class
-  
-  # binary matrix for heatmap.
-  temp.bin.mat <- data.frame(features = sapply(1:dim(sig.path.class)[1], function(x) paste(sig.path.class$from[x], sig.path.class$to[x],sep="")),
-                             bin.link = rep(1,dim(sig.path.class)[1]))
-  names(temp.bin.mat) <- c("features", cancer.type.list[i])
-  
-  if ( i == 1 ) {
-    bin.mat = temp.bin.mat
-  } else {
-    bin.mat <- merge(bin.mat, temp.bin.mat, by = "features", all.x=TRUE, all.y=TRUE)
-  }
-  
-  # importance matrix for heatmap.
-  temp.imp.mat <- data.frame(features = sapply(1:dim(sig.path.class)[1], function(x) paste(sig.path.class$from[x], sig.path.class$to[x],sep="")),
-                             norm.imp = sig.path.class$min_max)
-  names(temp.imp.mat) <- c("features", cancer.type.list[i])
-  
-  if ( i == 1 ) {
-    imp.mat = temp.imp.mat
-  } else {
-    imp.mat <- merge(imp.mat, temp.imp.mat, by = "features", all.x=TRUE, all.y=TRUE)
-  }
   
 }
 names(sig.path) <- cancer.type.list
@@ -69,8 +53,8 @@ names(sig.path) <- cancer.type.list
 
 ################## Link graph #########################
 ################## pan-cancer network ###############
-sub.cancer.type.list <- c("KIDNEY", "UCEC", "BRCA", "LGG", "OV", "LUAD", "LIHC", "STAD", "BLCA", "CESC") # LUSC excluded
-# sub.cancer.type.list <- c("UCEC", "BRCA", "LGG", "OV", "LUAD", "STAD", "BLCA", "CESC") # KIDNEY, COADREDAD, LUSC, LIHC excluded
+# sub.cancer.type.list <- c("KIDNEY", "UCEC", "BRCA", "LGG", "OV", "LUAD", "LIHC", "STAD", "BLCA", "CESC") # LUSC excluded
+sub.cancer.type.list <- c("UCEC", "BRCA", "LGG", "OV", "LUAD", "LIHC", "STAD", "BLCA", "CESC") # KIDNEY, COADREDAD, LUSC excluded
 # sub.cancer.type.list <- c("UCEC", "BRCA", "OV", "LIHC", "STAD", "BLCA") # 
 
 default.link.weight <- 1 
@@ -78,7 +62,7 @@ within.group.weight <- 100 ## link weight between a virtual node and other nodes
 btw.group.weight <- 0.01 ## link weight between virtual nodes
 
 group.ids <- list()
-
+# icancer = 1
 for (icancer in 1:length(sub.cancer.type.list)){
   # for (icancer in 2:5){
   sub.links.data <- sig.path[[which(names(sig.path) == sub.cancer.type.list[[icancer]])]]
@@ -95,7 +79,7 @@ for (icancer in 1:length(sub.cancer.type.list)){
     }
   })
   
-  edge.line.g1 <- as_data_frame(line.g1)
+  edge.line.g1 <- igraph::as_data_frame(line.g1)
   edge.line.g1$weight <- rep(default.link.weight, dim(edge.line.g1)[1]) # add weight = 1 for all links
   ## add virtual node
   virt<-data.frame(from = rep(sub.cancer.type.list[icancer],length(V(line.g1)$name)), to = V(line.g1)$name, weight = rep(within.group.weight,length(V(line.g1)$name)))
@@ -121,23 +105,10 @@ total.line.graph.2 <- rbind(total.line.graph, temp.g)
 
 total.g <- graph_from_data_frame(total.line.graph.2, directed = FALSE)
 
-
-# total.line.g[which(total.line.g$from =="LIHC"),]
-# v.edge.line.g1[which(v.edge.line.g1$to =="P14"),]
-# total.line.g[which(total.line.g$to =="P14"),]
-# total.line.graph[which(total.line.graph$to =="P14"),]
-# total.line.graph.2[which(total.line.graph.2$to =="P14"),]
-# total.line.graph.2
-# names(V(total.g))
-# unique(total.line.graph$from)
-
 # setting colors
 library(RColorBrewer)
 # group_color <- brewer.pal(length(group.ids), 'Set3') # 'Set3' 
 library(ggsci)
-# 
-# show_col(pal_npg("nrc")(10))
-# pal_npg("nrc")(10)
 group_color <- pal_npg("nrc")(length(group.ids))
 # the fill gets an additional alpha value for transparency:
 # group_color_fill <- paste0(group_color, '20')
@@ -168,8 +139,8 @@ for (each_cancer in cancer_type) {
       
       for (all_cancer in cancer_type) {
         
-        importance_cancer <- read.table(paste("TCGA-",all_cancer,"_cut100_short_long_common.csv",sep=""), 
-                                        header = TRUE, sep = ",", quote="\"", dec=".",stringsAsFactors=FALSE)
+        importance_cancer <- read.table(paste("TCGA-",all_cancer,"_top250_from_ml.csv",sep=""), header = TRUE, sep = ",", quote="\"", dec=".",stringsAsFactors=FALSE)
+        importance_cancer = importance_cancer %>% mutate(minmax = normalize(relative_importance))
         
         if (cancer_features %in% group.ids.2[[all_cancer]]) {
           
@@ -194,8 +165,8 @@ for (each_cancer in cancer_type) {
       
       for (all_cancer in cancer_type) {
         
-        importance_cancer <- read.table(paste("TCGA-",all_cancer,"_cut100_short_long_common.csv",sep=""), 
-                                        header = TRUE, sep = ",", quote="\"", dec=".",stringsAsFactors=FALSE)
+        importance_cancer <- read.table(paste("TCGA-",all_cancer,"_top250_from_ml.csv",sep=""), header = TRUE, sep = ",", quote="\"", dec=".",stringsAsFactors=FALSE)
+        importance_cancer = importance_cancer %>% mutate(minmax = normalize(relative_importance))
         
         if (cancer_features %in% group.ids.2[[all_cancer]]) {
           
@@ -219,6 +190,8 @@ for (each_cancer in cancer_type) {
     
   }
 }
+
+
 total.g_filt = total.g - names(V(total.g))[which(!names(V(total.g)) %in% names(divided_list))]
 lay_filt <- lay[which(rownames(lay) %in% names(divided_list)),]
 
@@ -226,33 +199,7 @@ order_name = V(total.g_filt)$name
 tbl_count = table(unlist(group.ids.2))
 tbl_count_ordered <- as.numeric(tbl_count[order(match(names(tbl_count), order_name))])
 
-# pie_size = total.line.graph.2 %>% 
-#   as_tbl_graph() %>% 
-#   mutate(bet= centrality_betweenness(),
-#          clo=centrality_closeness(),
-#          deg = centrality_degree(),
-#          eig = centrality_eigen(),
-#          page = centrality_pagerank()
-#          ) %>%
-#   as_tibble %>% 
-#   filter(!name %in% c("KIDNEY", "COADREAD", "UCEC", "BRCA", "LGG", "OV", "LUAD", "LIHC", "STAD", "BLCA", "CESC")) %>%
-#   arrange(desc(deg))
-
 divided_list_filt <- divided_list[order(match(names(divided_list), names(V(total.g_filt))))]
-
-## vertex size ~ sum of importance value/values
-# 
-# plot(total.g_filt, 
-#      layout=lay_filt,  
-#      vertex.size = tbl_count_ordered, 
-#      vertex.label=NA,
-#      edge.color = rgb(0.5, 0.5, 0.5, 0.2),
-#      vertex.shape="pie",
-#      vertex.pie=divided_list_filt,
-#      mark.groups = group.ids.2,
-#      mark.col = group_color_fill,
-#      mark.border = group_color,
-#      vertex.pie.color= list(group_color))
 
 plot(total.g_filt, 
      layout=lay_filt,  
@@ -262,10 +209,9 @@ plot(total.g_filt,
      vertex.shape="pie",
      vertex.pie=divided_list_filt,
      mark.groups = group.ids.2,
-     # mark.col = group_color_fill,
+     mark.col = group_color_fill,
      mark.border = group_color,
      vertex.pie.color= list(group_color))
-
 
 
 legend('topright', legend=names(group.ids.2), 
@@ -274,21 +220,24 @@ legend('topright', legend=names(group.ids.2),
        text.col = "black", horiz = FALSE)
 
 
-####################### critical features######################
 #################################################################
+####################### only critical features###################
 #################################################################
+
 
 sig.path_critical <- list()
 
 for (i in 1:length(cancer.type.list)){
-  each_sig_path_gb <- read.table(paste("TCGA-",cancer.type.list[i],"_critical_features_short_long_common.csv",sep=""), header = TRUE, sep = ",", quote="\"", dec=".",stringsAsFactors=FALSE)
+  each_sig_path_gb <- read.table(paste("TCGA-",cancer.type.list[i],"_critical_features.csv",sep=""), header = TRUE, sep = ",", quote="\"", dec=".",stringsAsFactors=FALSE)
   
   ss_cri<-sapply(1:length(each_sig_path_gb$variable), function(x) ifelse(length(ttt<-unlist(strsplit(each_sig_path_gb$variable[x],"P")))==2, 
-                                                                paste0("P",ttt[2]),paste0("P",ttt[2]) ))
+                                                                         paste0("P",ttt[2]),paste0("P",ttt[2]) ))
   tt_cri <-sapply(1:length(each_sig_path_gb$variable), function(x) ifelse(length(ttt<-unlist(strsplit(each_sig_path_gb$variable[x],"P")))==2, 
-                                                                paste0("P",ttt[2]),paste0("P",ttt[3]) ))
+                                                                          paste0("P",ttt[2]),paste0("P",ttt[3]) ))
   
-  sig.path.class_cri <- data.frame(from = ss_cri, to = tt_cri, min_max = each_sig_path_gb$minmax, class = each_sig_path_gb$classification)
+  each_sig_path_gb = each_sig_path_gb %>% mutate(minmax = normalize(relative_importance))
+  
+  sig.path.class_cri <- data.frame(from = ss_cri, to = tt_cri, min_max = each_sig_path_gb$minmax)
   # sig.path.class$p.or.l <- sapply(1:dim(sig.path.class)[1], function(x) ifelse(sig.path.class$from[x] == sig.path.class$to[x], "path", "link"))
   
   sig.path_critical[[i]] <- sig.path.class_cri
@@ -297,8 +246,8 @@ for (i in 1:length(cancer.type.list)){
 names(sig.path_critical) <- cancer.type.list
 
 # sub.cancer.type.list <- c("KIDNEY", "COADREAD", "UCEC", "BRCA", "LGG", "OV", "LUAD", "LIHC", "STAD", "BLCA", "CESC") # LUSC excluded
-sub.cancer.type.list <- c("KIDNEY", "UCEC", "BRCA", "LGG", "OV", "LUAD", "LIHC", "STAD", "BLCA", "CESC") # LUSC excluded
-# sub.cancer.type.list <- c("UCEC", "BRCA", "LGG", "OV", "LUAD", "STAD", "BLCA", "CESC") # KIDNEY, COADREDAD, LUSC, LIHC excluded
+# sub.cancer.type.list <- c("KIDNEY", "UCEC", "BRCA", "LGG", "OV", "LUAD", "LIHC", "STAD", "BLCA", "CESC") # LUSC excluded
+sub.cancer.type.list <- c("UCEC", "BRCA", "LGG", "OV", "LUAD","LIHC","STAD", "BLCA", "CESC") # KIDNEY, COADREDAD, LUSC excluded
 # sub.cancer.type.list <- c("UCEC", "BRCA", "OV", "LIHC", "STAD", "BLCA") # 
 
 default.link.weight <- 1 
@@ -316,7 +265,7 @@ for (icancer in 1:length(sub.cancer.type.list)){
   
   V(line.g1_cri)$name <- sapply(1:dim(sub.links.data_cri)[1], function(x) {
     if (sub.links.data_cri[x, 1] == sub.links.data_cri[x, 2]) {
-
+      
       return(sub.links.data_cri[x, 1])
     } else {
       return(paste(sub.links.data_cri[x, 1], sub.links.data_cri[x, 2], sep = ""))
@@ -325,7 +274,7 @@ for (icancer in 1:length(sub.cancer.type.list)){
   
   
   
-  edge.line.g1_cri <- as_data_frame(line.g1_cri)
+  edge.line.g1_cri <- igraph::as_data_frame(line.g1_cri)
   edge.line.g1_cri$weight <- rep(default.link.weight, dim(edge.line.g1_cri)[1]) # add weight = 1 for all links
   ## add virtual node
   virt_cri<-data.frame(from = rep(sub.cancer.type.list[icancer],length(V(line.g1_cri)$name)), to = V(line.g1_cri)$name, weight = rep(within.group.weight,length(V(line.g1_cri)$name)))
@@ -336,7 +285,7 @@ for (icancer in 1:length(sub.cancer.type.list)){
   } else {
     total.line.g_cri <- rbind(total.line.g_cri, v.edge.line.g1_cri)
   }
-
+  
   group.ids_cri[[icancer]] <- unique(c(edge.line.g1_cri$from, edge.line.g1_cri$to, sub.cancer.type.list[icancer]))
   
 }
@@ -374,12 +323,13 @@ for (each_cancer in cancer_type_cri) {
       
       for (all_cancer in cancer_type) {
         
-        importance_cancer <- read.table(paste("TCGA-",all_cancer,"_raw_from_ml_short_long_common.csv",sep=""), 
+        importance_cancer <- read.table(paste("TCGA-",all_cancer,"_critical_features.csv",sep=""), 
                                         header = TRUE, sep = ",", quote="\"", dec=".",stringsAsFactors=FALSE)
+        importance_cancer = importance_cancer %>% mutate(minmax = normalize(relative_importance))
         
         if (cancer_features %in% group.ids_cri.2[[all_cancer]] & cancer_features_for_minmax %in% importance_cancer$variable ) {
           
-          if (importance_cancer[which(cancer_features_for_minmax %in% importance_cancer$variable),]$minmax == 0) {
+          if (importance_cancer[which( importance_cancer$variable == cancer_features_for_minmax ),]$minmax == 0) {
             tmp_boolen_cri = c(tmp_boolen_cri ,1.0e-10)
           }else {
             tmp_boolen_cri = c(tmp_boolen_cri ,importance_cancer[which(cancer_features_for_minmax == importance_cancer$variable),]$minmax)
@@ -399,12 +349,14 @@ for (each_cancer in cancer_type_cri) {
       cancer_features_for_minmax = cancer_features
       for (all_cancer in cancer_type) {
         
-        importance_cancer <- read.table(paste("TCGA-",all_cancer,"_raw_from_ml_short_long_common.csv",sep=""), 
+        importance_cancer <- read.table(paste("TCGA-",all_cancer,"_critical_features.csv",sep=""), 
                                         header = TRUE, sep = ",", quote="\"", dec=".",stringsAsFactors=FALSE)
+        
+        importance_cancer = importance_cancer %>% mutate(minmax = normalize(relative_importance))
         
         if (cancer_features %in% group.ids_cri.2[[all_cancer]] & cancer_features_for_minmax %in% importance_cancer$variable ) {
           
-          if (importance_cancer[which(cancer_features_for_minmax %in% importance_cancer$variable),]$minmax == 0) {
+          if (importance_cancer[which(importance_cancer$variable == cancer_features_for_minmax),]$minmax == 0) {
             tmp_boolen_cri = c(tmp_boolen_cri ,1.0e-10)
           }else {
             tmp_boolen_cri = c(tmp_boolen_cri ,importance_cancer[which(cancer_features_for_minmax == importance_cancer$variable),]$minmax)
@@ -436,7 +388,7 @@ tbl_count_cri = table(unlist(group.ids_cri.2))
 tbl_count_ordered_cri <- as.numeric(tbl_count_cri[order(match(names(tbl_count_cri), order_name_cri))])
 
 divided_list_filt_cri <- divided_list_cri[order(match(names(divided_list_cri), names(V(total.g_filt_cri))))]
-names(V(total.g_filt_cri)) %in% rownames(lay_filt_cri)
+# names(V(total.g_filt_cri)) %in% rownames(lay_filt_cri)
 
 plot(total.g_filt_cri,
      layout=lay_filt_cri,
@@ -449,7 +401,7 @@ plot(total.g_filt_cri,
      mark.col = group_color_fill,
      mark.border = group_color,
      vertex.pie.color= list(group_color)
-     )
+)
 
 legend('topright', legend=names(group.ids_cri.2), 
        col = group_color,
@@ -458,7 +410,7 @@ legend('topright', legend=names(group.ids_cri.2),
 
 
 #################################################################
-##### critical features on a cut 100 network#####################
+##### critical features on a cut 250 network#####################
 #################################################################
 
 ## Remove all the virtual nodes and related links
@@ -469,15 +421,15 @@ legend('topright', legend=names(group.ids_cri.2),
 # group.ids_cri.2 <- lapply(1:length(group.ids_cri), function(x) setdiff(group.ids_cri[[x]], sub.cancer.type.list[x]))
 # names(group.ids_cri.2) <- names(group.ids_cri)
 
-
 communal_tmp = tbl_count[names(tbl_count) %in% names(tbl_count_cri)] +2
 only_cut_tmp = tbl_count[!names(tbl_count) %in% names(tbl_count_cri)]
+
+
 tbl_count_communal = c(communal_tmp,only_cut_tmp)
 
 order_name = V(total.g_filt)$name
 
 tbl_count_communal_ordered <- as.numeric(tbl_count_communal[order(match(names(tbl_count_communal), order_name))])
-total.g_filt_cri
 
 plot(total.g_filt, 
      layout=lay_filt,  
@@ -497,71 +449,4 @@ legend('topright', legend=names(group.ids.2),
        pch=15, bty = "n", pt.cex = 1.5, cex = 0.8,
        text.col = "black", horiz = FALSE)
 # 
-# lay_cri <- layout_nicely(total.g_cri)
-# rownames(lay_cri) <- V(total.g_cri)$name
-# 
-# if (sum(names(V(total.g_cri)) %in% sub.cancer.type.list) != 0 ) {
-#   total.g_cri <- total.g_cri - vertices(sub.cancer.type.list)
-# } else {
-#   total.g_cri = total.g_cri
-# }
-# 
-# 
-# lay_cri <- lay_cri[-which(rownames(lay_cri) %in% sub.cancer.type.list),]
-# group.ids_cri.2 <- lapply(1:length(group.ids_cri), function(x) setdiff(group.ids_cri[[x]], sub.cancer.type.list[x]))
-# names(group.ids_cri.2) <- names(group.ids_cri)
-# 
-# 
-# total.g_filt_communal = total.g_filt - names(V(total.g_filt))[which(!names(V(total.g_filt)) %in% names(V(total.g_filt_cri)))]
-# # divided_list_filt_cri
-# # group.ids_cri.2 %in% group.ids.2
-# divided_list_filt_communal  <- divided_list_cri[order(match(names(divided_list_cri), names(V(total.g_filt_communal))))]
-# 
-# plot(total.g_filt_communal,
-#      layout=lay_filt,
-#      vertex.size = tbl_count_communal,
-#      vertex.label=NA,
-#      edge.color = rgb(0.5, 0.5, 0.5, 0.2),
-#      vertex.shape="pie",
-#      vertex.pie=divided_list_filt_communal,
-#      # mark.groups = group.ids.2,
-#      mark.col = group_color_fill,
-#      mark.border = group_color,
-#      vertex.pie.color= list(group_color)
-# )
-# order_name_cri = V(total.g_filt_cri)$name
-# tbl_count_communal_cri_ordered <- as.numeric(tbl_count_communal[order(match(names(tbl_count_communal), order_name_cri))])
-# group.ids.2 <- lapply(1:length(group.ids), function(x) setdiff(group.ids[[x]], sub.cancer.type.list[x]))
-# 
-# plot(total.g_filt_cri,
-#      layout=lay_filt,
-#      vertex.size = tbl_count_communal_cri_ordered,
-#      vertex.label=NA,
-#      edge.color = rgb(0.5, 0.5, 0.5, 0.2),
-#      vertex.shape="pie",
-#      vertex.pie=divided_list_filt_cri,
-#      # mark.groups = group.ids_cri.2,
-#      mark.col = group_color_fill,
-#      mark.border = group_color,
-#      vertex.pie.color= list(group_color)
-# )
-# 
-# 
-# # 
-# # plot(total.g_filt_communal,
-# #      layout=lay_filt_cri,
-# #      vertex.size = tbl_count_communal ,
-# #      vertex.label=NA,
-# #      edge.color = rgb(0.5, 0.5, 0.5, 0.2),
-# #      vertex.shape="pie",
-# #      vertex.pie=divided_list_filt_cri,
-# #      mark.groups = group.ids_cri.2,
-# #      mark.col = group_color_fill,
-# #      mark.border = group_color,
-# #      vertex.pie.color= list(group_color)
-# # )
-# 
-# legend('topright', legend=names(group.ids_cri.2), 
-#        col = group_color,
-#        pch=15, bty = "n", pt.cex = 1.5, cex = 0.8,
-#        text.col = "black", horiz = FALSE)
+
