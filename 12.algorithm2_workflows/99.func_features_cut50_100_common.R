@@ -8,7 +8,7 @@ ref_path = paste0(filepath, "99.reference/")
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 surv_total_results = read_xlsx("~/nas/04.Results/Total_results_survpval2.xlsx")
 
-# num_CancerType = "24.TCGA-OV"
+# num_CancerType = "19.TCGA-LIHC"
 # for all
 for (num_CancerType in Cancerlist) {
   
@@ -17,12 +17,14 @@ for (num_CancerType in Cancerlist) {
   
   # call input
   
-  cancer_bf = read.csv(paste0(filepath,"04.Results/bestfeatures/",CancerType, "_best_features.csv"))
-  cancer_short_long_features = readRDS(paste0("~/nas/04.Results/short_long/",CancerType,"_best_features_short_long.rds"))
-  cancer_bf_cut = cancer_bf[1:surv_total_results[which(surv_total_results$CancerType == CancerType),]$num_of_features,]
+  cancer_bf = read.csv(paste0(filepath,"04.Results/bestfeatures/",CancerType, "_critical_features.csv"))
+  cancer_short_long_features = readRDS(paste0("~/nas/04.Results/short_long/",CancerType,"_critical_features_short_long.rds"))
+  # cancer_bf_cut = cancer_bf[1:surv_total_results[which(surv_total_results$CancerType == CancerType),]$num_of_features,]
   duration_log_df = readRDS(paste0(main.path_tc, "/", CancerType,"_dual_add_duration_log.rds"))
+  duration_log_df = duration_log_df[which(!is.na(duration_log_df$duration)),]
   
   cancer_bf = cancer_bf %>% mutate( minmax = (relative_importance - min(relative_importance)) / (max(relative_importance) - min(relative_importance)))
+  
   cancer_bf_ml = duration_log_df[,cancer_bf$variable]
  
   # cancer_bf_cut_50
@@ -108,7 +110,10 @@ for (num_CancerType in Cancerlist) {
     print("I don't know")
   }
  
-  cancer_bf[is.na(cancer_bf$classification),]$classification = "common"
+  if (sum(is.na(cancer_bf$classification)) != 0) {
+    cancer_bf[is.na(cancer_bf$classification),]$classification = "common"
+  } 
+  
   
   if (nrow(cancer_bf) < 50) {
     
