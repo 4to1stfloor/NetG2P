@@ -12,7 +12,7 @@ ref_path = paste0(filepath, "99.reference/")
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 
 setwd("~/nas/04.Results/short_long/ttest")
-
+# num_CancerType = "19.TCGA-LIHC"
 # for all
 for (num_CancerType in Cancerlist) {
   
@@ -22,7 +22,7 @@ for (num_CancerType in Cancerlist) {
   # call input
   
   # duration_log_df = readRDS(paste0(main.path_tc, "/", CancerType,"_dual_add_duration_log.rds"))
-  cancer_short_long_features = readRDS(paste0("~/nas/04.Results/short_long/",CancerType,"_best_features_short_long.rds"))
+  cancer_short_long_features = readRDS(paste0("~/nas/04.Results/short_long/",CancerType,"_critical_features_short_long.rds"))
   
   tmp_meta = cancer_short_long_features[,which(colnames(cancer_short_long_features) %in% c("vitalstatus" , "duration", "status", "cluster"))]
   rownames(tmp_meta) <- sub("TCGA",CancerType , rownames(tmp_meta))
@@ -41,7 +41,7 @@ for (num_CancerType in Cancerlist) {
   
   cancer_short_long_features = cancer_short_long_features[,which(!colnames(cancer_short_long_features) %in% c("vitalstatus" , "duration", "status", "cluster"))]
   cancer_short_long_features_t = as.data.frame(t(cancer_short_long_features))
-
+  
   colnames(cancer_short_long_features_t) <- sub("TCGA",CancerType , colnames(cancer_short_long_features_t))
   cancer_short_long_features_t$features = rownames(cancer_short_long_features_t)
   rownames(cancer_short_long_features_t) = NULL
@@ -84,4 +84,4 @@ col_pat_n = setNames(num_pat_n, unique(pca_rank2_add_meta$cancertype.x))
 ggplot(pca_rank2_add_meta, aes(PC1, PC2 ,shape = factor(cluster), color = factor(cancertype.x) ))+
   geom_point() +
   scale_color_manual(values = col_pat_n)
-  # stat_ellipse(aes(color = factor(cancertype.x)), geom = "path", linewidth = 1, alpha = 0.5)
+# stat_ellipse(aes(color = factor(cancertype.x)), geom = "path", linewidth = 1, alpha = 0.5)
