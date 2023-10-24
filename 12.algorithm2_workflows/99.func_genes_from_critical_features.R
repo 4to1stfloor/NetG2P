@@ -42,10 +42,7 @@ for (num_CancerType in Cancerlist) {
   
   # call input
   
-  cancer_bf = read.csv(paste0(filepath,"04.Results/bestfeatures/",CancerType, "_best_features.csv"))
-  cancer_bf_cut = cancer_bf[1:surv_total_results[which(surv_total_results$CancerType == CancerType),]$num_of_features,]
-  
-  write.csv(cancer_bf_cut,paste0(filepath,"04.Results/bestfeatures/",CancerType, "_critical_features.csv"))
+  cancer_bf_cut = read.csv(paste0(filepath,"04.Results/bestfeatures/",CancerType, "_critical_features.csv"))
 
   # 일단 unique gene으로 해봄
   total_link_genes = link_genes_filtered_df[which(link_genes_filtered_df$Pathway %in% cancer_bf_cut$variable),]$Genes

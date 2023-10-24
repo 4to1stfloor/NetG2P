@@ -30,7 +30,7 @@ for (num_CancerType in Cancerlist) {
   Cancernum = gsub('[.-]','',gsub('[a-zA-Z]','', num_CancerType))
   # call input
   
-  cancer_bf = read.csv(paste0(filepath,"04.Results/bestfeatures/",CancerType, "_best_features.csv"))
+  cancer_bf = read.csv(paste0(filepath,"04.Results/bestfeatures/",CancerType, "_critical_features.csv"))
   
   cancer_bf_cut = cancer_bf[1:surv_total_results[which(surv_total_results$CancerType == CancerType),]$num_of_features,]
   total_features[[CancerType]] = cancer_bf_cut$variable
@@ -96,7 +96,7 @@ for (num_CancerType in Cancerlist) {
   Cancernum = gsub('[.-]','',gsub('[a-zA-Z]','', num_CancerType))
   # call input
   
-  cancer_bf = read.csv(paste0(filepath,"04.Results/bestfeatures/",CancerType, "_best_features.csv"))
+  cancer_bf = read.csv(paste0(filepath,"04.Results/bestfeatures/",CancerType, "_critical_features.csv"))
   
   cancer_bf_cut = cancer_bf[1:surv_total_results[which(surv_total_results$CancerType == CancerType),]$num_of_features,]
   cancer_bf_cut = cancer_bf_cut %>% mutate( minmax = (relative_importance - min(relative_importance)) / (max(relative_importance) - min(relative_importance)))

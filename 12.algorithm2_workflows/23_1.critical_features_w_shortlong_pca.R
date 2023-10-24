@@ -10,7 +10,7 @@ filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
 
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
-
+Cancerlist = Cancerlist[c(-7,-11,-12)]
 setwd("~/nas/04.Results/short_long/ttest")
 # num_CancerType = "19.TCGA-LIHC"
 # for all
@@ -85,3 +85,10 @@ ggplot(pca_rank2_add_meta, aes(PC1, PC2 ,shape = factor(cluster), color = factor
   geom_point() +
   scale_color_manual(values = col_pat_n)
 # stat_ellipse(aes(color = factor(cancertype.x)), geom = "path", linewidth = 1, alpha = 0.5)
+
+
+saveRDS(total_pca_df_filt, "/mnt/gluster_server/data/network/total_cancer_pat_for_PCA.rds")
+saveRDS(pca_rank2_add_meta , "/mnt/gluster_server/data/network/total_cancer_pat_for_PCA_meta.rds")
+
+
+

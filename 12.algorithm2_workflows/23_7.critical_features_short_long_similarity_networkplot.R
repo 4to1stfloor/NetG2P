@@ -27,7 +27,7 @@ if(!dir.exists(fig_path)){
 }
 setwd(fig_path)
 # pathway = as.data.frame(readxl::read_xlsx(paste0(ref_path ,"kegg_gene_set_w_cancer_hallmarks.xlsx")))
-
+# num_CancerType = "19.TCGA-LIHC"
 for (num_CancerType in Cancerlist) {
   
   main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)
@@ -35,8 +35,8 @@ for (num_CancerType in Cancerlist) {
   Cancernum = gsub('[.-]','',gsub('[a-zA-Z]','', num_CancerType))
   # call input
   
-  cancer_bf = read.csv(paste0(filepath,"04.Results/bestfeatures/",CancerType, "_best_features.csv"))
-  short_long = readRDS(paste0(filepath,"04.Results/short_long/",CancerType,"_best_features_short_long.rds"))
+  cancer_bf = read.csv(paste0(filepath,"04.Results/bestfeatures/",CancerType, "_critical_features.csv"))
+  short_long = readRDS(paste0(filepath,"04.Results/short_long/",CancerType,"_critical_features_short_long.rds"))
   
   cancer_bf_cut = cancer_bf[1:surv_total_results[which(surv_total_results$CancerType == CancerType),]$num_of_features,]
   
@@ -116,9 +116,9 @@ for (num_CancerType in Cancerlist) {
   cancer_sl_network <- graph_from_data_frame(d=tmp_links,
                                              vertices=tmp_cancer_nodes,
                                              directed=FALSE)
-  
+
   cancer_short_network <- graph_from_data_frame(d=tmp_short_links,
-                                                vertices=tmp_cancer_nodes,
+                                                vertices= tmp_cancer_nodes,
                                                 directed=FALSE)
   
   cancer_long_network <- graph_from_data_frame(d=tmp_long_links,
