@@ -26,7 +26,7 @@ link_genes_filtered <- link_genes_filtered %>%
 link_genes_filtered_df = as.data.frame(link_genes_filtered)
 colnames(link_genes_filtered_df) = colnames(single_genes)
 
-cancer_specific_critical_features = read_csv("~/nas/04.Results/critical_features/unique_short_long_critical_features_for_SW.csv")
+cancer_specific_critical_features = read.csv("~/nas/04.Results/critical_features/unique_short_long_critical_features_for_SW_ver2.csv")
 
 # for fic
 fig_path = "~/nas/04.Results/critical_features/cancer_specific_critical_features/"
@@ -42,7 +42,9 @@ setwd(fig_path)
 
 # num_CancerType = "10.TCGA-BLCA"
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
-# num_CancerType = "29.TCGA-LGG"  
+Cancerlist = Cancerlist[c(-7,-11,-12)]
+colnames(cancer_specific_critical_features )  = c(colnames(cancer_specific_critical_features )[1:6] , gsub('[.]','',gsub('\\d','', Cancerlist)))
+# num_CancerType = "04.TCGA-CESC"
 for (num_CancerType in Cancerlist) {
   
   main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)
@@ -66,7 +68,7 @@ for (num_CancerType in Cancerlist) {
   edges = data.frame(matrix(ncol = 2))
   colnames(edges) = c("from","to")
 
-  for (critical_features in cancer_critical_features$features) {
+  for (critical_features in cancer_critical_features$variable) {
     nodes = unique(c(nodes , paste0("P",strsplit(critical_features, "P")[[1]][2]) , paste0("P",strsplit(critical_features, "P")[[1]][3])))
     
     if (is.na(strsplit(critical_features, "P")[[1]][3] )) {

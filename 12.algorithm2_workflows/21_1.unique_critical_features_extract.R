@@ -29,10 +29,12 @@ for (num_CancerType in Cancerlist) {
   
   main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)
   CancerType = gsub('[.]','',gsub('\\d','', num_CancerType))
-
+  
+  spe_cancer = total_features[[CancerType]]
   # call input
   for (diff_cancer in names(total_features)[names(total_features) != CancerType]) {
-    spe_cancer = setdiff(total_features[[CancerType]], total_features[[diff_cancer]])
+    
+    spe_cancer = setdiff(spe_cancer, total_features[[diff_cancer]])
   }
   
   cancer_slc = read.csv(paste0("~/nas/04.Results/short_long/ttest_common/",CancerType,"_critical_features_short_long_common.csv"))
@@ -55,10 +57,10 @@ for (num_CancerType in Cancerlist) {
   
   main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)
   CancerType = gsub('[.]','',gsub('\\d','', num_CancerType))
-  
+  spe_cancer = total_features[[CancerType]]
   # call input
   for (diff_cancer in names(total_features)[names(total_features) != CancerType]) {
-    spe_cancer = setdiff(total_features[[CancerType]], total_features[[diff_cancer]])
+    spe_cancer = setdiff(spe_cancer, total_features[[diff_cancer]])
   }
   
   cancer_slc = read.csv(paste0("~/nas/04.Results/short_long/ttest_common/",CancerType,"_critical_features_short_long_common.csv"))
