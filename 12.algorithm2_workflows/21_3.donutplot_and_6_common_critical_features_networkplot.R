@@ -72,6 +72,8 @@ library(ggplot2)
 library(graphlayouts)
 library(ggraph)
 library(igraph)
+library(tidygraph)
+library(tidyverse)
 
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
@@ -110,7 +112,7 @@ fit_features = surv_total_results %>%
 
 # c(fit_features$CancerType[4:9] , fit_features$CancerType[c(2,3)])
 max_comb = list()
-
+combn(c(fit_features$CancerType), 3)
 for (n in 3:length(c(fit_features$CancerType))) {
   print(n)
   tmp_comb <- combn(c(fit_features$CancerType), n)
