@@ -286,7 +286,7 @@ ratio_cancerhallmark = data.frame()
 
 for (cancer_hallmark in colnames(df_total_hallmark_genes)) {
   tmp_ratio = sum(!is.na(df_total_hallmark_genes[,cancer_hallmark])) / total_genes_length
-  tmp_df = data.frame(ca  ㅌㅋ` ncer_hallmark = tmp_ratio)
+  tmp_df = data.frame(cancer_hallmark = tmp_ratio)
   colnames(tmp_df) = cancer_hallmark
   
   if (ncol(ratio_cancerhallmark) == 0) {
