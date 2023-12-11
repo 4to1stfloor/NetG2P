@@ -26,7 +26,7 @@ if(!dir.exists(fig_path)){
 setwd(fig_path)
 set.seed(13524)
 
-# num_CancerType = "19.TCGA-LIHC"
+num_CancerType = "29.TCGA-LGG"
 total_surv_result = read_xlsx("~/nas/04.Results/Total_results_survpval2.xlsx")
 total_results_pval = data.frame()
 
@@ -34,6 +34,7 @@ for (num_CancerType in Cancerlist) {
   
   main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)
   CancerType = gsub('[.]','',gsub('\\d','', num_CancerType))
+  name_CancerType = gsub('TCGA-','',CancerType)
   
   # call input
   annotate_best_features =  read.csv(paste0(filepath,"13.analysis/",CancerType,"_best_features.csv"))
@@ -69,11 +70,18 @@ for (num_CancerType in Cancerlist) {
   
   best_features_df$cluster = tmp_pheat_cut$cluster
   
+  median(best_features_df[which(best_features_df$cluster == 1),]$duration) <
+    median(best_features_df[which(best_features_df$cluster == 2),]$duration)
+  
   if (mean(best_features_df[which(best_features_df$cluster == 1),]$duration) <
       mean(best_features_df[which(best_features_df$cluster == 2),]$duration)) {
-    best_features_df[which(best_features_df$cluster == 1),]$cluster = 3
-    best_features_df[which(best_features_df$cluster == 2),]$cluster = 1
-    best_features_df[which(best_features_df$cluster == 3),]$cluster = 2
+    if (CancerType == "TCGA-BRCA") {
+      best_features_df = best_features_df
+    } else {
+      best_features_df[which(best_features_df$cluster == 1),]$cluster = 3
+      best_features_df[which(best_features_df$cluster == 2),]$cluster = 1
+      best_features_df[which(best_features_df$cluster == 3),]$cluster = 2
+    }
   } else {
     best_features_df = best_features_df
   }
@@ -85,7 +93,7 @@ for (num_CancerType in Cancerlist) {
   tmp_surv = ggsurvplot(
     fit,    # survfit object with calculated statistics.
     data = best_features_df,
-    pval = FALSE,             # show p-value of log-rank test.
+    pval = F,             # show p-value of log-rank test.
     # conf.int = TRUE,         # show confidence intervals for
     # ggtheme = RTCGA::theme_RTCGA(base_family = "Arial", base_size = 30),
     ggtheme = custom,
@@ -110,27 +118,34 @@ for (num_CancerType in Cancerlist) {
   # library(graphics)
   
   if (max(tmp_surv$data.survtable$time) == 6000) {
-    fine_tune_x = 5000 
+    fine_tune_x = 5500 
   } else if (max(tmp_surv$data.survtable$time) == 4000) {
-    fine_tune_x = 3200 
+    fine_tune_x = 3700 
   } else if (max(tmp_surv$data.survtable$time) == 8000) {
-    fine_tune_x = 6500
+    fine_tune_x = 7200
   } else if (max(tmp_surv$data.survtable$time) == 5000) {
-    fine_tune_x = 4200
+    fine_tune_x = 4500
   } else {
     fine_tune_x = max(tmp_surv$data.survtable$time) - 1000
   }
   
   if (CancerType == "TCGA-COADREAD") {
-    fine_tune_x = 3000 
+    fine_tune_x = 3300 
   }
+  
+  if (CancerType == "TCGA-LGG") {
+    pval_label = "p < 0.0001"
+  } else {
+    pval_label = paste0("p = ",round(surv_pvalue(fit)$pval, 3))
+  }
+  
   tmp_surv$plot <- tmp_surv$plot +
     annotate("text", 
              x = 0.9, 
              y = 0.1,
              hjust = 0.05, 
              size = 20, 
-             label = paste0("p = ",round(surv_pvalue(fit)$pval, 3)),
+             label = pval_label,
              fontface = "bold")+
     annotate("text", 
              x = fine_tune_x, 
@@ -138,7 +153,7 @@ for (num_CancerType in Cancerlist) {
              # hjust = 0.01, 
              # vjust = 0.6,
              size = 20, 
-             label = CancerType,
+             label = name_CancerType,
              fontface = "bold")
   
   ggsave(file = paste0(CancerType, "_",last_num,"_survival_plot_adjust_wo_conf.svg"), tmp_surv$plot, width=17, height=15, device = svg)
