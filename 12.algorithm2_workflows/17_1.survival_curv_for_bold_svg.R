@@ -26,7 +26,7 @@ if(!dir.exists(fig_path)){
 setwd(fig_path)
 set.seed(13524)
 
-num_CancerType = "29.TCGA-LGG"
+num_CancerType =  "10.TCGA-BLCA"
 total_surv_result = read_xlsx("~/nas/04.Results/Total_results_survpval2.xlsx")
 total_results_pval = data.frame()
 
@@ -97,10 +97,14 @@ for (num_CancerType in Cancerlist) {
     # conf.int = TRUE,         # show confidence intervals for
     # ggtheme = RTCGA::theme_RTCGA(base_family = "Arial", base_size = 30),
     ggtheme = custom,
-    palette = c("#86AA00","#FF9E29"),
+    size = 5,
+    censor.size=20,
+    legend = "none",
+    palette = c("#00A087FF","#E64B35FF"),
     # title = CancerType,
     risk.table = FALSE,
-    xlab = "days",
+    xlab = "",
+    ylab = "",
     surv.median.line = "hv",
     font.main = c(50, "bold"),
     font.x = c(50, "bold"),
@@ -132,11 +136,12 @@ for (num_CancerType in Cancerlist) {
   if (CancerType == "TCGA-COADREAD") {
     fine_tune_x = 3300 
   }
+
   
   if (CancerType == "TCGA-LGG") {
     pval_label = "p < 0.0001"
   } else {
-    pval_label = paste0("p = ",round(surv_pvalue(fit)$pval, 3))
+    pval_label = paste0("p = ",sprintf("%.3f",surv_pvalue(fit)$pval))
   }
   
   tmp_surv$plot <- tmp_surv$plot +
@@ -156,7 +161,7 @@ for (num_CancerType in Cancerlist) {
              label = name_CancerType,
              fontface = "bold")
   
-  ggsave(file = paste0(CancerType, "_",last_num,"_survival_plot_adjust_wo_conf.svg"), tmp_surv$plot, width=17, height=15, device = svg)
+  ggsave(file = paste0(CancerType, "_",last_num,"_survival_plot_adjust_thickness.svg"), tmp_surv$plot, width=17, height=15, device = svg)
   
 }
 
