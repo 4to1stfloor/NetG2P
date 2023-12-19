@@ -88,7 +88,7 @@ for (num_CancerType in Cancerlist) {
   
   fit = survfit(Surv(duration, status) ~ cluster, data = best_features_df)
   
-  custom = theme_bw()+ theme(plot.title = element_text(hjust = 0.99, face = "bold"))
+  custom = theme_bw()
   
   tmp_surv = ggsurvplot(
     fit,    # survfit object with calculated statistics.
@@ -107,10 +107,10 @@ for (num_CancerType in Cancerlist) {
     ylab = "",
     surv.median.line = "hv",
     font.main = c(50, "bold"),
-    font.x = c(50, "bold"),
+    font.x = c(10, "bold"),
     font.y = c(50, "bold"),
     font.tickslab = c(50, "bold","black"),
-    font.caption = c(50, "bold"),
+    font.caption = c(15, "bold"),
     font.legend = c(50, "bold"),
     legend.title = "",
     legend.labs = c("Long-term", "Short-term"),
@@ -144,6 +144,14 @@ for (num_CancerType in Cancerlist) {
     pval_label = paste0("p = ",sprintf("%.3f",surv_pvalue(fit)$pval))
   }
   
+  png(filename =  paste0(CancerType, "_",last_num,"_survival_plot_adjust_thickness.png"),
+      width = 30, height = 25,  units = "cm" ,
+      # pointsize = 12,
+      bg = "white",
+      res = 300,
+      # family = ""
+      )
+  
   tmp_surv$plot <- tmp_surv$plot +
     annotate("text", 
              x = 0.9, 
@@ -152,16 +160,25 @@ for (num_CancerType in Cancerlist) {
              size = 20, 
              label = pval_label,
              fontface = "bold")+
-    annotate("text", 
-             x = fine_tune_x, 
-             y = 1,
-             # hjust = 0.01, 
-             # vjust = 0.6,
-             size = 20, 
-             label = name_CancerType,
-             fontface = "bold")
+    # annotate("text", 
+    #          x = fine_tune_x, 
+    #          y = 1,
+    #          # hjust = 0.01, 
+    #          # vjust = 0.6,
+    #          size = 20, 
+    #          label = name_CancerType,
+    #          fontface = "bold") +
+    theme(
+      axis.ticks = element_line(size = 0.1),
+      axis.line = element_line(linewidth = 2)
+    )+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
   
-  ggsave(file = paste0(CancerType, "_",last_num,"_survival_plot_adjust_thickness.svg"), tmp_surv$plot, width=17, height=15, device = svg)
+  print(tmp_surv$plot)
+  
+  dev.off()
+  # ggsave(file = paste0(CancerType, "_",last_num,"_survival_plot_adjust_thickness.svg"), tmp_surv$plot, width=17, height=15, device = svg)
   
 }
+
 

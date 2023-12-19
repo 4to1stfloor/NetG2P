@@ -34,7 +34,7 @@ for (num_CancerType in Cancerlist) {
   ModelType = gsub('TCGA-','', CancerType)
   cancer_bf = read.csv(paste0("~/nas/04.Results/short_long/ttest_common/",CancerType,"_critical_features_short_long_common.csv"))
   
-  cancer_bf_top5 = cancer_bf %>% head(, n= 5) %>% select(variable, minmax)
+  cancer_bf_top5 = cancer_bf %>% head(n= 5) %>% select(variable, minmax)
 
   
   # short
@@ -100,14 +100,18 @@ library(RColorBrewer)
 num_types = brewer.pal(length(unique(fig_total_top5_df$cancer_type)), "Paired")
 col_types = setNames(num_types, unique(fig_total_top5_df$cancer_type))
 
-num_count = brewer.pal(length(unique(fig_total_top5_df$count)), "Set1")
+num_count = brewer.pal(length(unique(fig_total_top5_df$count)), "Greys")
 col_count = setNames(num_count, unique(fig_total_top5_df$count))
 
 cancertypes_colors = list(cancer_type = col_types , count = col_count)
-
-pheatmap::pheatmap(fig_total_top5_df %>% select(importance),
+Colors = brewer.pal(9, "Blues")
+tmp_heatmap = pheatmap::pheatmap(fig_total_top5_df %>% select(importance),
                    annotation_row = annotation_df,
                    annotation_colors = cancertypes_colors,
+                   cellwidth = 10,
                    # block.size = c(2, 2),
+                   color = Colors,
                    cluster_cols = F,
                    cluster_rows = F)
+
+ggsave(file = "importance_edit.svg", tmp_heatmap, width=10, height=20, device = svg)
