@@ -347,7 +347,7 @@ for (num_CancerType in Cancerlist) {
   
   # c - set hyper-parameter
   
-  gbm_params = list(learn_rate = seq(0.01, 1, 0.01),
+  gbm_params = list(learn_rate = seq(0.01, 0.001, 0.0001),
                     ntrees = seq(10, 5000, 10),
                     max_depth = seq(2, 30, 1),
                     sample_rate = seq(0, 2, 0.01),
