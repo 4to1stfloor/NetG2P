@@ -4,10 +4,16 @@ ref_path = paste0(filepath, "99.reference/")
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 
 type = "link"
-mode = "dual"
-# mode = ""
+# mode = "dual"
+mode = ""
 data_type = "exp"
-folder_name = "h2o_bias_pval_exp_dual_cut_50"
+
+if (type == "each") {
+  cut_features = 3
+} else {
+  cut_features = 50
+}
+folder_name = paste0("h2o_bias_pval_",data_type, "_",type,"_cut_",cut_features)
 # Cancerlist = Cancerlist[7:12]
 set.seed(13524)
 
@@ -123,7 +129,7 @@ for (num_CancerType in Cancerlist) {
   } else {
     data_tc_ori = data_tc
   }
-
+  
   # 2) transfer data for model build
   # A - data split
   
@@ -209,7 +215,7 @@ for (num_CancerType in Cancerlist) {
   filtered_features_list = list()
   dl_round_acc = data.frame(matrix(ncol = 2))
   colnames(dl_round_acc) = c("round", "acc")
-
+  
   for (num_round in 1:14) {
     
     if (num_round == 1) {
@@ -228,7 +234,7 @@ for (num_CancerType in Cancerlist) {
                                  hyper_params = dl_params,
                                  search_criteria = search_criteria,
                                  seed = 1
-                                 )
+    )
     
     Sys.sleep(runif(1,min=1,max=10))
     
@@ -256,16 +262,16 @@ for (num_CancerType in Cancerlist) {
     if (top_acc < af_acc) {
       top_acc = af_acc
       print(top_acc)
-      }
+    }
     
     if (top_acc < 0.8 ) {
-      max_num = num_round *50
+      max_num = num_round * cut_features
       new_features = tmp_features[-(1:max_num)]
       print(length(new_features))
       
-      } else {
-        break
-        }
+    } else {
+      break
+    }
     
     remove(dl_grid_filtered,tmp.dl_test_filtered_df,best_filtered_dl,best_filtered_dl_perf,best_filtered_dl_conma,af_acc)
   }
@@ -276,10 +282,10 @@ for (num_CancerType in Cancerlist) {
   if (length(top_num) != 1 ) {
     top_num = top_num[1]
   }
-
+  
   best_cut_dl = get(paste0("best_filtered_dl",top_num))
   print(paste("best_features :", best_cut_dl@parameters$x))
-
+  
   df_dl_merge_confusion = rbind(as.data.frame(h2o.confusionMatrix(best_cut_dl)),"\n",
                                 as.data.frame(h2o.confusionMatrix(object = best_cut_dl,test_tc.hex)))
   best_cut_dl_perf = h2o.performance(best_cut_dl, newdata = test_tc.hex)
@@ -302,38 +308,38 @@ for (num_CancerType in Cancerlist) {
   
   if (best_cut_dl@model$training_metrics@metrics$AUC == "NaN") {
     print(paste0(num_CancerType," " ,best_cut_dl@algorithm," has no specific model"))
+  } else {
+    fig_path = paste0(main.path_tc,"/",folder_name,"/dl_figure")
+    if(!dir.exists(fig_path)){
+      dir.create(fig_path)
+      print(paste0("Created folder: ", fig_path))
     } else {
-      fig_path = paste0(main.path_tc,"/",folder_name,"/dl_figure")
-      if(!dir.exists(fig_path)){
-        dir.create(fig_path)
-        print(paste0("Created folder: ", fig_path))
-      } else {
-        print(paste0("Folder already exists: ", fig_path))
-      }
-      
-      setwd(fig_path)
-      png(filename = paste0(best_cut_dl@model_id, "roc_test_set.png"),
-          width = 2000, height = 2000, units = "px", pointsize = 12,
-          bg = "white", res = NA, family = "")
-      
-      plot_roc = plot(h2o.performance(model = best_cut_dl, newdata = test_tc.hex) , type = "roc")
-      print(plot_roc)
-      dev.off()
-      
-      png(filename = paste0(best_cut_dl@model_id, "varimp_plot.png"),
-          width = 2000, height = 4000, units = "px", pointsize = 12,
-          bg = "white", res = NA, family = "")
-      
-      h2o.varimp_plot(best_cut_dl, num_of_features = 150)
-      dev.off()
-      
-      png(filename = paste0(best_cut_dl@model_id, "gains_lift_plot.png"),
-          width = 2000, height = 2000, units = "px", pointsize = 12,
-          bg = "white", res = NA, family = "")
-      
-      h2o.gains_lift_plot(best_cut_dl)
-      dev.off()
-      } 
+      print(paste0("Folder already exists: ", fig_path))
+    }
+    
+    setwd(fig_path)
+    png(filename = paste0(best_cut_dl@model_id, "roc_test_set.png"),
+        width = 2000, height = 2000, units = "px", pointsize = 12,
+        bg = "white", res = NA, family = "")
+    
+    plot_roc = plot(h2o.performance(model = best_cut_dl, newdata = test_tc.hex) , type = "roc")
+    print(plot_roc)
+    dev.off()
+    
+    png(filename = paste0(best_cut_dl@model_id, "varimp_plot.png"),
+        width = 2000, height = 4000, units = "px", pointsize = 12,
+        bg = "white", res = NA, family = "")
+    
+    h2o.varimp_plot(best_cut_dl, num_of_features = 150)
+    dev.off()
+    
+    png(filename = paste0(best_cut_dl@model_id, "gains_lift_plot.png"),
+        width = 2000, height = 2000, units = "px", pointsize = 12,
+        bg = "white", res = NA, family = "")
+    
+    h2o.gains_lift_plot(best_cut_dl)
+    dev.off()
+  } 
   
   remove(tmp.dl_test_df,best_dl_perf, best_dl_conma)
   
@@ -350,7 +356,7 @@ for (num_CancerType in Cancerlist) {
                     nbins = round(2 ^ seq(2, 6, length = 15)),
                     min_split_improvement = c(0,1e-8,1e-6,1e-4),
                     histogram_type = c("UniformAdaptive","Random","QuantilesGlobal","RoundRobin")  
-                    )
+  )
   
   search_criteria <- list(strategy = "RandomDiscrete",
                           max_runtime_secs = 60* 60, 
@@ -369,7 +375,7 @@ for (num_CancerType in Cancerlist) {
     
     if (num_round == 1) {
       new_features = features
-      }
+    }
     
     gbm_grid_filtered <- h2o.grid("gbm", x = new_features, y = response,
                                   grid_id = "gbm_grid_filtered",
@@ -406,12 +412,12 @@ for (num_CancerType in Cancerlist) {
     print(paste("accuracy :", af_acc ,"round :" ,num_round))
     filtered_features_list[as.character(num_round)] = af_acc
     print(af_acc)
-   
+    
     if (num_round == 1) {
       tmp_features = best_filtered_gbm@parameters$x
     }
     
-  
+    
     if (top_acc < af_acc) {
       top_acc = af_acc
       print(top_acc)
@@ -419,16 +425,16 @@ for (num_CancerType in Cancerlist) {
     
     if (top_acc < 0.8 ) {
       
-      max_num = num_round *50
+      max_num = num_round * cut_features
       new_features = tmp_features[-(1:max_num)]
       print(length(new_features))
       
-      } else {
-        break
-        }
-  
-  remove(gbm_grid_filtered,tmp.gbm_test_filtered_df,best_filtered_gbm,best_filtered_gbm_perf,best_filtered_gbm_conma,af_acc)
-  
+    } else {
+      break
+    }
+    
+    remove(gbm_grid_filtered,tmp.gbm_test_filtered_df,best_filtered_gbm,best_filtered_gbm_perf,best_filtered_gbm_conma,af_acc)
+    
   }
   
   top_num = names(filtered_features_list)[filtered_features_list == top_acc]
@@ -439,20 +445,20 @@ for (num_CancerType in Cancerlist) {
   }
   
   best_cut_gbm = get(paste0("best_filtered_gbm",top_num))
-
+  
   print(paste("best_features :", best_cut_gbm@parameters$x))
-
+  
   df_gbm_merge_confusion = rbind(as.data.frame(h2o.confusionMatrix(best_cut_gbm)),"\n",
-                                as.data.frame(h2o.confusionMatrix(object = best_cut_gbm,test_tc.hex)))
+                                 as.data.frame(h2o.confusionMatrix(object = best_cut_gbm,test_tc.hex)))
   
   best_cut_gbm_perf = h2o.performance(best_cut_gbm, newdata = test_tc.hex)
   best_cut_gbm_conma = as.data.frame(h2o.confusionMatrix(best_cut_gbm_perf))
-
+  
   write.csv(df_gbm_merge_confusion,paste0(main.path_tc,"/",folder_name,"/", best_cut_gbm@model_id,"_", round(1-best_cut_gbm_conma$Error[3],3) ,"_confusionmatrix.csv"))
   write.csv(gbm_round_acc, paste0(main.path_tc,"/",folder_name,"/",CancerType, "_acc_gbm_round.csv"))
   
   h2o.saveModel(best_cut_gbm, path = paste0(main.path_tc, "/",folder_name,"/", best_cut_gbm@model_id,"_", round(1-best_cut_gbm_conma$Error[3],3)))
-
+  
   # figure
   
   if (best_cut_gbm@model$training_metrics@metrics$AUC == "NaN") {
@@ -480,9 +486,9 @@ for (num_CancerType in Cancerlist) {
     png(filename = paste0(best_cut_gbm@model_id, "varimp_plot.png"),
         width = 2000, height = 4000, units = "px", pointsize = 12,
         bg = "white", res = NA, family = "")
-
+    
     h2o.varimp_plot(best_cut_gbm, num_of_features = 150)
-
+    
     dev.off()
     
     png(filename = paste0(best_cut_gbm@model_id, "gains_lift_plot.png"),
