@@ -41,6 +41,23 @@ calculate_metrics <- function(cancer_type, count_matrix, model_name) {
 
 filepath = "/home/seokwon/nas/"
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
+
+for (type in c("each", "link")) {
+  for (data_type in c("exp","mut")) {
+    if (type == "each") {
+      cut_features = 3
+    } else {
+      cut_features = 50
+    }
+    
+    folder_name = paste0("h2o_bias_pval_",data_type, "_",type,"_cut_",cut_features)
+    
+  }
+}
+
+
+
+
 # folder_name = "h2o_bias_pval_exp_dual_cut_50/"
 folder_name = "h2o_bias_pval_mut_dual_cut_50/"
 
@@ -53,19 +70,6 @@ colnames(result_each) = result_each[1,]
 result_each = result_each[-1,-ncol(result_each)]
 result_each$`Test-set` = as.numeric(result_each$`Test-set`)
 result_each$`Test-set` = round(result_each$`Test-set`,3)
-
-# 
-# result_each = as.data.frame(total_result[2:nrow(total_result), c(7, 10)])
-# colnames(result_each) = result_each[1,]
-# result_each = result_each[-1,]
-# result_each$`Test-set` = as.numeric(result_each$`Test-set`)
-# result_each$`Test-set` = round(result_each$`Test-set`,3)
-# 
-# result_link = as.data.frame(total_result[2:nrow(total_result), c(1, 4)])
-# colnames(result_link) = result_link[1,]
-# result_link = result_link[-1,]
-# result_link$`Test-set` = as.numeric(result_link$`Test-set`)
-# result_link$`Test-set` = round(result_link$`Test-set`,3)
 
 metrics_list <- list()
 n = 0

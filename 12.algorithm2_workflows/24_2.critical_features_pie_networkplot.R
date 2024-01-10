@@ -146,7 +146,7 @@ for (each_cancer in cancer_type) {
           
           if (importance_cancer[which(cancer_features_for_minmax == importance_cancer$variable),]$minmax == 0) {
             tmp_boolen = c(tmp_boolen ,1.0e-10)
-          }else {
+          } else {
             tmp_boolen = c(tmp_boolen ,importance_cancer[which(cancer_features_for_minmax == importance_cancer$variable),]$minmax)
           }
           
