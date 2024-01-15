@@ -202,6 +202,8 @@ receiver_color = receiver_color[receiver_order]
 
 grid_col = c( receiver_color,sender_color)
 
+svg("figure3G.svg")
+
 circos.clear()
 # circos.par(start.degree = 100,
 #            gap.degree=0.5,
@@ -231,3 +233,6 @@ circos.track(track.index = 1, panel.fun = function(x, y) {
 }, bg.border = NA) #
 
 title("Shared_critical_features")
+
+# Close the graphics device
+dev.off() 
