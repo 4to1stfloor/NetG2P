@@ -1,9 +1,3 @@
-## data: 2022.01.06 
-## Writer: Jisu Shin 
-## edit : Seok-Won Jang
-
-## /home/seokwon -> there is not a empty space anymore
-## mv RDPN to /mnt/gluster_server/06.seokwon
 
 ## This script is for running RDPN (random degree preserving network)  with new PPI backbone 
 
