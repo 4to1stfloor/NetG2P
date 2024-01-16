@@ -69,7 +69,10 @@ library(ggraph)
 library(ggforce)
 
 lo = layout_nicely(shared_network)
-# saveRDS(lo, "~/nas/04.Results/short_long/ttest_common/layout_network.rds")
+# lo = readRDS("~/nas/04.Results/short_long/ttest_common/layout_network.rds")
+# lo[1,2] = -6.5
+
+saveRDS(lo, "~/nas/04.Results/short_long/ttest_common/layout_network.rds")
 
 network_PP = ggraph(shared_network, layout = lo) +
   geom_edge_parallel2(aes(colour = node.color, edge_width = rep(E(shared_network)$weight , each = 2)), alpha = 0.25) +
@@ -246,7 +249,7 @@ network_sl_df <- network_sl_df %>%
   mutate(edge_color = case_when(
     character == "short" ~ "#E41A1C",
     character == "long" ~ "#4DAF4A",
-    character == "mixed" ~ "blue",
+    character == "mixed" ~ "#83BCDB",
     character == "none" ~ "white",
     TRUE ~ NA_character_
   ))
