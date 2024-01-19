@@ -72,10 +72,10 @@ tmp = pheatmap(total_features,
 ggsave(file="supple_figure3E.svg", plot=tmp, width=10, height=10)
 
 # ####
-# total_features_wo_common = total_features
-# total_features_wo_common[total_features_wo_common == 1] = 0
-# total_features_wo_common = total_features_wo_common[which(rowSums(total_features_wo_common) != 0),]
-# 
+total_features_wo_common = total_features
+total_features_wo_common[total_features_wo_common == 1] = 0
+total_features_wo_common = total_features_wo_common[which(rowSums(total_features_wo_common) != 0),]
+
 # pheatmap(total_features_wo_common, 
 #          # color = colorRampPalette(c("red", "white", "navy"))(50),
 #          color = colorRampPalette(c('#C0392B','grey','#2471A3'))(50),
@@ -135,17 +135,30 @@ long = pheatmap(total_features_3l_reorder %>% select(`TCGA-BLCA`,`TCGA-OV`,`TCGA
 ggsave(file="figure3E.svg", plot=long, width=10, height=10)
 
 # ###
-# 
-# total_features_wo_common_wo_3l = total_features_wo_common %>% 
-#   select(-`TCGA-UCEC`,-`TCGA-OV`,-`TCGA-BLCA`)
-# total_features_wo_common_wo_3l = total_features_wo_common_wo_3l[which(rowSums(total_features_wo_common_wo_3l) != 0),]
-# 
-# pheatmap(total_features_wo_common_wo_3l, 
-#          # color = colorRampPalette(c("red", "white", "navy"))(50),
-#          color = colorRampPalette(c('#C0392B','grey','#2471A3'))(50),
-#          cutree_cols = 2,
-#          border_color = "white",
-#          clustering_method = "ward.D2")
+# wo_3L
+total_features_wo_common_wo_3l = total_features_wo_common %>%
+  select(-`TCGA-UCEC`,-`TCGA-OV`,-`TCGA-BLCA`)
+total_features_wo_common_wo_3l = total_features_wo_common_wo_3l[which(rowSums(total_features_wo_common_wo_3l) != 0),]
+
+pheatmap(total_features_wo_common_wo_3l,
+         # color = colorRampPalette(c("red", "white", "navy"))(50),
+         color = c("#C0392B",
+                   "#CA5E53",
+                   "#D5847B",
+                   "#DFA9A4",
+                   "#EACFCC",
+                   "#F5F5F5",
+                   "#CBDAE4",
+                   "#C0DEBE",
+                   "#A6D2A2",
+                   "#8CC787",
+                   "#72BC6C"),
+         # cutree_cols = 2,
+         cluster_rows = T,
+         border_color = "white",
+         clustering_method = "complete")
+
+ggsave(file="figure3E.svg", plot=long, width=10, height=10)
 # 
 # ### 
 # total_features_wo_3l = total_features %>% select(-`TCGA-UCEC`,-`TCGA-OV`,-`TCGA-BLCA`)
