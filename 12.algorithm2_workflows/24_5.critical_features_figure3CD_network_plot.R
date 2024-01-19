@@ -68,7 +68,7 @@ for (i in 1:nrow(total_comb)) {
 shared_network = network_df %>%  
   as_tbl_graph(directed=FALSE) %N>%
   mutate(num_features = ((node_size_df$num_features) / max(node_size_df$num_features)) * 15 + 10) %N>%
-  mutate(color = c("grey","#72BC6C","grey","#C0392B","#C0392B","#72BC6C","#C0392B","grey","#C0392B","#72BC6C"))
+  mutate(color = c("#D3DFE5","#72BC6C","#D3DFE5","#C0392B","#C0392B","#72BC6C","#C0392B","#D3DFE5","#C0392B","#72BC6C"))
 
 library(ggraph)
 library(ggforce)
@@ -138,45 +138,45 @@ network_PP = ggraph(shared_network, layout = lo) +
   scale_edge_color_manual(values=c(
     "#72BC6C", # BLCA
     "#C0392B", # BRCA
-    "#C4C4C4", # CESC
-    "#C4C4C4", # LGG
+    "#D3DFE5", # CESC
+    "#D3DFE5", # LGG
     "#C0392B", # LIHC
     "#C0392B", # LUAD
     "#C0392B", # LUSC
     "#72BC6C", # OV
-    "#C4C4C4", # STAD
+    "#D3DFE5", # STAD
     "#72BC6C"  # UCEC
   )) +
   scale_color_manual(values=c(
     "#72BC6C", # BLCA
     "#C0392B", # BRCA
-    "#C4C4C4", # CESC
-    "#C4C4C4", # LGG
+    "#D3DFE5", # CESC
+    "#D3DFE5", # LGG
     "#C0392B", # LIHC
     "#C0392B", # LUAD
     "#C0392B", # LUSC
     "#72BC6C", # OV
-    "#C4C4C4", # STAD
+    "#D3DFE5", # STAD
     "#72BC6C"  # UCEC
   )) +
   
   scale_fill_manual(values=c(
     "#72BC6C", # BLCA
     "#C0392B", # BRCA
-    "#C4C4C4", # CESC
-    "#C4C4C4", # LGG
+    "#D3DFE5", # CESC
+    "#D3DFE5", # LGG
     "#C0392B", # LIHC
     "#C0392B", # LUAD
     "#C0392B", # LUSC
     "#72BC6C", # OV
-    "#C4C4C4", # STAD
+    "#D3DFE5", # STAD
     "#72BC6C"  # UCEC
   )) +
   geom_node_text(aes(label = names(V(shared_network)), vjust = 0.5)) +
   theme_graph()
 
 # 
-ggsave(file="figure3C_long_short_common.svg", plot=network_PP, width=10, height=10)
+ggsave(file="figure3C.svg", plot=network_PP, width=10, height=10)
 
 #### long short on the plot 
 
@@ -283,7 +283,7 @@ network_sl_df <- network_sl_df %>%
   mutate(edge_color = case_when(
     character == "short" ~ "#E41A1C",
     character == "long" ~ "#4DAF4A",
-    character == "mixed" ~ "grey",
+    character == "mixed" ~ "#D3DFE5",
     character == "none" ~ "white",
     TRUE ~ NA_character_
   ))
@@ -315,26 +315,26 @@ network_p = ggraph(shared_features_network, layout = lo) +
   scale_color_manual(values=c(
     "#72BC6C", # BLCA
     "#C0392B", # BRCA
-    "#C4C4C4", # CESC
-    "#C4C4C4", # LGG
+    "#D3DFE5", # CESC
+    "#D3DFE5", # LGG
     "#C0392B", # LIHC
     "#C0392B", # LUAD
     "#C0392B", # LUSC
     "#72BC6C", # OV
-    "#C4C4C4", # STAD
+    "#D3DFE5", # STAD
     "#72BC6C"  # UCEC
   )) +
   
   scale_fill_manual(values=c(
     "#72BC6C", # BLCA
     "#C0392B", # BRCA
-    "#C4C4C4", # CESC
-    "#C4C4C4", # LGG
+    "#D3DFE5", # CESC
+    "#D3DFE5", # LGG
     "#C0392B", # LIHC
     "#C0392B", # LUAD
     "#C0392B", # LUSC
     "#72BC6C", # OV
-    "#C4C4C4", # STAD
+    "#D3DFE5", # STAD
     "#72BC6C"  # UCEC
   )) +
   geom_node_text(aes(label = names(V(shared_features_network)), vjust = 0.5)) +

@@ -60,7 +60,7 @@ tmp = pheatmap(total_features,
                    "#DFA9A4",
                    "#EACFCC",
                    "#F5F5F5",
-                   "#CBDAE4",
+                   "#D3DFE5",
                    "#C0DEBE",
                    "#A6D2A2",
                    "#8CC787",
@@ -69,12 +69,12 @@ tmp = pheatmap(total_features,
          # border_color = "black",
          # cutree_cols = 2,
          clustering_method = "ward.D2")
-ggsave(file="supple_figure3E.svg", plot=tmp, width=10, height=10)
+ggsave(file="figure3E_total.svg", plot=tmp, width=10, height=10)
 
 # ####
-total_features_wo_common = total_features
-total_features_wo_common[total_features_wo_common == 1] = 0
-total_features_wo_common = total_features_wo_common[which(rowSums(total_features_wo_common) != 0),]
+# total_features_wo_common = total_features
+# total_features_wo_common[total_features_wo_common == 1] = 0
+# total_features_wo_common = total_features_wo_common[which(rowSums(total_features_wo_common) != 0),]
 
 # pheatmap(total_features_wo_common, 
 #          # color = colorRampPalette(c("red", "white", "navy"))(50),
@@ -121,7 +121,7 @@ long = pheatmap(total_features_3l_reorder %>% select(`TCGA-BLCA`,`TCGA-OV`,`TCGA
                    "#DFA9A4",
                    "#EACFCC",
                    "#F5F5F5",
-                   "#CBDAE4",
+                   "#D3DFE5",
                    "#C0DEBE",
                    "#A6D2A2",
                    "#8CC787",
@@ -132,15 +132,15 @@ long = pheatmap(total_features_3l_reorder %>% select(`TCGA-BLCA`,`TCGA-OV`,`TCGA
          border_color = "white",
          clustering_method = "ward.D")
 
-ggsave(file="figure3E.svg", plot=long, width=10, height=10)
+ggsave(file="figure3E_long.svg", plot=long, width=10, height=10)
 
 # ###
 # wo_3L
-total_features_wo_common_wo_3l = total_features_wo_common %>%
+total_features_wo_3l = total_features %>%
   select(-`TCGA-UCEC`,-`TCGA-OV`,-`TCGA-BLCA`)
-total_features_wo_common_wo_3l = total_features_wo_common_wo_3l[which(rowSums(total_features_wo_common_wo_3l) != 0),]
+total_features_wo_3l = total_features_wo_3l[which(rowSums(total_features_wo_3l) != 0),]
 
-pheatmap(total_features_wo_common_wo_3l,
+short = pheatmap(total_features_wo_3l,
          # color = colorRampPalette(c("red", "white", "navy"))(50),
          color = c("#C0392B",
                    "#CA5E53",
@@ -148,7 +148,7 @@ pheatmap(total_features_wo_common_wo_3l,
                    "#DFA9A4",
                    "#EACFCC",
                    "#F5F5F5",
-                   "#CBDAE4",
+                   "#D3DFE5",
                    "#C0DEBE",
                    "#A6D2A2",
                    "#8CC787",
@@ -156,9 +156,9 @@ pheatmap(total_features_wo_common_wo_3l,
          # cutree_cols = 2,
          cluster_rows = T,
          border_color = "white",
-         clustering_method = "complete")
+         clustering_method = "ward.D")
 
-ggsave(file="figure3E.svg", plot=long, width=10, height=10)
+ggsave(file="figure3E_short.svg", plot=short, width=10, height=10)
 # 
 # ### 
 # total_features_wo_3l = total_features %>% select(-`TCGA-UCEC`,-`TCGA-OV`,-`TCGA-BLCA`)
