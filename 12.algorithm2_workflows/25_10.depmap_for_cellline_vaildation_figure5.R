@@ -1,4 +1,16 @@
 
+library(ggbiplot)
+library(dplyr)
+library(tidyr)
+library(tibble)
+library(ggplot2)
+library(ggfortify)
+library(pheatmap)
+library(RColorBrewer)
+library(Rtsne)
+library(tsne)
+library(umap)
+
 ucec_cellline = readRDS("~/nas/00.data/filtered_TCGA/32.TCGA-UCEC/UCEC_cellline_dual_all_log.rds")
 ucec_TCGA = readRDS("~/nas/04.Results/short_long/TCGA-UCEC_critical_features_short_long.rds")
 
@@ -9,13 +21,56 @@ short_cluster %>%
   rownames_to_column(var = "features") %>%
   gather(key = "patient", value = "value", -features)
 
-library(ggbiplot)
 
-test_df = ucec_TCGA %>% select(-vitalstatus, -duration, -status)
+wo_info = ucec_TCGA %>% select(-vitalstatus, -duration, -status)
 ucec_cellline$cluster = "cell"
-ucec_cellline_filt_df = ucec_cellline[,colnames(test_df)]
+ucec_cellline_filt_df = ucec_cellline[,colnames(wo_info)]
 
-combine_df = rbind(test_df, ucec_cellline_filt_df)
+set.seed(1)
+samp <- sample(nrow(wo_info), nrow(wo_info)*0.75)
+test_df_train <- wo_info[samp,]
+test_df_valid <- wo_info[-samp,]
+
+pca_res <- prcomp(test_df_train %>% select(-cluster), retx=TRUE, center=TRUE, scale=TRUE)
+expl_var <- round(pca_res$sdev^2/sum(pca_res$sdev^2)*100) # percent explained variance
+pred_val <- predict(pca_res, newdata=test_df_valid %>% select(-cluster))
+
+cell_val <- predict(pca_res, newdata=ucec_cellline_filt_df %>% select(-cluster))
+
+tsne_out <- Rtsne(wo_info %>% select(-cluster))
+tsne_t <- tsne(wo_info %>% select(-cluster))
+umap_out = umap(wo_info %>% select(-cluster), n_components = 2, random_state = 15) 
+umap_layout = as.data.frame(umap_out[["layout"]] )
+
+umap_layout$cluster = wo_info$cluster
+
+
+tsne_out <- Rtsne(combine_df %>% select(-cluster))
+tsne_t <- tsne(combine_df %>% select(-cluster))
+umap_out = umap(combine_df %>% select(-cluster), n_components = 2, random_state = 15) 
+umap_layout = as.data.frame(umap_out[["layout"]] )
+
+umap_layout$cluster = combine_df$cluster
+
+
+###Plot result
+
+ggplot() + 
+  geom_point(data = tsne_out$Y , aes(x = tsne_out$Y[,1] , y = tsne_out$Y[,2], color = combine_df$cluster), shape = 16)
+    
+ggplot() + 
+  geom_point(data = tsne_t , aes(x = tsne_t[,1] , y = tsne_t[,2], color = combine_df$cluster), shape = 16)
+
+ggplot() + 
+  geom_point(data = umap_layout , aes(x = umap_layout[,1] , y = umap_layout[,2], color = umap_layout$cluster), shape = 16)
+
+ggplot() + 
+  geom_point(data = pca_res$x, aes(x = pca_res$x[,1] , y = pca_res$x[,2], color = test_df_train$cluster), shape = 16) +
+  geom_point(data = pred_val, aes(x = pred_val[,1] , y = pred_val[,2], color = test_df_valid$cluster), shape = 15) +
+  geom_point(data = cell_val, aes(x = cell_val[,1] , y = cell_val[,2], color = ucec_cellline_filt_df$cluster), shape = 17) +
+  theme_bw()
+
+combine_df = rbind(wo_info, ucec_cellline_filt_df)
 
 pca_data = prcomp(combine_df %>% select(-cluster),
                   center = T,
@@ -30,12 +85,22 @@ autoplot(pca_data,
 
 pca_res = as.data.frame(pca_data$x)
 
-rownames(pca_res) == c(rownames(test_df), rownames(ucec_cellline_filt_df))
-pca_res$cluster = c(test_df$cluster, ucec_cellline_filt_df$cluster)
-
-pca_long = pca_res %>% filter(cluster == "long")
-pca_short = pca_res %>% filter(cluster == "short")
-pca_cell = pca_res %>% filter(cluster == "cell")
+if (all.equal(rownames(pca_res) , c(rownames(wo_info), rownames(ucec_cellline_filt_df)))) {
+  pca_res$cluster = c(wo_info$cluster, ucec_cellline_filt_df$cluster)
+  pca_long = pca_res %>% filter(cluster == "long")
+  pca_short = pca_res %>% filter(cluster == "short")
+  pca_cell = pca_res %>% filter(cluster == "cell")
+  
+}
+# only_tcga = prcomp(wo_info %>% select(-cluster), retx=TRUE, center=TRUE, scale=TRUE)
+# only_tcga_res = as.data.frame(only_tcga$x)
+# if (all.equal(rownames(only_tcga_res) , rownames(wo_info))) {
+#   only_tcga_res$cluster = wo_info$cluster
+# 
+#   }
+# 
+# tcga_long = only_tcga_res %>% filter(cluster == "long")
+# tcga_short = only_tcga_res %>% filter(cluster == "short")
 
 long_xy = c(mean(pca_long[,1]), mean(pca_long[,2]))
 short_xy = c(mean(pca_short[,1]), mean(pca_short[,2]))
@@ -53,9 +118,7 @@ for (num_cell in 1:nrow(pca_cell)) {
 
 ucec_cellline_filt_df$cluster = tmp_test
 
-pheatmap(ucec_cellline_filt_df %>% select(-cluster))
-
-
+CancerType = "TCGA-UCEC"
 cancer_bf = read.csv(paste0("~/nas/04.Results/short_long/ttest_common/",CancerType,"_critical_features_short_long_common.csv"))
 
 annotation_col <- data.frame(patients_group= ucec_cellline_filt_df$cluster)
@@ -83,9 +146,6 @@ ComplexHeatmap::pheatmap(as.matrix(t(ucec_cellline_filt_df %>% select(-cluster))
                          color = Colors,
                          show_rownames = F
 )
-
-
-
 
 library(tidyr)
 library(dplyr)
@@ -178,15 +238,9 @@ for (critical_features in colnames(ucec_cellline_filt_df %>% select(-cluster))) 
   
 }
 
-
-LAMA5
-LAMB4
-THBS3
-ITGA11
-HGF
-tmp_genes = filtered_df %>% filter(features == names(which(table(filtered_df$features) == max(table(filtered_df$features)))))
-
-depmap_common_genes = tmp_genes$genes
+# tmp_genes = filtered_df %>% filter(features == names(which(table(filtered_df$features) == max(table(filtered_df$features)))))
+# 
+# depmap_common_genes = tmp_genes$genes
 
 depmap_common_genes = filtered_df$genes
 
@@ -219,7 +273,20 @@ gene.filter_long_plot$mean_depmap <- sapply(1:length(depmap_common_genes),
                                             function(x) -mean(dplyr::filter(ge_long_interest, variable == depmap_common_genes[x])$value) )
 
 gene_filtered_short_edit = gene.filter_short_plot %>% filter(mean_depmap > 0.5)
+gene_filtered_long_low = gene.filter_long_plot %>% filter(mean_depmap < 0.5)
+
+gene_filtered_short_low = gene.filter_short_plot %>% filter(mean_depmap < 0.5)
 gene_filtered_long_edit = gene.filter_long_plot %>% filter(mean_depmap > 0.5)
+
+intersect(gene_filtered_short_edit$Genes, gene_filtered_long_low$Genes)
+intersect(gene_filtered_short_low$Genes, gene_filtered_long_edit$Genes)
+
+gene_filtered_short_edit = gene.filter_short_plot %>% filter(mean_depmap > 0.5)
+gene_filtered_long_edit = gene.filter_long_plot %>% filter(mean_depmap > 0.5)
+
+sig_genes = intersect(gene_filtered_short_edit$Genes , gene_filtered_long_edit$Genes)
+gene_filtered_short_edit = gene_filtered_short_edit %>% filter(Genes %in% sig_genes)
+gene_filtered_long_edit = gene_filtered_long_edit %>% filter(Genes %in% sig_genes)
 
 ge_short_edit_specific = ge_short_interest[which(ge_short_interest$variable %in% gene_filtered_short_edit$Genes),]
 ge_long_edit_specific = ge_long_interest[which(ge_long_interest$variable %in% gene_filtered_long_edit$Genes),]
@@ -229,14 +296,16 @@ ge_long_edit_specific = ge_long_interest[which(ge_long_interest$variable %in% ge
 ge_short_edit_specific$group = "short"
 ge_long_edit_specific$group = "long"
 
+
 ge_total_edit_specific = rbind(ge_short_edit_specific,ge_long_edit_specific)
 
 library(ggdist)
+library(ggpubr)
 
-table(filtered_df$features)
+# table(filtered_df$features)
+# filter(variable == "RFC1")
 
-ge_total_edit_specific %>%
-  filter(variable != "RFC1") %>%
+ge_total_edit_specific  %>%
   ggdensity(x = "value",
             # add = "mean",
             rug = T,
@@ -245,6 +314,64 @@ ge_total_edit_specific %>%
             palette = c("#4DAF4A", "#E41A1C")) +
   scale_x_continuous(limits = c(-3.5, 0.5)) +
   facet_grid(rows = "variable", scales = "free", space = "free")
+
+####
+mut = readRDS("~/nas/00.data/filtered_TCGA/32.TCGA-UCEC/TCGA-UCEC_mut_count_filt_data.rds")
+exp = readRDS("~/nas/00.data/filtered_TCGA/32.TCGA-UCEC/TCGA-UCEC_exp_TPM_mat_filt_log_gene_symbol.rds")
+net =  readRDS()
+filtered_mut = mut %>% as.data.frame() %>% filter( rownames(.) %in% c("CCNB1","CHEK1","POLE","PGK1","FEN1"))
+filtered_exp = exp %>% as.data.frame() %>% filter( rownames(.) %in% c("CCNB1","CHEK1","POLE","PGK1","FEN1"))
+
+# grep() 함수를 사용하여 필터링
+colnames(filtered_mut) <- sapply(strsplit(colnames(filtered_mut), "-"), function(x) paste(x[1:3], collapse = "-"))
+colnames(filtered_exp) <- sapply(strsplit(colnames(filtered_exp), "-"), function(x) paste(x[1:3], collapse = "-"))
+
+for (dup_pat in colnames(filtered_mut)[duplicated(colnames(filtered_mut))]) {
+  tmp_mut = filtered_mut[,which(colnames(filtered_mut) == dup_pat)]
+  
+  tmp_mut = data.frame(rowSums(tmp_mut))
+  colnames(tmp_mut) = dup_pat
+  filtered_mut = filtered_mut[,which(colnames(filtered_mut) != dup_pat)]
+  filtered_mut = cbind(filtered_mut, tmp_mut)
+}
+
+for (dup_pat in colnames(filtered_exp)[duplicated(colnames(filtered_exp))]) {
+  tmp_mut = filtered_exp[,which(colnames(filtered_exp) == dup_pat)]
+  
+  tmp_mut = data.frame(rowSums(tmp_mut))
+  colnames(tmp_mut) = dup_pat
+  filtered_exp = filtered_exp[,which(colnames(filtered_exp) != dup_pat)]
+  filtered_exp = cbind(filtered_exp, tmp_mut)
+}
+
+filtered_mut_df = as.data.frame(t(filtered_mut))
+filtered_mut_df = filtered_mut_df %>% filter(rownames(.) != "TCGA-BK-A0CA.1")
+filtered_mut_df = filtered_mut_df[rownames(wo_info),]
+
+filtered_exp_df = as.data.frame(t(filtered_exp))
+filtered_exp_df = filtered_exp_df %>% filter(rownames(.) != "TCGA-BK-A0CA.1")
+filtered_exp_df = filtered_exp_df[rownames(wo_info),]
+
+if (all.equal(rownames(filtered_mut_df) , rownames(wo_info))) {
+  filtered_mut_df$cluster = wo_info$cluster
+}
+
+if (all.equal(rownames(filtered_exp_df) , rownames(wo_info))) {
+  filtered_exp_df$cluster = wo_info$cluster
+}
+
+
+long_mut = filtered_mut_df %>% filter(cluster == "long")
+short_mut = filtered_mut_df %>% filter(cluster == "short")
+
+long_exp = filtered_exp_df %>% filter(cluster == "long")
+short_exp = filtered_exp_df %>% filter(cluster == "short")
+
+colSums(long_mut %>% select(-cluster))
+colSums(short_mut %>% select(-cluster))
+
+colSums(long_exp %>% select(-cluster))
+colSums(short_exp %>% select(-cluster))
 
 
 # unique(ge_total_edit_specific$variable)

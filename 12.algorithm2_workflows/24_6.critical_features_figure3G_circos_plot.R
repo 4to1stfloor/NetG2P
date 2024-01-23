@@ -106,23 +106,23 @@ for (i in 1:nrow(total_comb)) {
     }
     tmp_cir_df = rbind(tmp_first_cir_df, tmp_second_cir_df)
     
-
+    
     tmp_cir_df[which(tmp_cir_df$cancertype == first_cancer),]$minmax = first_cl[which(first_cl$variable %in% tmp_cir_df$variable),]$minmax
     tmp_cir_df[which(tmp_cir_df$cancertype == second_cancer),]$minmax = second_cl[which(second_cl$variable %in% tmp_cir_df$variable),]$minmax
     
     
     weight = length(equal_enriched$variable) / (length(total_features[[first_cancer]]) + 
-                                         length(total_features[[second_cancer]]) - 
-                                         length(intersect(total_features[[first_cancer]], total_features[[second_cancer]])))
+                                                  length(total_features[[second_cancer]]) - 
+                                                  length(intersect(total_features[[first_cancer]], total_features[[second_cancer]])))
     
     # tmp_cir_df_filt = tmp_cir_df %>% 
     #   select(variable , cancertype, relative_importance,minmax,pval,classification) %>%
     #   mutate(weight_filt = weight * minmax * 10^4)
-
+    
     tmp_cir_df_filt = tmp_cir_df %>% 
       select(variable , cancertype, relative_importance,minmax,pval,classification) %>%
       mutate(weight_filt =1)
-
+    
   } else {
     next
   }
