@@ -4,7 +4,7 @@
 library(openxlsx)
 crit.sl.features = read.xlsx("~/nas/04.Results/critical_features/most_common_with_short_long_critical_features.xlsx")
 
-remove.cancer = c("TCGA-COADREAD", "TCGA-LUSC")
+remove.cancer = c("TCGA-COADREAD", "TCGA-KIDNEY")
 crit.sl.features = crit.sl.features[,!colnames(crit.sl.features) %in% remove.cancer]
 
 
@@ -60,10 +60,10 @@ pheatmap(common.nn.mat, cluster_rows = T, cluster_cols = T,clustering_method = "
 
 
 #
-loss.count = rowSums(common.nn.mat[,colnames(common.nn.mat) %in% c("TCGA-LIHC", "TCGA-KIDNEY")])
+loss.count = rowSums(common.nn.mat[,colnames(common.nn.mat) %in% c("TCGA-LIHC", "TCGA-LUSC")])
 loss.feat = names(loss.count)[abs(loss.count) > 1]
 
-gain.count = rowSums(common.nn.mat[,colnames(common.nn.mat) %in% c("TCGA-STAD", "TCGA-OV", "TCGA-BLCA", "TCGA-UCEC")])
+gain.count = rowSums(common.nn.mat[,colnames(common.nn.mat) %in% c( "TCGA-OV", "TCGA-BLCA", "TCGA-UCEC")])
 gain.feat = names(gain.count)[abs(gain.count) > 1]
 
 common.filt = common.nn.mat[rownames(common.nn.mat) %in% unique(c(loss.feat, gain.feat)),]
@@ -197,12 +197,9 @@ long_enrichGO <- setReadable(long_enrichGO, OrgDb = org.Hs.eg.db, keyType="ENTRE
 dotplot(long_enrichGO) + dotplot(short_enrichGO) 
 
 library(DOSE)
-data(geneList)
-
-gseDO(as.numeric(long_gene_en$ENTREZID))
 
 top_genes_group = list(short_cluster = short_gene_en$ENTREZID, long_cluster = long_gene_en$ENTREZID)
-?compareCluster
+
 ck <- compareCluster(geneCluster = top_genes_group, 
                      fun = "enrichGO",
                      OrgDb='org.Hs.eg.db')
@@ -214,8 +211,6 @@ png(filename = paste0(CancerType,"_dotplot.png"),
     bg = "white", res = 1200, family = "")
 
 exp_dot = dotplot(ck)
-
-cnetplot(ck)
 
 print(exp_dot)
 dev.off()

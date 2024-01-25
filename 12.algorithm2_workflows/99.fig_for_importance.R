@@ -77,9 +77,6 @@ for (num_CancerType in Cancerlist) {
   
 }
 
-table(total_top5_df$pathway)[table(total_top5_df$pathway) == max(table(total_top5_df$pathway))]
-
-pheatmap::pheatmap(total_top5_df %>% select(features,importance))
 fig_total_top5_df = total_top5_df
 
 tmp = as.data.frame(table(total_top5_df$pathway))
@@ -87,8 +84,10 @@ fig_total_top5_df$count <- tmp$Freq[match(fig_total_top5_df$pathway, tmp$Var1)]
 fig_total_top5_df$cancer_type = gsub("TCGA-", "",fig_total_top5_df$cancer_type)
 library(pheatmap)
 
-fig_total_top5_df$rownames = paste0(fig_total_top5_df$features, "_", fig_total_top5_df$pathway_name)
+fig_total_top5_df$rownames = paste0(fig_total_top5_df$pathway_name, " ; ", fig_total_top5_df$features)
 rownames(fig_total_top5_df) = fig_total_top5_df$rownames
+
+fig_total_top5_df
 
 annotation_df <- data.frame(cancer_type = fig_total_top5_df$cancer_type,
                             count = fig_total_top5_df$count)
@@ -97,8 +96,25 @@ rownames(annotation_df) <- rownames(fig_total_top5_df)
 library(RColorBrewer)
 # Create a named color vector for the unique values of vital_status
 
-num_types = brewer.pal(length(unique(fig_total_top5_df$cancer_type)), "Paired")
-col_types = setNames(num_types, unique(fig_total_top5_df$cancer_type))
+color_map <- c(
+  "UCEC" =  "#E64B35FF",
+  "BRCA" = "#4DBBD5FF",
+  "LGG" = "#00A087FF",
+  "LUSC" = "#B09C85FF",
+  "OV" = "#3C5488FF",
+  "LUAD" = "#F39B7FFF",
+  "LIHC" = "#8491B4FF",
+  "STAD" = "#91D1C2FF",
+  "BLCA" = "#7E6148FF",
+  "CESC" = "#DC0000FF",
+  "COADREAD" = "#FFFF99",
+  "KIDNEY" = "#B15928"
+)
+
+
+# num_types = brewer.pal(length(unique(fig_total_top5_df$cancer_type)), "Paired")
+# col_types = setNames(num_types, unique(fig_total_top5_df$cancer_type))
+col_types = color_map[unique(fig_total_top5_df$cancer_type)]
 
 num_count = brewer.pal(length(unique(fig_total_top5_df$count)), "Greys")
 col_count = setNames(num_count, unique(fig_total_top5_df$count))
@@ -114,4 +130,49 @@ tmp_heatmap = pheatmap::pheatmap(fig_total_top5_df %>% select(importance),
                    cluster_cols = F,
                    cluster_rows = F)
 
-ggsave(file = "importance_edit.svg", tmp_heatmap, width=10, height=20, device = svg)
+
+
+library(gridExtra)
+
+t = pheatmap::pheatmap(fig_total_top5_df %>% 
+                         filter(cancer_type %in% c("CESC","BLCA", "STAD", "LUAD", "LIHC", "OV"))%>% 
+                         select(importance),
+                       annotation_row = annotation_df,
+                       annotation_colors = cancertypes_colors,
+                       cellwidth = 10,
+                       # block.size = c(2, 2),
+                       color = Colors,
+                       cluster_cols = F,
+                       cluster_rows = F)
+
+p = pheatmap::pheatmap(fig_total_top5_df %>% 
+                         filter(cancer_type %in% c("LUSC","LGG", "BRCA", "UCEC", "COADREAD", "KIDNEY"))%>% 
+                         select(importance),
+                       annotation_row = annotation_df,
+                       annotation_colors = cancertypes_colors,
+                       cellwidth = 10,
+                       # block.size = c(2, 2),
+                       color = Colors,
+                       cluster_cols = F,
+                       cluster_rows = F,)
+library(grid)
+
+print(p)
+p$gtable$grobs[[5]]$gp = gpar(fontface = "bold")
+grid = grid.arrange(arrangeGrob(grobs= list(t[[4]],p[[4]]) , ncol = 2))
+
+ggsave(file = "importance_edit.svg", grid, width=13, height=10, device = svg)
+
+
+tmp_p = fig_total_top5_df %>% 
+  filter(cancer_type %in% c("LUSC","LGG", "BRCA", "UCEC", "COADREAD", "KIDNEY"))%>% 
+  select(importance)
+
+tmp_t = fig_total_top5_df %>% 
+  filter(cancer_type %in% c("CESC","BLCA", "STAD", "LUAD", "LIHC", "OV"))%>% 
+  select(importance)
+
+write.csv(as.data.frame(rownames(tmp_p)), "right_name.csv")
+write.csv(as.data.frame(rownames(tmp_t)), "left_name.csv")
+write.csv(as.data.frame(unique(fig_total_top5_df$cancer_type)), "cancer_name.csv")
+

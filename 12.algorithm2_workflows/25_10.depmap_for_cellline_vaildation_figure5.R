@@ -14,15 +14,15 @@ library(umap)
 ucec_cellline = readRDS("~/nas/00.data/filtered_TCGA/32.TCGA-UCEC/UCEC_cellline_dual_all_log.rds")
 ucec_TCGA = readRDS("~/nas/04.Results/short_long/TCGA-UCEC_critical_features_short_long.rds")
 
-short_cluster = ucec_TCGA %>% filter(cluster == "short") %>% select(-vitalstatus, -duration,-status, -cluster)
-long_cluster = ucec_TCGA %>% filter(cluster == "long") %>% select(-vitalstatus, -duration,-status, -cluster)
+short_cluster = ucec_TCGA %>% filter(cluster == "short") %>% dplyr::select(-vitalstatus, -duration,-status, -cluster)
+long_cluster = ucec_TCGA %>% filter(cluster == "long") %>% dplyr::select(-vitalstatus, -duration,-status, -cluster)
 
 short_cluster %>%
   rownames_to_column(var = "features") %>%
   gather(key = "patient", value = "value", -features)
 
 
-wo_info = ucec_TCGA %>% select(-vitalstatus, -duration, -status)
+wo_info = ucec_TCGA %>% dplyr::select(-vitalstatus, -duration, -status)
 ucec_cellline$cluster = "cell"
 ucec_cellline_filt_df = ucec_cellline[,colnames(wo_info)]
 
@@ -31,23 +31,24 @@ samp <- sample(nrow(wo_info), nrow(wo_info)*0.75)
 test_df_train <- wo_info[samp,]
 test_df_valid <- wo_info[-samp,]
 
-pca_res <- prcomp(test_df_train %>% select(-cluster), retx=TRUE, center=TRUE, scale=TRUE)
+pca_res <- prcomp(test_df_train %>% dplyr::select(-cluster), retx=TRUE, center=TRUE, scale=TRUE)
 expl_var <- round(pca_res$sdev^2/sum(pca_res$sdev^2)*100) # percent explained variance
-pred_val <- predict(pca_res, newdata=test_df_valid %>% select(-cluster))
+pred_val <- predict(pca_res, newdata=test_df_valid %>% dplyr::select(-cluster))
 
-cell_val <- predict(pca_res, newdata=ucec_cellline_filt_df %>% select(-cluster))
+cell_val <- predict(pca_res, newdata=ucec_cellline_filt_df %>% dplyr::select(-cluster))
 
-tsne_out <- Rtsne(wo_info %>% select(-cluster))
-tsne_t <- tsne(wo_info %>% select(-cluster))
-umap_out = umap(wo_info %>% select(-cluster), n_components = 2, random_state = 15) 
+tsne_out <- Rtsne(wo_info %>% dplyr::select(-cluster))
+tsne_t <- tsne(wo_info %>% dplyr::select(-cluster))
+umap_out = umap(wo_info %>% dplyr::select(-cluster), n_components = 2, random_state = 15) 
 umap_layout = as.data.frame(umap_out[["layout"]] )
 
 umap_layout$cluster = wo_info$cluster
 
+combine_df = rbind(wo_info, ucec_cellline_filt_df)
 
-tsne_out <- Rtsne(combine_df %>% select(-cluster))
-tsne_t <- tsne(combine_df %>% select(-cluster))
-umap_out = umap(combine_df %>% select(-cluster), n_components = 2, random_state = 15) 
+tsne_out <- Rtsne(combine_df %>% dplyr::select(-cluster))
+tsne_t <- tsne(combine_df %>% dplyr::select(-cluster))
+umap_out = umap(combine_df %>% dplyr::select(-cluster), n_components = 2, random_state = 15) 
 umap_layout = as.data.frame(umap_out[["layout"]] )
 
 umap_layout$cluster = combine_df$cluster
@@ -72,7 +73,7 @@ ggplot() +
 
 combine_df = rbind(wo_info, ucec_cellline_filt_df)
 
-pca_data = prcomp(combine_df %>% select(-cluster),
+pca_data = prcomp(combine_df %>% dplyr::select(-cluster),
                   center = T,
                   scale. = T)
 
@@ -105,18 +106,18 @@ if (all.equal(rownames(pca_res) , c(rownames(wo_info), rownames(ucec_cellline_fi
 long_xy = c(mean(pca_long[,1]), mean(pca_long[,2]))
 short_xy = c(mean(pca_short[,1]), mean(pca_short[,2]))
 
-tmp_test =c()
+tmp_cluster =c()
 for (num_cell in 1:nrow(pca_cell)) {
   tmp_long = sqrt((long_xy[1] - pca_cell[num_cell,1])^2 + (long_xy[2] - pca_cell[num_cell,2])^2)
   tmp_short = sqrt((short_xy[1] - pca_cell[num_cell,1])^2 + (short_xy[2] - pca_cell[num_cell,2])^2)
   if (tmp_long > tmp_short) {
-    tmp_test = c(tmp_test, "short")
+    tmp_cluster = c(tmp_cluster, "short")
   } else {
-    tmp_test = c(tmp_test, "long")
+    tmp_cluster = c(tmp_cluster, "long")
   }
 }
 
-ucec_cellline_filt_df$cluster = tmp_test
+ucec_cellline_filt_df$cluster = tmp_cluster
 
 CancerType = "TCGA-UCEC"
 cancer_bf = read.csv(paste0("~/nas/04.Results/short_long/ttest_common/",CancerType,"_critical_features_short_long_common.csv"))
@@ -132,7 +133,7 @@ rownames(annotation_row) <- cancer_bf$variable
 
 ann_colors_sl = list(patients_group = short_long_colors, types = num_features )
 Colors = brewer.pal(9, "YlOrRd")
-ComplexHeatmap::pheatmap(as.matrix(t(ucec_cellline_filt_df %>% select(-cluster))),
+ComplexHeatmap::pheatmap(as.matrix(t(ucec_cellline_filt_df %>% dplyr::select(-cluster))),
                          column_split = factor(annotation_col$patients_group, levels = c("short","long")),
                          annotation_col = annotation_col,
                          annotation_row = annotation_row,
@@ -179,7 +180,7 @@ ucec_cellline_long = ucec_cellline_filt_df %>% filter(cluster == "long")
 ucec_cellline_short = ucec_cellline_filt_df %>% filter(cluster == "short")
 
 filtered_df = data.frame()
-for (critical_features in colnames(ucec_cellline_filt_df %>% select(-cluster))) {
+for (critical_features in colnames(ucec_cellline_filt_df %>% dplyr::select(-cluster))) {
   
   depmap_common_link_genes <- unique(link_genes_filtered_df[which(link_genes_filtered_df$Pathway %in% critical_features),]$Genes)
   depmap_common_each_genes <- unique(link_genes_filtered_df[which(single_genes$Pathway %in% critical_features),]$Genes)
@@ -200,10 +201,10 @@ for (critical_features in colnames(ucec_cellline_filt_df %>% select(-cluster))) 
 
   ge_sub_short = ge.tbl %>% 
     filter(rownames(ge.tbl) %in% rownames(ucec_cellline_short)) %>%
-    select(cell_id,any_of(depmap_common_genes))
+    dplyr::select(cell_id,any_of(depmap_common_genes))
   ge_sub_long = ge.tbl %>% 
     filter(rownames(ge.tbl) %in% rownames(ucec_cellline_long)) %>%
-    select(cell_id,any_of(depmap_common_genes))
+    dplyr::select(cell_id,any_of(depmap_common_genes))
   
   if (ncol(ge_sub_short) <=1 | ncol(ge_sub_long) <=1) {
     next
@@ -246,10 +247,10 @@ depmap_common_genes = filtered_df$genes
 
 ge_sub_short = ge.tbl %>% 
   filter(rownames(ge.tbl) %in% rownames(ucec_cellline_short)) %>%
-  select(cell_id,any_of(depmap_common_genes))
+  dplyr::select(cell_id,any_of(depmap_common_genes))
 ge_sub_long = ge.tbl %>% 
   filter(rownames(ge.tbl) %in% rownames(ucec_cellline_long)) %>%
-  select(cell_id,any_of(depmap_common_genes))
+  dplyr::select(cell_id,any_of(depmap_common_genes))
 
 ge_short_interest <- melt(ge_sub_short, id.vars = 'cell_id')
 ge_short_interest = ge_short_interest[!is.na(ge_short_interest$value),]
@@ -314,6 +315,9 @@ ge_total_edit_specific  %>%
             palette = c("#4DAF4A", "#E41A1C")) +
   scale_x_continuous(limits = c(-3.5, 0.5)) +
   facet_grid(rows = "variable", scales = "free", space = "free")
+
+
+
 
 ####
 mut = readRDS("~/nas/00.data/filtered_TCGA/32.TCGA-UCEC/TCGA-UCEC_mut_count_filt_data.rds")

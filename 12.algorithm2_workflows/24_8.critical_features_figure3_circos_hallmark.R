@@ -58,6 +58,7 @@ library(clusterProfiler)
 # setwd("~/nas/99.reference/")
 # write.xlsx(df_total_hallmark_genes, "gene_set_w_cancer_hallmarks_edit.xlsx")
 # num_CancerType = "32.TCGA-UCEC"
+Cancerlist = c("10.TCGA-BLCA","24.TCGA-OV" , "32.TCGA-UCEC")
 total_score_df = data.frame()
 # for all
 for (num_CancerType in Cancerlist) {
@@ -207,15 +208,15 @@ circlize_tbl <- circlize_tbl %>%
 # reciver = features
 # sender_order = circlize_tbl$cancertype %>% unique() # %>% sort()
 
-# sender_order = circlize_tbl %>% group_by(cancertype) %>%
-#   summarise(total_value = sum(value)) %>%
-#   arrange(total_value)
+sender_order = circlize_tbl %>% group_by(cancertype) %>%
+  summarise(total_value = sum(value)) %>%
+  arrange(total_value)
 sender_order = sender_order$cancertype
 
 # receiver_order = unique(circlize_tbl$hallmark)
-# receiver_order = circlize_tbl %>% group_by(hallmark) %>%
-#   summarise(total_value = sum(value)) %>%
-#   arrange(desc(total_value))
+receiver_order = circlize_tbl %>% group_by(hallmark) %>%
+  summarise(total_value = sum(value)) %>%
+  arrange(desc(total_value))
 
 receiver_order = receiver_order$hallmark
 
