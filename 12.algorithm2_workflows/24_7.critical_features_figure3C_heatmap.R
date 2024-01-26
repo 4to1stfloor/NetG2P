@@ -39,15 +39,17 @@ for (num_CancerType in Cancerlist) {
                                                  .default = NA))
   
   if (CancerType == "TCGA-CESC") {
-    total_features = tmp_features %>% select(-sl)
+    total_features = tmp_features %>% dplyr::select(-sl)
   } else {
-    total_features = merge(total_features , tmp_features %>% select(features, value) , by = "features", all = TRUE)
+    total_features = merge(total_features , tmp_features %>% dplyr::select(features, value) , by = "features", all = TRUE)
   }
   
 }
+
+cal_total_features = total_features
 library(RColorBrewer)
 library(viridis)
-colnames(total_features) = c("features" ,gsub('[.]','',gsub('\\d','', Cancerlist)) )
+colnames(total_features) = c("features" ,gsub('TCGA-','',gsub('[.]','',gsub('\\d','', Cancerlist))) )
 total_features[is.na(total_features)] = 0
 rownames(total_features) = total_features$features
 total_features$features = NULL
@@ -89,6 +91,22 @@ ggsave(file="figure3E_total.svg", plot=tmp, width=10, height=10)
 #          border_color = "white",
 #          clustering_method = "average")
 
+tmp_total = total_features
+values <- c(5, 1, 0, -5)
+
+combinations <- expand.grid(replicate(ncol(tmp_total), values, simplify = FALSE))
+sorted_combinations <- combinations %>%
+  mutate(Sum = rowSums(.)) %>%
+  arrange(desc(Sum))
+colnames(tmp_total)
+tmp_total_reorder = data.frame()
+for (rownum in 1:nrow(sorted_combinations)) {
+  tmp_condition = tmp_total %>% filter(`CESC` == sorted_combinations[rownum,"Var1"],
+                                       `` == sorted_combinations[rownum,"Var2"], 
+                                       `TCGA-BLCA` == sorted_combinations[rownum,"Var3"])
+  
+  tmp_total_reorder = rbind(tmp_total_reorder,tmp_condition)
+}
 ## only three long cancer 
 
 total_features_3l = total_features %>% 
@@ -170,3 +188,25 @@ ggsave(file="figure3E_short.svg", plot=short, width=10, height=10)
 #          clustering_method = "ward.D2")
 # ?pheatmap
 # "ward.D", "ward.D2", "single", "complete", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC)
+
+
+# calculate ratio of features
+colnames(cal_total_features) = c("features" ,gsub('[.]','',gsub('\\d','', Cancerlist)) )
+rownames(cal_total_features) = cal_total_features$features
+cal_total_features$features = NULL
+
+node_classification = data.frame()
+for (tmp_name in colnames(cal_total_features)) {
+  tmp_df = cal_total_features %>% 
+    dplyr::select(tmp_name) %>% dplyr::filter(!is.na(.))
+
+  long_ratio = sum(tmp_df == 5) / nrow(tmp_df)
+  common_ratio = sum(tmp_df == 1) / nrow(tmp_df)
+  short_ratio = sum(tmp_df == -5) / nrow(tmp_df)
+  
+  tmp_classi = data.frame(long = long_ratio, short = short_ratio, common = common_ratio)
+  rownames(tmp_classi) = tmp_name
+  node_classification = rbind(node_classification,tmp_classi)
+  
+}
+dddddd

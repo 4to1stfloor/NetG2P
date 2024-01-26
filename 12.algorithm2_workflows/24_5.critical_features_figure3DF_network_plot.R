@@ -68,7 +68,7 @@ for (i in 1:nrow(total_comb)) {
 shared_network = network_df %>%  
   as_tbl_graph(directed=FALSE) %N>%
   mutate(num_features = ((node_size_df$num_features) / max(node_size_df$num_features)) * 15 + 10) %N>%
-  mutate(color = c("#D3DFE5","#72BC6C","#D3DFE5","#C0392B","#C0392B","#72BC6C","#C0392B","#D3DFE5","#C0392B","#72BC6C"))
+  mutate(color = c("#72BC6C","#72BC6C","#D3DFE5","#C0392B","#C0392B","#72BC6C","#C0392B","#D3DFE5","#C0392B","#72BC6C"))
 
 library(ggraph)
 library(ggforce)
@@ -78,6 +78,11 @@ lo = readRDS("~/nas/04.Results/short_long/ttest_common/layout_network.rds")
 
 # saveRDS(lo, "~/nas/04.Results/short_long/ttest_common/layout_network.rds")
 
+# shared_network = network_df %>%  
+#   as_tbl_graph(directed=FALSE) %N>%
+#   mutate(num_features = ((node_size_df$num_features) / max(node_size_df$num_features)) * 15 + 10) %N>%
+#   mutate(color = c("#DC0000FF","#7E6148FF","#91D1C2FF","#F39B7FFF","#8491B4FF","#3C5488FF","#B09C85FF","#00A087FF","#4DBBD5FF","#E64B35FF"))
+# 
 # network_PP = ggraph(shared_network, layout = lo) +
 #   geom_edge_parallel2(aes(colour = node.color, edge_width = rep(E(shared_network)$weight , each = 2)), alpha = 0.25) +
 #   geom_node_point(
@@ -110,7 +115,7 @@ lo = readRDS("~/nas/04.Results/short_long/ttest_common/layout_network.rds")
 #     "#91D1C2FF", # STAD
 #     "#E64B35FF"  # UCEC
 #   )) +
-#   
+# 
 #   scale_fill_manual(values=c(
 #     "#7E6148FF", # BLCA
 #     "#4DBBD5FF", # BRCA
@@ -125,6 +130,8 @@ lo = readRDS("~/nas/04.Results/short_long/ttest_common/layout_network.rds")
 #   )) +
 #   geom_node_text(aes(label = names(V(shared_network)), vjust = 0.5)) +
 #   theme_graph()
+# 
+# ggsave(file="candidated_figure3C.svg", plot=network_PP, width=10, height=10)
 
 ##
 network_PP = ggraph(shared_network, layout = lo) +
@@ -138,7 +145,7 @@ network_PP = ggraph(shared_network, layout = lo) +
   scale_edge_color_manual(values=c(
     "#72BC6C", # BLCA
     "#C0392B", # BRCA
-    "#D3DFE5", # CESC
+    "#72BC6C", # CESC
     "#D3DFE5", # LGG
     "#C0392B", # LIHC
     "#C0392B", # LUAD
@@ -150,7 +157,7 @@ network_PP = ggraph(shared_network, layout = lo) +
   scale_color_manual(values=c(
     "#72BC6C", # BLCA
     "#C0392B", # BRCA
-    "#D3DFE5", # CESC
+    "#72BC6C", # CESC
     "#D3DFE5", # LGG
     "#C0392B", # LIHC
     "#C0392B", # LUAD
@@ -163,7 +170,7 @@ network_PP = ggraph(shared_network, layout = lo) +
   scale_fill_manual(values=c(
     "#72BC6C", # BLCA
     "#C0392B", # BRCA
-    "#D3DFE5", # CESC
+    "#72BC6C", # CESC
     "#D3DFE5", # LGG
     "#C0392B", # LIHC
     "#C0392B", # LUAD
@@ -226,50 +233,43 @@ for (i in 1:nrow(total_comb)) {
       equal_enriched = first_cl[which(first_cl$classification == second_cl$classification),]
     }
     
-    if (has_element(equal_enriched$classification , "common")) {
-      equal_enriched = equal_enriched %>% filter( classification != 'common')
-    }
+    # if (has_element(equal_enriched$classification , "common")) {
+    #   equal_enriched = equal_enriched %>% filter( classification != 'common')
+    # }
     
-    if (length(unique(equal_enriched$classification)) == 1 ) {
-      tmp_prop = prop.table(table(equal_enriched$classification))
-      # print(tmp_prop)
-      if (sum(tmp_prop > 0.8) == 1) {
-        
-        equal_enriched = equal_enriched %>% filter( classification == names(tmp_prop[tmp_prop > 0.8]))
-        
-      } else {
-        equal_enriched = data.frame()
-      }
-    } else if (length(unique(equal_enriched$classification)) == 2) {
-      print(first_cancer)
-      print(second_cancer)
-      equal_enriched$ratio = tmp_prop
-      equal_enriched$classification_backup = equal_enriched$classification
-      equal_enriched$classification = "mixed"
-    } else {
-      equal_enriched = equal_enriched
-    }
-    
-    print(unique(equal_enriched$classification))
     if (nrow(equal_enriched) != 0) {
-      if ( unique(equal_enriched$classification) == "long") {
-        edge_character = "long"
-      } else if (unique(equal_enriched$classification) == "short") {
-        edge_character = "short"
-      } else if (unique(equal_enriched$classification) == "mixed") { 
-        edge_character = "mixed"
+      tmp_prop = prop.table(table(equal_enriched$classification))
+      
+      if (sum(tmp_prop > 0.5) == 1) {
+        equal_enriched = equal_enriched %>% filter( classification == names(tmp_prop[tmp_prop > 0.5]))
+      } else if (sum(names(tmp_prop) %in% "common") >=1) {
+        equal_enriched = equal_enriched %>% filter( classification == names(tmp_prop[!names(tmp_prop) %in% "common"]))
       } else {
-        edge_character = 'none'
-      }
+        equal_enriched$ratio = tmp_prop
+        equal_enriched$classification_backup = equal_enriched$classification
+        equal_enriched$classification = "mixed"
+      } 
+    } 
+    
+    # print(unique(equal_enriched$classification))
+    if (nrow(equal_enriched) != 0) {
+      edge_character = unique(equal_enriched$classification)
     } else {
       edge_character = 'none'
     }
     
+    if (length(unique(equal_enriched$classification)) ==1 && unique(equal_enriched$classification) == "common") {
+      edge_character = 'none'
+    }
+    
+    if (edge_character == "common") {
+      edge_character = 'mixed'
+    }
     tmp_df = data.frame(from = first_cancer, 
                         to = second_cancer, 
                         weight = length(equal_enriched$variable) / (length(total_features[[first_cancer]]) + 
-                          length(total_features[[second_cancer]]) - 
-                          length(intersect(total_features[[first_cancer]], total_features[[second_cancer]]))),
+                                                                      length(total_features[[second_cancer]]) - 
+                                                                      length(intersect(total_features[[first_cancer]], total_features[[second_cancer]]))),
                         character = edge_character)
     } else {
       next
@@ -288,6 +288,7 @@ network_sl_df <- network_sl_df %>%
     TRUE ~ NA_character_
   ))
 
+library(tidygraph)
 shared_features_network = network_sl_df %>%  
   as_tbl_graph(directed=FALSE) %N>%
   mutate(num_features = ((node_size_df$num_features) / max(node_size_df$num_features)) * 15 + 10) %N>%
@@ -315,7 +316,7 @@ network_p = ggraph(shared_features_network, layout = lo) +
   scale_color_manual(values=c(
     "#72BC6C", # BLCA
     "#C0392B", # BRCA
-    "#D3DFE5", # CESC
+    "#72BC6C", # CESC
     "#D3DFE5", # LGG
     "#C0392B", # LIHC
     "#C0392B", # LUAD
@@ -328,7 +329,7 @@ network_p = ggraph(shared_features_network, layout = lo) +
   scale_fill_manual(values=c(
     "#72BC6C", # BLCA
     "#C0392B", # BRCA
-    "#D3DFE5", # CESC
+    "#72BC6C", # CESC
     "#D3DFE5", # LGG
     "#C0392B", # LIHC
     "#C0392B", # LUAD
@@ -342,3 +343,4 @@ network_p = ggraph(shared_features_network, layout = lo) +
 
 ggsave(file="figure3D_long_short_common.svg", plot=network_p, width=10, height=10)
 ########
+
