@@ -1,15 +1,9 @@
 #####
-
+library(pheatmap)
 library(dplyr)
 library(RColorBrewer)
 library(readxl)
 library(openxlsx)
-library(igraph)
-library(ggforce)
-library(ggplot2)
-library(graphlayouts)
-library(ggraph)
-library(igraph)
 library(tidyr)
 
 filepath = "/home/seokwon/nas/"
@@ -73,6 +67,31 @@ tmp = pheatmap(total_features,
          clustering_method = "ward.D2")
 ggsave(file="figure3E_total.svg", plot=tmp, width=10, height=10)
 
+#####
+tmp_total = total_features
+values <- c(5, 1, 0, -5)
+colnames(total_features)
+combinations <- expand.grid(replicate(ncol(tmp_total), values, simplify = FALSE))
+colnames(combinations) = colnames(total_features)
+sorted_combinations <- combinations %>%
+  mutate(Sum = rowSums(.)) %>%
+  arrange(desc(Sum))
+sorted_combinations
+
+tmp_total_reorder = data.frame()
+for (rownum in 1:nrow(sorted_combinations)) {
+  for (names_t in colnames(total_features)) {
+    tmp_condition = tmp_total %>% filter(names_t == sorted_combinations[rownum,names_t])
+  }
+
+  tmp_total_reorder = rbind(tmp_total_reorder,tmp_condition)
+}
+
+
+#####
+long_enriched = sort(rowSums(total_features == 5 ), decreasing = T)
+short_enriched = sort(rowSums(total_features == -5 ), decreasing = T)
+
 # ####
 # total_features_wo_common = total_features
 # total_features_wo_common[total_features_wo_common == 1] = 0
@@ -91,22 +110,9 @@ ggsave(file="figure3E_total.svg", plot=tmp, width=10, height=10)
 #          border_color = "white",
 #          clustering_method = "average")
 
-tmp_total = total_features
-values <- c(5, 1, 0, -5)
 
-combinations <- expand.grid(replicate(ncol(tmp_total), values, simplify = FALSE))
-sorted_combinations <- combinations %>%
-  mutate(Sum = rowSums(.)) %>%
-  arrange(desc(Sum))
-colnames(tmp_total)
-tmp_total_reorder = data.frame()
-for (rownum in 1:nrow(sorted_combinations)) {
-  tmp_condition = tmp_total %>% filter(`CESC` == sorted_combinations[rownum,"Var1"],
-                                       `` == sorted_combinations[rownum,"Var2"], 
-                                       `TCGA-BLCA` == sorted_combinations[rownum,"Var3"])
-  
-  tmp_total_reorder = rbind(tmp_total_reorder,tmp_condition)
-}
+
+
 ## only three long cancer 
 
 total_features_3l = total_features %>% 
@@ -209,4 +215,4 @@ for (tmp_name in colnames(cal_total_features)) {
   node_classification = rbind(node_classification,tmp_classi)
   
 }
-dddddd
+

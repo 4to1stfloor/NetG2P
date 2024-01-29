@@ -57,6 +57,37 @@ for (i in 1:nrow(total_comb)) {
   network_df = rbind(network_df, tmp_df)
 }
 
+total_shared_features = data.frame()
+
+for (i in 1:nrow(total_comb)) {
+  first_cancer = total_comb[i,1]
+  second_cancer = total_comb[i,2]
+  
+  if (length(intersect(total_features[[first_cancer]], total_features[[second_cancer]])) != 0 ) {
+    tmp_df = data.frame(from = first_cancer, 
+                        to = second_cancer, 
+                        shared_features = intersect(total_features[[first_cancer]], total_features[[second_cancer]]))
+  } else {
+    next
+  }
+  total_shared_features = rbind(total_shared_features, tmp_df)
+}
+
+total_shared_features_filt = total_shared_features %>%
+  mutate(original = shared_features) %>%
+  separate_rows(shared_features, sep = "P", convert = TRUE) %>%
+  filter(shared_features != "") %>%  # 공백이 아닌 행만 남기기
+  mutate(shared_features = paste0("P", shared_features))
+
+count_table = total_shared_features_filt %>%
+  count(shared_features) %>%
+  arrange(desc(n))
+
+# total_shared_features_filt %>% filter(shared_features == "P54")
+
+write.csv(count_table, "count_table_divide_pathwaylink.csv")
+write.csv(total_shared_features_filt, "original_shared_features.csv")
+
 # shared_network = graph_from_data_frame(network_df, directed = F)
 shared_network = network_df %>%
   as_tbl_graph(directed=FALSE) %N>%
