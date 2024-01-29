@@ -58,17 +58,17 @@ for (i in 1:nrow(total_comb)) {
 }
 
 # shared_network = graph_from_data_frame(network_df, directed = F)
-# shared_network = network_df %>%  
-#   as_tbl_graph(directed=FALSE) %N>%
-#   mutate(num_features = log2(node_size_df$num_features +1)) %N>%
-#   mutate(color = c("#DC0000FF","#7E6148FF","#91D1C2FF","#F39B7FFF","#8491B4FF","#3C5488FF","#B09C85FF","#00A087FF","#4DBBD5FF","#E64B35FF"))
+shared_network = network_df %>%
+  as_tbl_graph(directed=FALSE) %N>%
+  mutate(num_features = log2(node_size_df$num_features +1)) %N>%
+  mutate(color = c("#DC0000FF","#7E6148FF","#91D1C2FF","#F39B7FFF","#8491B4FF","#3C5488FF","#B09C85FF","#00A087FF","#4DBBD5FF","#E64B35FF"))
 
 # node color -> enriched 
-
-shared_network = network_df %>%  
-  as_tbl_graph(directed=FALSE) %N>%
-  mutate(num_features = ((node_size_df$num_features) / max(node_size_df$num_features)) * 15 + 10) %N>%
-  mutate(color = c("#72BC6C","#72BC6C","#D3DFE5","#C0392B","#C0392B","#72BC6C","#C0392B","#D3DFE5","#C0392B","#72BC6C"))
+# 
+# shared_network = network_df %>%  
+#   as_tbl_graph(directed=FALSE) %N>%
+#   mutate(num_features = ((node_size_df$num_features) / max(node_size_df$num_features)) * 15 + 10) %N>%
+#   mutate(color = c("#72BC6C","#72BC6C","#D3DFE5","#C0392B","#C0392B","#72BC6C","#C0392B","#D3DFE5","#C0392B","#72BC6C"))
 
 library(ggraph)
 library(ggforce)
@@ -83,57 +83,6 @@ lo = readRDS("~/nas/04.Results/short_long/ttest_common/layout_network.rds")
 #   mutate(num_features = ((node_size_df$num_features) / max(node_size_df$num_features)) * 15 + 10) %N>%
 #   mutate(color = c("#DC0000FF","#7E6148FF","#91D1C2FF","#F39B7FFF","#8491B4FF","#3C5488FF","#B09C85FF","#00A087FF","#4DBBD5FF","#E64B35FF"))
 # 
-# network_PP = ggraph(shared_network, layout = lo) +
-#   geom_edge_parallel2(aes(colour = node.color, edge_width = rep(E(shared_network)$weight , each = 2)), alpha = 0.25) +
-#   geom_node_point(
-#     aes(fill = names(V(shared_network)),
-#         color = names(V(shared_network))
-#     ),
-#     size = V(shared_network)$num_features
-#   ) +
-#   scale_edge_color_manual(values=c(
-#     "#00A087FF", # LGG
-#     "#3C5488FF", # OV
-#     "#4DBBD5FF", # BRCA
-#     "#7E6148FF", # BLCA
-#     "#8491B4FF", # LIHC
-#     "#91D1C2FF", # STAD
-#     "#B09C85FF", # LUSC
-#     "#DC0000FF", # CESC
-#     "#E64B35FF", # UCEC
-#     "#F39B7FFF"  # LUAD
-#   )) +
-#   scale_color_manual(values=c(
-#     "#7E6148FF", # BLCA
-#     "#4DBBD5FF", # BRCA
-#     "#DC0000FF", # CESC
-#     "#00A087FF", # LGG
-#     "#8491B4FF", # LIHC
-#     "#F39B7FFF", # LUAD
-#     "#B09C85FF", # LUSC
-#     "#3C5488FF", # OV
-#     "#91D1C2FF", # STAD
-#     "#E64B35FF"  # UCEC
-#   )) +
-# 
-#   scale_fill_manual(values=c(
-#     "#7E6148FF", # BLCA
-#     "#4DBBD5FF", # BRCA
-#     "#DC0000FF", # CESC
-#     "#00A087FF", # LGG
-#     "#8491B4FF", # LIHC
-#     "#F39B7FFF", # LUAD
-#     "#B09C85FF", # LUSC
-#     "#3C5488FF", # OV
-#     "#91D1C2FF", # STAD
-#     "#E64B35FF"  # UCEC
-#   )) +
-#   geom_node_text(aes(label = names(V(shared_network)), vjust = 0.5)) +
-#   theme_graph()
-# 
-# ggsave(file="candidated_figure3C.svg", plot=network_PP, width=10, height=10)
-
-##
 network_PP = ggraph(shared_network, layout = lo) +
   geom_edge_parallel2(aes(colour = node.color, edge_width = rep(E(shared_network)$weight , each = 2)), alpha = 0.25) +
   geom_node_point(
@@ -143,47 +92,99 @@ network_PP = ggraph(shared_network, layout = lo) +
     size = V(shared_network)$num_features
   ) +
   scale_edge_color_manual(values=c(
-    "#72BC6C", # BLCA
-    "#C0392B", # BRCA
-    "#72BC6C", # CESC
-    "#D3DFE5", # LGG
-    "#C0392B", # LIHC
-    "#C0392B", # LUAD
-    "#C0392B", # LUSC
-    "#72BC6C", # OV
-    "#D3DFE5", # STAD
-    "#72BC6C"  # UCEC
+    "#00A087FF", # LGG
+    "#3C5488FF", # OV
+    "#4DBBD5FF", # BRCA
+    "#7E6148FF", # BLCA
+    "#8491B4FF", # LIHC
+    "#91D1C2FF", # STAD
+    "#B09C85FF", # LUSC
+    "#DC0000FF", # CESC
+    "#E64B35FF", # UCEC
+    "#F39B7FFF"  # LUAD
   )) +
   scale_color_manual(values=c(
-    "#72BC6C", # BLCA
-    "#C0392B", # BRCA
-    "#72BC6C", # CESC
-    "#D3DFE5", # LGG
-    "#C0392B", # LIHC
-    "#C0392B", # LUAD
-    "#C0392B", # LUSC
-    "#72BC6C", # OV
-    "#D3DFE5", # STAD
-    "#72BC6C"  # UCEC
+    "#7E6148FF", # BLCA
+    "#4DBBD5FF", # BRCA
+    "#DC0000FF", # CESC
+    "#00A087FF", # LGG
+    "#8491B4FF", # LIHC
+    "#F39B7FFF", # LUAD
+    "#B09C85FF", # LUSC
+    "#3C5488FF", # OV
+    "#91D1C2FF", # STAD
+    "#E64B35FF"  # UCEC
   )) +
-  
+
   scale_fill_manual(values=c(
-    "#72BC6C", # BLCA
-    "#C0392B", # BRCA
-    "#72BC6C", # CESC
-    "#D3DFE5", # LGG
-    "#C0392B", # LIHC
-    "#C0392B", # LUAD
-    "#C0392B", # LUSC
-    "#72BC6C", # OV
-    "#D3DFE5", # STAD
-    "#72BC6C"  # UCEC
+    "#7E6148FF", # BLCA
+    "#4DBBD5FF", # BRCA
+    "#DC0000FF", # CESC
+    "#00A087FF", # LGG
+    "#8491B4FF", # LIHC
+    "#F39B7FFF", # LUAD
+    "#B09C85FF", # LUSC
+    "#3C5488FF", # OV
+    "#91D1C2FF", # STAD
+    "#E64B35FF"  # UCEC
   )) +
   geom_node_text(aes(label = names(V(shared_network)), vjust = 0.5)) +
-  theme_graph()
+  theme_graph()+ 
+  theme(legend.position="none")
+
+ggsave(file="figure3D.svg", plot=network_PP, width=10, height=10)
+
+##
+# network_PP = ggraph(shared_network, layout = lo) +
+#   geom_edge_parallel2(aes(colour = node.color, edge_width = rep(E(shared_network)$weight , each = 2)), alpha = 0.25) +
+#   geom_node_point(
+#     aes(fill = names(V(shared_network)),
+#         color = names(V(shared_network))
+#     ),
+#     size = V(shared_network)$num_features
+#   ) +
+#   scale_edge_color_manual(values=c(
+#     "#72BC6C", # BLCA
+#     "#C0392B", # BRCA
+#     "#72BC6C", # CESC
+#     "#D3DFE5", # LGG
+#     "#C0392B", # LIHC
+#     "#C0392B", # LUAD
+#     "#C0392B", # LUSC
+#     "#72BC6C", # OV
+#     "#D3DFE5", # STAD
+#     "#72BC6C"  # UCEC
+#   )) +
+#   scale_color_manual(values=c(
+#     "#72BC6C", # BLCA
+#     "#C0392B", # BRCA
+#     "#72BC6C", # CESC
+#     "#D3DFE5", # LGG
+#     "#C0392B", # LIHC
+#     "#C0392B", # LUAD
+#     "#C0392B", # LUSC
+#     "#72BC6C", # OV
+#     "#D3DFE5", # STAD
+#     "#72BC6C"  # UCEC
+#   )) +
+#   
+#   scale_fill_manual(values=c(
+#     "#72BC6C", # BLCA
+#     "#C0392B", # BRCA
+#     "#72BC6C", # CESC
+#     "#D3DFE5", # LGG
+#     "#C0392B", # LIHC
+#     "#C0392B", # LUAD
+#     "#C0392B", # LUSC
+#     "#72BC6C", # OV
+#     "#D3DFE5", # STAD
+#     "#72BC6C"  # UCEC
+#   )) +
+#   geom_node_text(aes(label = names(V(shared_network)), vjust = 0.5)) +
+#   theme_graph()
 
 # 
-ggsave(file="figure3C.svg", plot=network_PP, width=10, height=10)
+# ggsave(file="figure3C.svg", plot=network_PP, width=10, height=10)
 
 #### long short on the plot 
 
@@ -227,11 +228,17 @@ for (i in 1:nrow(total_comb)) {
     second_cl = second_cancer_sl %>% 
       subset(., variable %in% shared_features)
     
-    second_cl = second_cl %>% arrange(factor(variable, levels = first_cl$variable))
+    tmp_equal_enriched = merge(first_cl , second_cl , by = "variable", all = FALSE )
     
-    if (all.equal(first_cl$variable ,second_cl$variable)) {
-      equal_enriched = first_cl[which(first_cl$classification == second_cl$classification),]
-    }
+    equal_enriched = tmp_equal_enriched %>% 
+      select(-X.1.x, -X.x, -X.1.y,-X.y) %>% 
+      mutate(total_minmax = minmax.x * minmax.y) %>% 
+      filter(classification.x == classification.y) %>%
+      arrange(desc(total_minmax)) 
+    
+    equal_enriched = equal_enriched %>%
+      mutate( classification = classification.x) %>%
+      select(-classification.x ,- classification.y)
     
     # if (has_element(equal_enriched$classification , "common")) {
     #   equal_enriched = equal_enriched %>% filter( classification != 'common')
@@ -339,8 +346,9 @@ network_p = ggraph(shared_features_network, layout = lo) +
     "#72BC6C"  # UCEC
   )) +
   geom_node_text(aes(label = names(V(shared_features_network)), vjust = 0.5)) +
-  theme_graph()
+  theme_graph()+ 
+  theme(legend.position="none")
 
-ggsave(file="figure3D_long_short_common.svg", plot=network_p, width=10, height=10)
+ggsave(file="figure3F_long_short_common.svg", plot=network_p, width=10, height=10)
 ########
 

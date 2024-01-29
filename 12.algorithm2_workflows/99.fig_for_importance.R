@@ -157,8 +157,7 @@ p = pheatmap::pheatmap(fig_total_top5_df %>%
                        cluster_rows = F,)
 library(grid)
 
-print(p)
-p$gtable$grobs[[5]]$gp = gpar(fontface = "bold")
+
 grid = grid.arrange(arrangeGrob(grobs= list(t[[4]],p[[4]]) , ncol = 2))
 
 ggsave(file = "importance_edit.svg", grid, width=13, height=10, device = svg)

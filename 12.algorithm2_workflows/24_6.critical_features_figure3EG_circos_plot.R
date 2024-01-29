@@ -60,55 +60,43 @@ for (i in 1:nrow(total_comb)) {
     second_cl = second_cancer_sl %>% 
       subset(., variable %in% shared_features)
     
-    second_cl = second_cl %>% arrange(factor(variable, levels = first_cl$variable))
+    tmp_equal_enriched = merge(first_cl , second_cl , by = "variable", all = FALSE )
     
-    if (all.equal(first_cl$variable ,second_cl$variable)) {
-      equal_enriched = first_cl[which(first_cl$classification == second_cl$classification),]
+    equal_enriched = tmp_equal_enriched %>% 
+      select(-X.1.x, -X.x, -X.1.y,-X.y) %>% 
+      mutate(total_minmax = minmax.x * minmax.y) %>% 
+      filter(classification.x == classification.y) %>%
+      arrange(desc(total_minmax)) 
+    
+    equal_enriched = equal_enriched %>%
+      mutate( classification = classification.x) %>%
+      select(-classification.x ,- classification.y)
+
+    if (has_element(equal_enriched$classification, "common")) {
+      equal_enriched = equal_enriched %>% filter(classification != "common")
     }
-    
-    if (has_element(equal_enriched$classification , "common")) {
-      equal_enriched = equal_enriched %>% filter( classification != 'common')
-    }
-    
     if (nrow(equal_enriched) > 5) {
       equal_enriched = equal_enriched %>% slice(1:5)
     }
-    
-    if (nrow(equal_enriched) != 0) {
-      tmp_prop = prop.table(table(equal_enriched$classification))
-      
-      if (sum(tmp_prop > 0.5) == 1) {
-        equal_enriched = equal_enriched %>% filter( classification == names(tmp_prop[tmp_prop > 0.5]))
-      } else if (sum(names(tmp_prop) %in% "common") >=1) {
-        equal_enriched = equal_enriched %>% filter( classification == names(tmp_prop[!names(tmp_prop) %in% "common"]))
-      } else {
-        equal_enriched$ratio = tmp_prop
-        equal_enriched$classification_backup = equal_enriched$classification
-        equal_enriched$classification = "mixed"
-      } 
-    } 
     
     # print(unique(equal_enriched$classification))
     
     if (nrow(equal_enriched) != 0) {
       tmp_first_cir_df = equal_enriched %>% mutate(cancertype = first_cancer) %>%
-        select(cancertype, variable , relative_importance, minmax, pval, classification)
+        select(cancertype, variable , total_minmax , classification)
       tmp_second_cir_df = equal_enriched %>% mutate(cancertype = second_cancer) %>%
-        select(cancertype, variable , relative_importance, minmax, pval, classification)
+        select(cancertype, variable , total_minmax , classification)
     } else {
       next
     }
     tmp_cir_df = rbind(tmp_first_cir_df, tmp_second_cir_df)
-    
-    tmp_cir_df[which(tmp_cir_df$cancertype == first_cancer),]$minmax = first_cl[which(first_cl$variable %in% tmp_cir_df$variable),]$minmax
-    tmp_cir_df[which(tmp_cir_df$cancertype == second_cancer),]$minmax = second_cl[which(second_cl$variable %in% tmp_cir_df$variable),]$minmax
-    
+
     # tmp_cir_df_filt = tmp_cir_df %>% 
     #   select(variable , cancertype, relative_importance,minmax,pval,classification) %>%
     #   mutate(weight_filt = weight * minmax * 10^4)
     
     tmp_cir_df_filt = tmp_cir_df %>% 
-      select(variable , cancertype, relative_importance,minmax,pval,classification) %>%
+      select(variable , cancertype, total_minmax,classification) %>%
       mutate(weight_filt =1)
     
   } else {
@@ -190,7 +178,7 @@ receiver_color = receiver_color[receiver_order]
 
 grid_col = c( receiver_color,sender_color)
 
-svg("figure3E.svg")
+svg("figure3E_wo_common.svg")
 
 circos.clear()
 # circos.par(start.degree = 100,
@@ -202,7 +190,7 @@ circos.par(start.degree = 90,
            gap.after = c( rep(2, length(receiver_order)-1), 10,rep(2, length(sender_order)-1), 10))
 
 chordDiagram(circlize_tbl %>% 
-               select(cancertype  , variable  , weight_filt  ), directional = 1, 
+               select(cancertype  , variable  , cancer_num   ), directional = 1, 
              order=order,
              grid.col = grid_col,
              transparency = 0.6, 
@@ -234,8 +222,8 @@ total_circos_sl_df = data.frame()
 for (i in 1:nrow(total_comb)) {
   first_cancer = total_comb[i,1]
   second_cancer = total_comb[i,2]
-  # first_cancer = "STAD"
-  # second_cancer = "OV"
+  # first_cancer = "BLCA"
+  # second_cancer = "UCEC"
   if (length(intersect(total_features[[first_cancer]], total_features[[second_cancer]])) != 0 ) {
     
     shared_features = intersect(total_features[[first_cancer]], total_features[[second_cancer]])
@@ -249,19 +237,28 @@ for (i in 1:nrow(total_comb)) {
     second_cl = second_cancer_sl %>% 
       subset(., variable %in% shared_features)
     
-    second_cl = second_cl %>% arrange(factor(variable, levels = first_cl$variable))
+    # second_cl = second_cl %>% arrange(factor(variable, levels = first_cl$variable))
     
-    if (all.equal(first_cl$variable ,second_cl$variable)) {
-      equal_enriched = first_cl[which(first_cl$classification == second_cl$classification),]
-    }
+    tmp_equal_enriched = merge(first_cl , second_cl , by = "variable", all = FALSE )
     
+    equal_enriched = tmp_equal_enriched %>% 
+      select(-X.1.x, -X.x, -X.1.y,-X.y) %>% 
+      mutate(total_minmax = minmax.x * minmax.y) %>% 
+      filter(classification.x == classification.y) %>%
+      arrange(desc(total_minmax)) 
+
+    equal_enriched = equal_enriched %>%
+      mutate( classification = classification.x) %>%
+      select(-classification.x ,- classification.y)
+    
+    # if (all.equal(first_cl$variable ,second_cl$variable)) {
+    #   equal_enriched = first_cl[which(first_cl$classification == second_cl$classification),]
+    # }
+
     # if (has_element(equal_enriched$classification , "common")) {
     #   equal_enriched = equal_enriched %>% filter( classification != 'common')
     # }
-    if (nrow(equal_enriched) > 5) {
-      equal_enriched = equal_enriched %>% slice(1:5)
-    }
-    
+
     if (nrow(equal_enriched) != 0) {
       tmp_prop = prop.table(table(equal_enriched$classification))
       
@@ -286,26 +283,30 @@ for (i in 1:nrow(total_comb)) {
       edge_character = 'none'
     }
     
+    if (nrow(equal_enriched) > 10) {
+      equal_enriched = equal_enriched %>% slice(1:10)
+    }
+
     if (nrow(equal_enriched) != 0 && edge_character != 'none') {
       tmp_first_cir_df = equal_enriched %>% mutate(cancertype = first_cancer) %>%
-        select(cancertype, variable , relative_importance, minmax, pval, classification)
+        select(cancertype, variable , total_minmax , classification)
       tmp_second_cir_df = equal_enriched %>% mutate(cancertype = second_cancer) %>%
-        select(cancertype, variable , relative_importance, minmax, pval, classification)
+        select(cancertype, variable , total_minmax , classification)
     } else {
       next
     }
     tmp_cir_df = rbind(tmp_first_cir_df, tmp_second_cir_df)
     
     
-    tmp_cir_df[which(tmp_cir_df$cancertype == first_cancer),]$minmax = first_cl[which(first_cl$variable %in% tmp_cir_df$variable),]$minmax
-    tmp_cir_df[which(tmp_cir_df$cancertype == second_cancer),]$minmax = second_cl[which(second_cl$variable %in% tmp_cir_df$variable),]$minmax
-    
+    # tmp_cir_df[which(tmp_cir_df$cancertype == first_cancer),]$minmax = first_cl[which(first_cl$variable %in% tmp_cir_df$variable),]$minmax
+    # tmp_cir_df[which(tmp_cir_df$cancertype == second_cancer),]$minmax = second_cl[which(second_cl$variable %in% tmp_cir_df$variable),]$minmax
+    # 
     # tmp_cir_df_filt = tmp_cir_df %>% 
     #   select(variable , cancertype, relative_importance,minmax,pval,classification) %>%
     #   mutate(weight_filt = weight * minmax * 10^4)
     
     tmp_cir_df_filt = tmp_cir_df %>% 
-      select(variable , cancertype, relative_importance,minmax,pval,classification) %>%
+      # select(variable , cancertype, relative_importance,minmax,pval,classification) %>%
       mutate(weight_filt =1)
     
     
@@ -315,7 +316,6 @@ for (i in 1:nrow(total_comb)) {
   total_circos_sl_df = rbind(total_circos_sl_df, tmp_cir_df_filt)
   
 }
-
 
 total_circos_slc_filt_df = data.frame()
 
@@ -394,7 +394,7 @@ circlize_tbl = circlize_tbl %>% mutate(edges_color = case_when( classification =
                                                                 classification == "mixed" ~ "#D3DFE5",
                                                                 .default = NA))
 
-svg("figure3G.svg")
+# svg("figure3G.svg")
 
 circos.clear()
 # circos.par(start.degree = 100,
@@ -407,7 +407,7 @@ circos.par(start.degree = 90,
            )
 
 chordDiagram(circlize_tbl %>% 
-               select(cancertype  , variable  , weight_filt  ), directional = 1, 
+               select(cancertype  , variable  , cancer_num  ), directional = 1, 
              order=order,
              grid.col = grid_col,
              col = circlize_tbl$edges_color,
@@ -429,4 +429,6 @@ circos.track(track.index = 1, panel.fun = function(x, y) {
 title("Shared_critical_features")
 
 # Close the graphics device
-dev.off() 
+# dev.off() 
+
+###
