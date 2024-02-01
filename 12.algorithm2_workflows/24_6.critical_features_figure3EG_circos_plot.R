@@ -178,7 +178,7 @@ receiver_color = receiver_color[receiver_order]
 
 grid_col = c( receiver_color,sender_color)
 
-svg("figure3E_wo_common.svg")
+# svg("figure3E_wo_common.svg")
 
 circos.clear()
 # circos.par(start.degree = 100,
@@ -211,7 +211,7 @@ circos.track(track.index = 1, panel.fun = function(x, y) {
 title("Shared_critical_features")
 
 # Close the graphics device
-dev.off() 
+dev.off()
 
 ####
 #### short long common 
@@ -317,6 +317,22 @@ for (i in 1:nrow(total_comb)) {
   
 }
 
+
+onlyslc_shared_features_filt = total_circos_sl_df %>%
+  mutate(original = variable ) %>%
+  separate_rows(variable , sep = "P", convert = TRUE) %>%
+  filter(variable  != "") %>%  # 공백이 아닌 행만 남기기
+  mutate(variable  = paste0("P", variable ))
+
+count_table = onlyslc_shared_features_filt %>%
+  count(variable) %>%
+  arrange(desc(n))
+
+# total_shared_features_filt %>% filter(shared_features == "P54")
+
+write.csv(count_table, "slc_count_table_divide_pathwaylink.csv")
+write.csv(onlyslc_shared_features_filt, "slc_original_shared_features.csv")
+
 total_circos_slc_filt_df = data.frame()
 
 for (type in unique(c(total_comb[,1],total_comb[,2]))) {
@@ -394,7 +410,7 @@ circlize_tbl = circlize_tbl %>% mutate(edges_color = case_when( classification =
                                                                 classification == "mixed" ~ "#D3DFE5",
                                                                 .default = NA))
 
-# svg("figure3G.svg")
+svg("figure3G.svg")
 
 circos.clear()
 # circos.par(start.degree = 100,
@@ -426,9 +442,9 @@ circos.track(track.index = 1, panel.fun = function(x, y) {
               facing = "clockwise", niceFacing = TRUE, adj = c(0, 0.55), cex = 1)
 }, bg.border = NA) #
 
-title("Shared_critical_features")
+# title("Shared_critical_features")
 
 # Close the graphics device
-# dev.off() 
+dev.off()
 
 ###

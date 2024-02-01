@@ -91,7 +91,7 @@ write.csv(total_shared_features_filt, "original_shared_features.csv")
 # shared_network = graph_from_data_frame(network_df, directed = F)
 shared_network = network_df %>%
   as_tbl_graph(directed=FALSE) %N>%
-  mutate(num_features = log2(node_size_df$num_features +1)) %N>%
+  mutate(num_features = ((node_size_df$num_features) / max(node_size_df$num_features)) * 15 + 10)  %N>%
   mutate(color = c("#DC0000FF","#7E6148FF","#91D1C2FF","#F39B7FFF","#8491B4FF","#3C5488FF","#B09C85FF","#00A087FF","#4DBBD5FF","#E64B35FF"))
 
 # node color -> enriched 

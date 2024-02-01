@@ -78,19 +78,286 @@ sorted_combinations <- combinations %>%
   arrange(desc(Sum))
 sorted_combinations
 
-tmp_total_reorder = data.frame()
+###
+tmp_long = tmp_total %>%
+  filter_all(all_vars(. %in% c(0, 5)))
+
+values <- c(5, 0)
+combinations <- expand.grid(replicate(ncol(tmp_long), values, simplify = FALSE))
+colnames(combinations) = colnames(tmp_long)
+sorted_combinations <- combinations %>%
+  mutate(Sum = rowSums(.)) %>%
+  arrange(desc(Sum))
+
+tmp_long_reorder = data.frame()
+
 for (rownum in 1:nrow(sorted_combinations)) {
-  for (names_t in colnames(total_features)) {
-    tmp_condition = tmp_total %>% filter(names_t == sorted_combinations[rownum,names_t])
-  }
+  tmp_condition = tmp_long %>% filter(CESC == sorted_combinations[rownum,"CESC"],
+                                       BLCA == sorted_combinations[rownum,"BLCA"],
+                                       STAD == sorted_combinations[rownum,"STAD"],
+                                       LUAD == sorted_combinations[rownum,"LUAD"],
+                                       LIHC == sorted_combinations[rownum,"LIHC"],
+                                       OV == sorted_combinations[rownum,"OV"],
+                                       LUSC == sorted_combinations[rownum,"LUSC"],
+                                       LGG == sorted_combinations[rownum,"LGG"],
+                                       BRCA == sorted_combinations[rownum,"BRCA"],
+                                       UCEC == sorted_combinations[rownum,"UCEC"]
+                                       )
+  
+  tmp_long_reorder = rbind(tmp_long_reorder,tmp_condition)
+}
+
+##
+tmp_long_common <- tmp_total %>%
+  filter_all(all_vars(. %in% c(0, 5, 1))) %>%
+  filter((rowSums(. == 5) > 0) & (rowSums(. == 1) > 0) & (rowSums(. == 0) > 0))
+
+values <- c(5, 1, 0)
+combinations <- expand.grid(replicate(ncol(tmp_long_common), values, simplify = FALSE))
+colnames(combinations) = colnames(tmp_long_common)
+sorted_combinations <- combinations %>%
+  mutate(Sum = rowSums(.)) %>%
+  arrange(desc(Sum))
+
+tmp_long_common_reorder = data.frame()
+
+for (rownum in 1:nrow(sorted_combinations)) {
+  tmp_condition = tmp_long_common %>% filter(CESC == sorted_combinations[rownum,"CESC"],
+                                       BLCA == sorted_combinations[rownum,"BLCA"],
+                                       STAD == sorted_combinations[rownum,"STAD"],
+                                       LUAD == sorted_combinations[rownum,"LUAD"],
+                                       LIHC == sorted_combinations[rownum,"LIHC"],
+                                       OV == sorted_combinations[rownum,"OV"],
+                                       LUSC == sorted_combinations[rownum,"LUSC"],
+                                       LGG == sorted_combinations[rownum,"LGG"],
+                                       BRCA == sorted_combinations[rownum,"BRCA"],
+                                       UCEC == sorted_combinations[rownum,"UCEC"]
+  )
+  
+  tmp_long_common_reorder = rbind(tmp_long_common_reorder,tmp_condition)
+}
+
+##
+tmp_common = tmp_total %>%
+  filter_all(all_vars(. %in% c(0, 1)))
+
+values <- c( 1, 0)
+combinations <- expand.grid(replicate(ncol(tmp_common), values, simplify = FALSE))
+colnames(combinations) = colnames(tmp_common)
+sorted_combinations <- combinations %>%
+  mutate(Sum = rowSums(.)) %>%
+  arrange(desc(Sum))
+
+tmp_common_reorder = data.frame()
+
+for (rownum in 1:nrow(sorted_combinations)) {
+  tmp_condition = tmp_common %>% filter(CESC == sorted_combinations[rownum,"CESC"],
+                                       BLCA == sorted_combinations[rownum,"BLCA"],
+                                       STAD == sorted_combinations[rownum,"STAD"],
+                                       LUAD == sorted_combinations[rownum,"LUAD"],
+                                       LIHC == sorted_combinations[rownum,"LIHC"],
+                                       OV == sorted_combinations[rownum,"OV"],
+                                       LUSC == sorted_combinations[rownum,"LUSC"],
+                                       LGG == sorted_combinations[rownum,"LGG"],
+                                       BRCA == sorted_combinations[rownum,"BRCA"],
+                                       UCEC == sorted_combinations[rownum,"UCEC"]
+  )
+  
+  tmp_common_reorder = rbind(tmp_common_reorder,tmp_condition)
+}
+
+##
+
+tmp_common_short = tmp_total %>%
+  filter_all(all_vars(. %in% c(0, -5, 1))) %>%
+  filter((rowSums(. == -5) > 0) & (rowSums(. == 1) > 0) & (rowSums(. == 0) > 0))
+
+values <- c(-5, 1, 0)
+combinations <- expand.grid(replicate(ncol(tmp_common_short), values, simplify = FALSE))
+colnames(combinations) = colnames(tmp_common_short)
+sorted_combinations <- combinations %>%
+  mutate(Sum = rowSums(.)) %>%
+  arrange(desc(Sum))
+
+tmp_common_short_reorder = data.frame()
+
+for (rownum in 1:nrow(sorted_combinations)) {
+  tmp_condition = tmp_common_short %>% filter(CESC == sorted_combinations[rownum,"CESC"],
+                                       BLCA == sorted_combinations[rownum,"BLCA"],
+                                       STAD == sorted_combinations[rownum,"STAD"],
+                                       LUAD == sorted_combinations[rownum,"LUAD"],
+                                       LIHC == sorted_combinations[rownum,"LIHC"],
+                                       OV == sorted_combinations[rownum,"OV"],
+                                       LUSC == sorted_combinations[rownum,"LUSC"],
+                                       LGG == sorted_combinations[rownum,"LGG"],
+                                       BRCA == sorted_combinations[rownum,"BRCA"],
+                                       UCEC == sorted_combinations[rownum,"UCEC"]
+  )
+  
+  tmp_common_short_reorder = rbind(tmp_common_short_reorder,tmp_condition)
+}
+
+##
+tmp_short = tmp_total %>%
+  filter_all(all_vars(. %in% c(0, -5)))
+
+values <- c(-5, 0)
+combinations <- expand.grid(replicate(ncol(tmp_short), values, simplify = FALSE))
+colnames(combinations) = colnames(tmp_short)
+sorted_combinations <- combinations %>%
+  mutate(Sum = rowSums(.)) %>%
+  arrange(desc(Sum))
+
+tmp_short_reorder = data.frame()
+
+for (rownum in 1:nrow(sorted_combinations)) {
+  tmp_condition = tmp_short %>% filter(CESC == sorted_combinations[rownum,"CESC"],
+                                              BLCA == sorted_combinations[rownum,"BLCA"],
+                                              STAD == sorted_combinations[rownum,"STAD"],
+                                              LUAD == sorted_combinations[rownum,"LUAD"],
+                                              LIHC == sorted_combinations[rownum,"LIHC"],
+                                              OV == sorted_combinations[rownum,"OV"],
+                                              LUSC == sorted_combinations[rownum,"LUSC"],
+                                              LGG == sorted_combinations[rownum,"LGG"],
+                                              BRCA == sorted_combinations[rownum,"BRCA"],
+                                              UCEC == sorted_combinations[rownum,"UCEC"]
+  )
+  
+  tmp_short_reorder = rbind(tmp_short_reorder,tmp_condition)
+}
+
+###
+tmp_last = tmp_total %>%
+  filter(!rownames(.) %in% c(rownames(tmp_long),
+                             rownames(tmp_long_common),
+                             rownames(tmp_common),
+                             rownames(tmp_common_short),
+                             rownames(tmp_short)))
+
+values <- c(-5, 0 ,1 , 5)
+combinations <- expand.grid(replicate(ncol(tmp_last), values, simplify = FALSE))
+colnames(combinations) = colnames(tmp_last)
+sorted_combinations <- combinations %>%
+  mutate(Sum = rowSums(.)) %>%
+  arrange(desc(Sum))
+
+tmp_last_reorder = data.frame()
+
+for (rownum in 1:nrow(sorted_combinations)) {
+  tmp_condition = tmp_last %>% filter(CESC == sorted_combinations[rownum,"CESC"],
+                                       BLCA == sorted_combinations[rownum,"BLCA"],
+                                       STAD == sorted_combinations[rownum,"STAD"],
+                                       LUAD == sorted_combinations[rownum,"LUAD"],
+                                       LIHC == sorted_combinations[rownum,"LIHC"],
+                                       OV == sorted_combinations[rownum,"OV"],
+                                       LUSC == sorted_combinations[rownum,"LUSC"],
+                                       LGG == sorted_combinations[rownum,"LGG"],
+                                       BRCA == sorted_combinations[rownum,"BRCA"],
+                                       UCEC == sorted_combinations[rownum,"UCEC"]
+                                      )
+  
+  tmp_last_reorder = rbind(tmp_last_reorder,tmp_condition)
+}
+
+tmp_total_reorder_filt = rbind(tmp_long_reorder,tmp_long_common_reorder, tmp_common_reorder, tmp_common_short_reorder, tmp_short_reorder, tmp_last_reorder)
+
+tmp = pheatmap(tmp_total_reorder_filt, 
+               # color = colorRampPalette(c('#C0392B','whitesmoke','#2471A3'))(11),
+               color = c("#C0392B",
+                         "#CA5E53",
+                         "#D5847B",
+                         "#DFA9A4",
+                         "#EACFCC",
+                         "#F5F5F5",
+                         "#D3DFE5",
+                         "#C0DEBE",
+                         "#A6D2A2",
+                         "#8CC787",
+                         "#72BC6C"),
+               show_rownames = F,
+               cluster_rows = F,
+               # border_color = "black",
+               # cutree_cols = 2,
+               clustering_method = "ward.D2")
+ggsave(file="figure3E_total.svg", plot=tmp, width=10, height=10)
+
+####
+
+values <- c( 5,1, 0 ,-5)
+combinations <- expand.grid(replicate(ncol(tmp_total), values, simplify = FALSE))
+colnames(combinations) = colnames(tmp_total)
+sorted_combinations <- combinations %>%
+  mutate(Sum = rowSums(.)) %>%
+  arrange(desc(Sum))
+
+tmp_total_reorder = data.frame()
+
+for (rownum in 1:nrow(sorted_combinations)) {
+  tmp_condition = tmp_total %>% filter(CESC == sorted_combinations[rownum,"CESC"],
+                                       BLCA == sorted_combinations[rownum,"BLCA"],
+                                       STAD == sorted_combinations[rownum,"STAD"],
+                                       LUAD == sorted_combinations[rownum,"LUAD"],
+                                       LIHC == sorted_combinations[rownum,"LIHC"],
+                                       OV == sorted_combinations[rownum,"OV"],
+                                       LUSC == sorted_combinations[rownum,"LUSC"],
+                                       LGG == sorted_combinations[rownum,"LGG"],
+                                       BRCA == sorted_combinations[rownum,"BRCA"],
+                                       UCEC == sorted_combinations[rownum,"UCEC"]
+                                       )
 
   tmp_total_reorder = rbind(tmp_total_reorder,tmp_condition)
 }
 
+tmp = pheatmap(tmp_total_reorder, 
+               # color = colorRampPalette(c('#C0392B','whitesmoke','#2471A3'))(11),
+               color = c("#C0392B",
+                         "#CA5E53",
+                         "#D5847B",
+                         "#DFA9A4",
+                         "#EACFCC",
+                         "#F5F5F5",
+                         "#D3DFE5",
+                         "#C0DEBE",
+                         "#A6D2A2",
+                         "#8CC787",
+                         "#72BC6C"),
+               show_rownames = F,
+               cluster_rows = F,
+               # border_color = "black",
+               # cutree_cols = 2,
+               clustering_method = "ward.D2")
+ggsave(file="figure3E_total.svg", plot=tmp, width=10, height=10)
 
-#####
-long_enriched = sort(rowSums(total_features == 5 ), decreasing = T)
-short_enriched = sort(rowSums(total_features == -5 ), decreasing = T)
+## 값조정해서 다시해야함
+tmp_total[tmp_total == 5] = 3
+tmp_total[tmp_total == -5] = -20
+
+tmp_total_reorder = tmp_total %>%
+  mutate(Sum = rowSums(.)) %>%
+  arrange(desc(Sum))
+
+tmp_total_reorder[tmp_total_reorder == 3] = 5
+tmp_total_reorder[tmp_total_reorder == -20] = -5
+
+tmp = pheatmap(tmp_total_reorder %>% select(-Sum), 
+               # color = colorRampPalette(c('#C0392B','whitesmoke','#2471A3'))(11),
+               color = c("#C0392B",
+                         "#CA5E53",
+                         "#D5847B",
+                         "#DFA9A4",
+                         "#EACFCC",
+                         "#F5F5F5",
+                         "#D3DFE5",
+                         "#C0DEBE",
+                         "#A6D2A2",
+                         "#8CC787",
+                         "#72BC6C"),
+               show_rownames = F,
+               cluster_rows = F,
+               # border_color = "black",
+               # cutree_cols = 2,
+               clustering_method = "ward.D2")
+ggsave(file="figure3C_total.svg", plot=tmp, width=10, height=10)
 
 # ####
 # total_features_wo_common = total_features
@@ -109,8 +376,6 @@ short_enriched = sort(rowSums(total_features == -5 ), decreasing = T)
 #          # cutree_cols = 2,
 #          border_color = "white",
 #          clustering_method = "average")
-
-
 
 
 ## only three long cancer 
@@ -216,3 +481,28 @@ for (tmp_name in colnames(cal_total_features)) {
   
 }
 
+
+#### sort by long 
+####
+
+
+total_features_3l = total_features %>% 
+  select(`TCGA-UCEC`,`TCGA-OV`,`TCGA-BLCA`)
+total_features_3l
+
+values <- c(5, 1, 0, -5)
+combinations <- expand.grid(replicate(3, values, simplify = FALSE))
+
+sorted_combinations <- combinations %>%
+  mutate(Sum = rowSums(.)) %>%
+  arrange(desc(Sum))
+
+total_features_3l_reorder = data.frame()
+
+for (rownum in 1:nrow(sorted_combinations)) {
+  tmp_condition = total_features_3l %>% filter(`TCGA-UCEC` == sorted_combinations[rownum,"Var1"],
+                                               `TCGA-OV` == sorted_combinations[rownum,"Var2"], 
+                                               `TCGA-BLCA` == sorted_combinations[rownum,"Var3"])
+  
+  total_features_3l_reorder = rbind(total_features_3l_reorder,tmp_condition)
+}
