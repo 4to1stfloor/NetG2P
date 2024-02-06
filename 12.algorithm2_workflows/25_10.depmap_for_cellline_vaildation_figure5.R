@@ -44,7 +44,7 @@ Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 setwd("~/nas/04.Results/drug/depmap/")
 ####
 Cancerlist = Cancerlist[c(-11,-12)]
-# num_CancerType = "32.TCGA-UCEC"
+num_CancerType =  "29.TCGA-LGG"
 
 for (num_CancerType in Cancerlist) {
   
@@ -66,34 +66,42 @@ for (num_CancerType in Cancerlist) {
   ### Dimension reduction (PCA)
   
   set.seed(1)
-
+  
   combine_df = rbind(wo_info, gc_cellline_filt_df)
   
-  pca_res_combine <- prcomp(combine_df %>% dplyr::select(-cluster), retx=TRUE, center=TRUE, scale=TRUE)
+  pca_res_tcga <- prcomp(wo_info %>% dplyr::select(-cluster), retx=TRUE, center=TRUE, scale=TRUE)
+  # pca_res_combine <- prcomp(combine_df %>% dplyr::select(-cluster), retx=TRUE, center=TRUE, scale=TRUE)
+  
+  cellline_pca_res = predict(pca_res_tcga, gc_cellline_filt_df %>% select(-cluster))
+  
   library(broom)
-  variance_exp <- pca_res_combine %>%  
+  variance_exp <- pca_res_tcga %>%  
     tidy("pcs") %>% 
     pull(percent)
   
-  pca_plot = pca_res_combine %>%
-    ggplot(aes(x = PC1, y = PC2, color= combine_df$cluster))+
+  pca_plot = ggplot(pca_res_tcga$x , aes(x = PC1, y = PC2, color= wo_info$cluster))+
     geom_point()+
+    geom_point(data = cellline_pca_res, aes(x = PC1, y=PC2, color = gc_cellline_filt_df$cluster)) + 
     labs(x = paste0("PC1: ",round(variance_exp[1]*100), "%"),
          y = paste0("PC2: ",round(variance_exp[2]*100), "%")) +
     theme_classic()+  
     scale_color_manual(values=c("#6633CC", "#4DAF4A","#E41A1C")) 
   
-  ggsave(file=paste0(CancerType , "_PCA_plot.svg"), plot=pca_plot, width=10, height=10)
+  ggsave(file=paste0(CancerType , "_PCA_plot_predict.svg"), plot=pca_plot, width=10, height=10)
   
   ## distance calculate
   
-  pca_res = as.data.frame(pca_res_combine$x)
+  pca_res = as.data.frame(pca_res_tcga$x)
+  cellline_pca_res = as.data.frame(cellline_pca_res)
   
-  if (all.equal(rownames(pca_res) , c(rownames(wo_info), rownames(gc_cellline_filt_df)))) {
-    pca_res$cluster = c(wo_info$cluster, gc_cellline_filt_df$cluster)
+  if (all.equal(rownames(pca_res) , rownames(wo_info) ) & all.equal(rownames(cellline_pca_res), rownames(gc_cellline_filt_df))) {
+    # pca_res$cluster = c(wo_info$cluster, gc_cellline_filt_df$cluster)
+    pca_res$cluster = wo_info$cluster
+    cellline_pca_res$cluster = gc_cellline_filt_df$cluster
+    
     pca_long = pca_res %>% filter(cluster == "long")
     pca_short = pca_res %>% filter(cluster == "short")
-    pca_cell = pca_res %>% filter(cluster == "cell")
+    pca_cell = cellline_pca_res %>% filter(cluster == "cell")
     
   }
   
@@ -147,6 +155,7 @@ for (num_CancerType in Cancerlist) {
   
   cell_heatmap = ComplexHeatmap::pheatmap(as.matrix(t(total_cell_for_fig_final %>% dplyr::select(-cluster))),
                                           column_split = factor(annotation_col$patients_group, levels = c("short","long")),
+                                          row_split = factor(annotation_row$types , levels = c(unique(annotation_row$types))),
                                           annotation_col = annotation_col,
                                           annotation_row = annotation_row,
                                           annotation_colors = ann_colors_sl,
@@ -235,6 +244,46 @@ for (num_CancerType in Cancerlist) {
   
   ggsave(file=paste0(CancerType , "_cellline_dotplotline_plot.svg"), plot=dotplot_line, width=10, height=10)
   
+  ###
+ 
+  tmp_all = filtered_ordered_df %>% filter(sig == "significant")
+  
+  sig_sub_short = ge.tbl %>% 
+    filter(rownames(ge.tbl) %in% rownames(cellline_short)) %>%
+    dplyr::select(cell_id,any_of(tmp_all$genes))
+  sig_sub_long = ge.tbl %>% 
+    filter(rownames(ge.tbl) %in% rownames(cellline_long)) %>%
+    dplyr::select(cell_id,any_of(tmp_all$genes))
+  
+  sig_short_interest <- melt(sig_sub_short, id.vars = 'cell_id')
+  sig_short_interest = sig_short_interest[!is.na(sig_short_interest$value),]
+  sig_long_interest <- melt(sig_sub_long, id.vars = 'cell_id')
+  sig_long_interest = sig_long_interest[!is.na(sig_long_interest$value),]
+  
+  if (length(sig_long_interest) != 0 | length(sig_long_interest) != 0) {
+    
+    sig_short_edit_specific = sig_short_interest
+    sig_long_edit_specific = sig_long_interest
+    
+    sig_short_edit_specific$group = "short"
+    sig_long_edit_specific$group = "long"
+    
+    sig_total_edit_specific = rbind(sig_short_edit_specific,sig_long_edit_specific)
+    
+    kernal_plot = sig_total_edit_specific %>%
+      ggdensity(x = "value",
+                # add = "mean",
+                rug = T,
+                color = "group",
+                fill = "group",
+                palette = c("#4DAF4A", "#E41A1C")) +
+      scale_x_continuous(limits = c(-3.5, 0.5)) +
+      facet_grid(rows = "variable", scales = "free", space = "free")
+    
+    ggsave(file=paste0(CancerType , "_kernel_only_sig_plot.svg"), plot=kernal_plot, width=10, height=10)
+    
+  } 
+  
   difference_df = filtered_ordered_df[which(abs(filtered_ordered_df$delta_long_to_short) > 0.15),]
   sig_dif_df = difference_df %>% filter(sig == "significant")
   
@@ -254,9 +303,8 @@ for (num_CancerType in Cancerlist) {
     sig_long_interest <- melt(sig_sub_long, id.vars = 'cell_id')
     sig_long_interest = sig_long_interest[!is.na(sig_long_interest$value),]
     
-    if (length(sig_long_interest) == 0 | length(sig_long_interest) == 0) {
-      
-    }
+    ## both 
+    
     gene.filter_short_plot <- as.data.frame(matrix(nrow = length(sig_dif_df$genes), ncol = 2))
     gene.filter_long_plot <- as.data.frame(matrix(nrow = length(sig_dif_df$genes), ncol = 2))
     
@@ -265,6 +313,8 @@ for (num_CancerType in Cancerlist) {
     
     gene.filter_short_plot$Genes <- sig_dif_df$genes
     gene.filter_long_plot$Genes <- sig_dif_df$genes
+    
+    # sig_short_interest$variable == "PIP5K1A"
     # Mean(depmap score)
     gene.filter_short_plot$mean_depmap <- sapply(1:length(sig_dif_df$genes),
                                                  function(x) -mean(dplyr::filter(sig_short_interest, variable == sig_dif_df$genes[x])$value) )
@@ -281,10 +331,7 @@ for (num_CancerType in Cancerlist) {
     ### both > 0.5 
     sig_1_genes = intersect(gene_filtered_short_edit$Genes , gene_filtered_long_edit$Genes)
     
-    if (length(sig_1_genes) == 0 ) {
-      next
-    } else {
-      
+    if (length(sig_1_genes) != 0 ) {
       gene_filtered_short_edit = gene_filtered_short_edit %>% filter(Genes %in% sig_1_genes)
       gene_filtered_long_edit = gene_filtered_long_edit %>% filter(Genes %in% sig_1_genes)
       
@@ -307,14 +354,11 @@ for (num_CancerType in Cancerlist) {
         facet_grid(rows = "variable", scales = "free", space = "free")
       
       ggsave(file=paste0(CancerType , "_kernel_both_plot.svg"), plot=kernal_plot, width=10, height=10)
-      
-    }
+    } 
     ### short > 0.5 & long < 0.5 
     sig_2_genes = intersect(gene_filtered_short_edit$Genes , gene_filtered_long_low$Genes)
     
-    if (length(sig_2_genes) == 0 ) {
-      next
-    } else {
+    if (length(sig_2_genes) != 0 ) {
       gene_filtered_short_edit = gene_filtered_short_edit %>% filter(Genes %in% sig_2_genes)
       gene_filtered_long_low = gene_filtered_long_low %>% filter(Genes %in% sig_2_genes)
       
@@ -337,13 +381,11 @@ for (num_CancerType in Cancerlist) {
         facet_grid(rows = "variable", scales = "free", space = "free")
       
       ggsave(file=paste0(CancerType , "_kernel_short_plot.svg"), plot=kernal_plot, width=10, height=10)
-    }
+    } 
     ### short < 0.5 & long > 0.5 
     sig_3_genes = intersect(gene_filtered_short_low$Genes , gene_filtered_long_edit$Genes)
     
-    if (length(sig_3_genes) == 0 ) {
-      next
-    } else {
+    if (length(sig_3_genes) != 0 ) {
       gene_filtered_short_low = gene_filtered_short_low %>% filter(Genes %in% sig_3_genes)
       gene_filtered_long_edit = gene_filtered_long_edit %>% filter(Genes %in% sig_3_genes)
       
@@ -366,13 +408,11 @@ for (num_CancerType in Cancerlist) {
         facet_grid(rows = "variable", scales = "free", space = "free")
       
       ggsave(file=paste0(CancerType , "_kernel_long_plot.svg"), plot=kernal_plot, width=10, height=10)
-    }
+    } 
     ### short < 0.5 & long < 0.5
     sig_4_genes = intersect(gene_filtered_short_low$Genes , gene_filtered_long_low$Genes)
     
-    if (length(sig_4_genes) == 0 ) {
-      next
-    } else {
+    if (length(sig_4_genes) != 0 ) {
       gene_filtered_short_low = gene_filtered_short_low %>% filter(Genes %in% sig_4_genes)
       gene_filtered_long_low = gene_filtered_long_low %>% filter(Genes %in% sig_4_genes)
       

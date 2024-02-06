@@ -328,7 +328,7 @@ tmp = pheatmap(tmp_total_reorder,
                clustering_method = "ward.D2")
 ggsave(file="figure3E_total.svg", plot=tmp, width=10, height=10)
 
-## 값조정해서 다시해야함
+## 
 tmp_total[tmp_total == 5] = 3
 tmp_total[tmp_total == -5] = -20
 
