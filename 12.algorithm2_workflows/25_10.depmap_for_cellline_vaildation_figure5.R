@@ -44,7 +44,7 @@ Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 setwd("~/nas/04.Results/drug/depmap/")
 ####
 Cancerlist = Cancerlist[c(-11,-12)]
-num_CancerType =  "29.TCGA-LGG"
+num_CancerType =  "04.TCGA-CESC"
 
 for (num_CancerType in Cancerlist) {
   
@@ -149,6 +149,8 @@ for (num_CancerType in Cancerlist) {
   ann_colors_sl = list(patients_group = short_long_colors, types = num_features )
   Colors = brewer.pal(9, "YlOrRd")
   
+  tmp = total_cell_for_fig_final %>% filter(cluster == "short")
+  rownames(tmp)
   png(filename = paste0(CancerType , "_cellline_heatmap_plot.png"),
       width = 10, height = 10,  units = "cm" ,pointsize = 12,
       bg = "white", res = 900, family = "")
