@@ -161,15 +161,14 @@ for (ev in tmp_total_cf$variable) {
   count <- str_count(ev, "P")
   
   if (count == 1) {
-    tmp_name =  paste0( name_pathway[which(name_pathway$num_pathway == ev),]$filtered_pathway_name, ":",ev )
+    tmp_name =  paste0( name_pathway[which(name_pathway$num_pathway == ev),]$Shorter_name , " : ",ev )
     
   } else {
     first_path = paste0("P",str_split(ev, "P")[[1]][2])
     second_path = paste0("P",str_split(ev, "P")[[1]][3])
     
-    tmp_name =  paste(paste0(name_pathway[which(name_pathway$num_pathway == first_path),]$filtered_pathway_name,":", first_path),
-                      paste0(name_pathway[which(name_pathway$num_pathway == second_path),]$filtered_pathway_name,":", second_path),
-                      sep = "\n")
+    tmp_name =  paste0(paste(name_pathway[which(name_pathway$num_pathway == first_path),]$Shorter_name , " / " ,
+                             name_pathway[which(name_pathway$num_pathway == second_path),]$Shorter_name ), " : ",ev)
   }
   
   tmp_total_cf[which(tmp_total_cf$variable == ev),"pathway_name"] = tmp_name
@@ -178,10 +177,36 @@ for (ev in tmp_total_cf$variable) {
 
 tmp_total_cf = tmp_total_cf %>% filter(minmax !=0)
 
-tmp_total_cf %>% filter(variable == "P46P49")
 
-tmp_total_cf$group <- factor(tmp_total_cf$group, levels = unique(tmp_total_cf$group))
-tmp_total_cf$cancertype <- factor(tmp_total_cf$cancertype, levels = rev(unique(tmp_total_cf$cancertype)))
+group_order = c("shared","BLCA","OV","UCEC","LIHC","STAD","LUAD","CESC","LUSC","BRCA","LGG")
+tmp_total_cf$group <- factor(tmp_total_cf$group, levels = group_order)
+tmp_total_cf$cancertype <- factor(tmp_total_cf$cancertype, levels = c("BLCA","OV","UCEC","LIHC","STAD","LUAD","CESC","LUSC","BRCA","LGG"))
+
+tmp_total_cf <- tmp_total_cf %>%
+  group_by(pathway_name) %>%
+  mutate(cancertype_freq = n()) %>%
+  ungroup() %>%
+  arrange(desc(cancertype_freq))
+
+tmp_total_cf = tmp_total_cf %>%
+  group_by(pathway_name) %>%
+  mutate(total_minmax = sum(minmax)) %>%
+  ungroup()
+
+five_order = tmp_total_cf %>% filter(cancertype_freq == 5) %>% arrange(desc(total_minmax))
+four_order = tmp_total_cf %>% filter(cancertype_freq == 4) %>% arrange(desc(total_minmax))
+three_order = tmp_total_cf %>% filter(cancertype_freq == 3) %>% arrange(desc(total_minmax))
+two_order = tmp_total_cf %>% filter(cancertype_freq == 2) %>% arrange(desc(total_minmax))
+one_order = tmp_total_cf %>% filter(cancertype_freq == 1) %>% arrange(desc(total_minmax))
+
+path_order = c(unique(five_order$pathway_name), 
+               unique(four_order$pathway_name),
+               unique(three_order$pathway_name),
+               unique(two_order$pathway_name),
+               unique(one_order$pathway_name))
+
+tmp_total_cf$pathway_name = factor(tmp_total_cf$pathway_name, levels = path_order)
+
 
 dotplot = ggplot(tmp_total_cf, aes(x = pathway_name , y = cancertype , size = minmax, color = minmax)) +
   geom_point() +
@@ -192,15 +217,16 @@ dotplot = ggplot(tmp_total_cf, aes(x = pathway_name , y = cancertype , size = mi
              space = "free_x") +
   theme_classic() +
   
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, face='bold', family = "arial" ),
+        axis.text.y = element_text( face='bold', family = "arial"),
         panel.spacing = unit(0, "lines"),
         # panel.border = element_blank(),
         # panel.grid.major = element_blank(),
         panel.border = element_rect(color = "black", fill = NA, size = 1),
         strip.background = element_rect(color = "black", size = 1))
+library(ggplot2)
 
-
-ggsave(file="~/nas/04.Results/critical_features/figure3A_dotplot.svg", plot=dotplot, width=30, height=10)
+ggplot2::ggsave(file="~/nas/04.Results/critical_features/figure3A_dotplot.svg", plot=dotplot, width=25, height=10)
 
 
 
