@@ -74,6 +74,7 @@ library(readxl)
 library(ggridges)
 library(ggdist)
 library(ggpubr)
+library(tidyverse)
 
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
@@ -99,15 +100,33 @@ ge.tbl <- read.csv(file = paste0(ref_path, 'DepMap/CRISPRGeneEffect.csv'),
 meta_for_TCGA = read.csv(paste0(ref_path, "/Depmap_meta_filt_to_TCGA.csv"))
 gdsc = readRDS("/mnt/gluster_server/data/reference/GDSC/2024_01_11/GDSC_data_combined.rds")
 meta_cell = readRDS("/mnt/gluster_server/data/reference/TLDR/meta_cells_primary.rds")
+nih_drug = read_xlsx("~/nas/99.reference/Nih_drug_data.xlsx")
+
+nih_drug_filted = nih_drug %>%
+  separate_rows(Drug_Name, sep = "\\(") %>%
+  mutate(Drug_Name = str_trim(gsub("\\)", "", Drug_Name))) %>%
+  group_by(Tissue_name) %>%
+  distinct(Drug_Name, .keep_all = TRUE)
+
+anticancer_drug = read_xlsx("~/nas/99.reference/anticancer_fund_cancerdrugsdb.xlsx")
+
+anticancer_drug_filted = anticancer_drug %>%
+  separate_rows(Indications, sep = "\\;") %>%
+  mutate(Indications = str_trim(Indications))
+
+anticancer_drug_filted = anticancer_drug_filted[!is.na(anticancer_drug_filted$Indications),]
+anticancer_drug_filted = anticancer_drug_filted %>% select(Product,Indications,Targets,CESC,BLCA,STAD,LUAD,LIHC,OV,LUSC,LGG,BRCA,UCEC,COADREAD,KIDNEY, everything())
 
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 setwd("~/nas/04.Results/drug/depmap/gdsc/")
 ####
 Cancerlist = Cancerlist[c(-11,-12)]
 
+
+
 # TLDR.sample.finder(TCGACode = "TCGA-CESC") %>% filter(DepMap == T & COSMIC == T & GDSC == T)
 
-# num_CancerType =  "04.TCGA-CESC"
+num_CancerType =  "24.TCGA-OV"
 
 for (num_CancerType in Cancerlist) {
   
@@ -116,7 +135,7 @@ for (num_CancerType in Cancerlist) {
   Cancername = gsub('TCGA-' , '', CancerType)
   
   # call input
-  gc_cellline = readRDS(paste0("~/nas/00.data/filtered_TCGA/", num_CancerType, "/",Cancername,"_cellline_dual_all_log.rds"))
+  # gc_cellline = readRDS(paste0("~/nas/00.data/filtered_TCGA/", num_CancerType, "/",Cancername,"_cellline_dual_all_log.rds"))
   gc_TCGA = readRDS(paste0("~/nas/04.Results/short_long/", CancerType,"_critical_features_short_long.rds"))
   
   filt_cancer_cell = meta_cell %>% 
@@ -125,65 +144,10 @@ for (num_CancerType in Cancerlist) {
   
   gdsc_each = gdsc %>% filter(COSMIC.ID %in% filt_cancer_cell$COSMIC.ID)
   
-  short_cluster = gc_TCGA %>% filter(cluster == "short") %>% dplyr::select(-vitalstatus, -duration,-status, -cluster)
-  long_cluster = gc_TCGA %>% filter(cluster == "long") %>% dplyr::select(-vitalstatus, -duration,-status, -cluster)
-  wo_info = gc_TCGA %>% dplyr::select(-vitalstatus, -duration, -status)
-  
-  gc_cellline$cluster = "cell"
-  gc_cellline_filt_df = gc_cellline[,colnames(wo_info)]
-  
-  ### Dimension reduction (PCA)
-  
-  set.seed(1)
-  
-  # combine_df = rbind(wo_info, gc_cellline_filt_df)
-  # 
-  pca_res_tcga <- prcomp(wo_info %>% dplyr::select(-cluster), retx=TRUE, center=TRUE, scale=TRUE)
-  # pca_res_combine <- prcomp(combine_df %>% dplyr::select(-cluster), retx=TRUE, center=TRUE, scale=TRUE)
-  
-  cellline_pca_res = predict(pca_res_tcga, gc_cellline_filt_df %>% select(-cluster))
-  
-  library(broom)
-  variance_exp <- pca_res_tcga %>%  
-    tidy("pcs") %>% 
-    pull(percent)
-  
-  ## distance calculate
-  
-  pca_res = as.data.frame(pca_res_tcga$x)
-  cellline_pca_res = as.data.frame(cellline_pca_res)
-  
-  if (all.equal(rownames(pca_res) , rownames(wo_info) ) & all.equal(rownames(cellline_pca_res), rownames(gc_cellline_filt_df))) {
-    # pca_res$cluster = c(wo_info$cluster, gc_cellline_filt_df$cluster)
-    pca_res$cluster = wo_info$cluster
-    cellline_pca_res$cluster = gc_cellline_filt_df$cluster
-    
-    pca_long = pca_res %>% filter(cluster == "long")
-    pca_short = pca_res %>% filter(cluster == "short")
-    pca_cell = cellline_pca_res %>% filter(cluster == "cell")
-    
-  }
-  
-  long_xy = c(mean(pca_long[,1]), mean(pca_long[,2]))
-  short_xy = c(mean(pca_short[,1]), mean(pca_short[,2]))
-  
-  tmp_cluster =c()
-  for (num_cell in 1:nrow(pca_cell)) {
-    tmp_long = sqrt((long_xy[1] - pca_cell[num_cell,1])^2 + (long_xy[2] - pca_cell[num_cell,2])^2)
-    tmp_short = sqrt((short_xy[1] - pca_cell[num_cell,1])^2 + (short_xy[2] - pca_cell[num_cell,2])^2)
-    if (tmp_long > tmp_short) {
-      tmp_cluster = c(tmp_cluster, "short")
-    } else {
-      tmp_cluster = c(tmp_cluster, "long")
-    }
-  }
-  
-  gc_cellline_filt_df$cluster = tmp_cluster
-  
-  saveRDS(gc_cellline_filt_df, paste0(CancerType, "_DM_sl_cluster.rds"))
-  
-  gdsc_each
-  filt_cancer_cell
+  gc_cellline_filt_df = readRDS(paste0(CancerType, "_DM_sl_cluster.rds"))
+ 
+  # gdsc_each
+  # filt_cancer_cell
   
   gc_filtered_cellline_df = gc_cellline_filt_df %>% filter(rownames(.) %in% filt_cancer_cell$DepMap.ID)
   
@@ -220,6 +184,16 @@ for (num_CancerType in Cancerlist) {
   library(ggpubr)
   library(ggsignif)
  
+  # for fic
+  fig_path = paste0(filepath,"/04.Results/drug/depmap/gdsc/", Cancername)
+  if(!dir.exists(fig_path)){
+    dir.create(fig_path)
+    print(paste0("Created folder: ", fig_path))
+  } else {
+    print(paste0("Folder already exists: ", fig_path))
+  }
+  setwd(fig_path)
+  
   if (nrow(total_long_gd) >1 & nrow(total_short_gd) >1) {
     anno = t.test(total_long_gd$Z_SCORE, total_short_gd$Z_SCORE)$p.value
     
@@ -241,29 +215,136 @@ for (num_CancerType in Cancerlist) {
     
     ggsave(filename = paste0(CancerType,"_total_cellline_IC50_zscore.svg"), total_gd)
   }
-  
-  library(ggplot2)
-  
 
   # gdsc_w_cluster$DepMap.ID
-  slice_drug_gdsc = gdsc_w_cluster %>% filter(DRUG_NAME %in% unique(gdsc_w_cluster$DRUG_NAME)[1:15])
   
-  ggplot(slice_drug_gdsc , aes( x = DRUG_NAME , y = Z_SCORE, fill= cluster)) + 
-    # geom_violin(color ="black") +
-    # geom_boxplot(width=0.1, color = "black" , fill="white")+
-    geom_boxplot()+
-    # scale_color_manual(values="black","black") + 
-    scale_fill_manual(values=c("#4DAF4A", "#E41A1C")) +
+  ## NIH
+  tmp_cancer_drug = nih_drug_filted %>% filter(Cancer_type == Cancername)
+  
+  nih_drug_gdsc = gdsc_w_cluster %>% filter(DRUG_NAME %in% tmp_cancer_drug$Drug_Name)
+
+  tmp_anti = anticancer_drug_filted %>% select(Product,Targets, any_of(Cancername))
+  tmp_anti = tmp_anti %>% filter(!is.na(OV))
+  
+  anti_drug_gdsc = gdsc_w_cluster %>% 
+    filter(DRUG_NAME %in% unique(tmp_anti$Product))
     
-    geom_signif(
-      # annotation = paste0("***","\n",formatC(anno, digits = 1)),
-      map_signif_level = TRUE,
-      comparisons = list(c("long", "short")),
-      # y_position = 4.05, xmin = 1, xmax = 3,
-      tip_length = c(0.22, 0.02),
-    ) +
-    # stat_compare_means(label.y = 10) +
-    theme_minimal()
+  nih_long = nih_drug_gdsc %>% filter(cluster == "long")
+  nih_short = nih_drug_gdsc %>% filter(cluster == "short")
+  
+  anti_drug_long = anti_drug_gdsc %>% filter(cluster == "long")
+  anti_drug_short = anti_drug_gdsc %>% filter(cluster == "short")
+  
+  # anno_slice = t.test(slice_long$Z_SCORE, slice_short$Z_SCORE)$p.value
+
+  library(gridExtra)
+  drug_name = "Olaparib"
+  
+  sig_nih_target = data.frame()
+  # n = 0
+  for (drug_name in unique(nih_drug_gdsc$DRUG_NAME)) {
+    # n = n+1
+    tmp_for_drug = nih_drug_gdsc %>% filter(DRUG_NAME == drug_name)
+    
+    tmp_nih_long = tmp_for_drug %>% filter(cluster == "long")
+    tmp_nih_short = tmp_for_drug %>% filter(cluster == "short")
+    
+    anno_tmp = t.test(tmp_nih_long$Z_SCORE, tmp_nih_short$Z_SCORE)$p.value
+    
+    tmp_drug = ggplot(tmp_for_drug , aes( x = cluster , y = Z_SCORE, fill= cluster)) + 
+             # geom_violin(color ="black") +
+             # geom_boxplot(width=0.1, color = "black" , fill="white")+
+             geom_boxplot()+
+             # scale_color_manual(values="black","black") + 
+             scale_fill_manual(values=c("#4DAF4A", "#E41A1C")) +
+             
+             geom_signif(
+               # annotation = paste0("NS","\n",formatC(anno_tmp, digits = 3)),
+               map_signif_level = TRUE,
+               comparisons = list(c("long", "short")),
+               # y_position = 3.05, 
+               # xmin = 1, 
+               # xmax = 3,
+               # tip_length = c(0.22, 0.02),
+             ) +
+             ggtitle(drug_name) +
+             # stat_compare_means(label.y = 10) +
+             theme_minimal()
+    if (mean(tmp_nih_long$Z_SCORE) - mean(tmp_nih_short$Z_SCORE) < 0) {
+      tolerance = "long"
+    } else {
+      tolerance = "short"
+    }
+    
+    if (anno_tmp < 0.05) {
+      ggsave(filename = paste0(CancerType,"_cellline_nih_approved_sig.svg"), tmp_drug)
+      tmp_target = data.frame(drug_name = drug_name,
+                              tolerance = tolerance,
+                              target = unique(nih_drug_gdsc[which(nih_drug_gdsc$DRUG_NAME == drug_name ),]$PUTATIVE_TARGET))
+      sig_nih_target = rbind(sig_nih_target,tmp_target)
+    } else {
+      ggsave(filename = paste0(CancerType,"_cellline_nih_approved_nonsig.svg"), tmp_drug)
+    }
+    
+  }
+  
+  sig_anti_target = data.frame()
+  for (drug_name in unique(anti_drug_gdsc$DRUG_NAME)) {
+    # n = n+1
+    tmp_for_drug = anti_drug_gdsc %>% filter(DRUG_NAME == drug_name)
+    
+    tmp_anti_long = tmp_for_drug %>% filter(cluster == "long")
+    tmp_anti_short = tmp_for_drug %>% filter(cluster == "short")
+    
+    anno_tmp = t.test(tmp_anti_long$Z_SCORE, tmp_anti_short$Z_SCORE)$p.value
+    
+    tmp_drug = ggplot(tmp_for_drug , aes( x = cluster , y = Z_SCORE, fill= cluster)) + 
+      # geom_violin(color ="black") +
+      # geom_boxplot(width=0.1, color = "black" , fill="white")+
+      geom_boxplot()+
+      # scale_color_manual(values="black","black") + 
+      scale_fill_manual(values=c("#4DAF4A", "#E41A1C")) +
+      
+      geom_signif(
+        # annotation = paste0("NS","\n",formatC(anno_tmp, digits = 3)),
+        map_signif_level = TRUE,
+        comparisons = list(c("long", "short")),
+        # y_position = 3.05, 
+        # xmin = 1, 
+        # xmax = 3,
+        # tip_length = c(0.22, 0.02),
+      ) +
+      ggtitle(drug_name) +
+      # stat_compare_means(label.y = 10) +
+      theme_minimal()
+    
+    if (mean(tmp_anti_long$Z_SCORE) - mean(tmp_anti_short$Z_SCORE) < 0) {
+      tolerance = "short"
+    } else {
+      tolerance = "long"
+    }
+    
+    if (anno_tmp < 0.05) {
+      
+      # ggsave(filename = paste0(CancerType,"_cellline_anti_licensed_sig.svg"), tmp_drug)
+      tmp_target = data.frame(drug_name = drug_name,
+                              tolerance = tolerance,
+                              target = unique(tmp_anti[which(tmp_anti$Product == drug_name ),]$Targets))
+      tmp_genes = str_trim(str_split(tmp_target$target, ";")[[1]])
+      tmp_target$critical_features = paste(colnames(gc_TCGA)[colnames(gc_TCGA) %in% c(single_genes %>% filter(Genes %in% tmp_genes) %>% pull(Pathway) ,
+                                                                               link_genes_filtered_df %>% filter(Genes  %in% tmp_genes) %>% pull(Pathway))], collapse = ";")
+      
+      sig_anti_target = rbind(sig_anti_target,tmp_target)
+    } else {
+      # ggsave(filename = paste0(CancerType,"_cellline_anti_licensed_nonsig.svg"), tmp_drug)
+    }
+    
+  }
+  
+  write.csv(sig_nih_target, paste0(CancerType,"_cellline_nih_approved_sig.csv"))
+  write.csv(sig_anti_target, paste0(CancerType,"_cellline_anti_licensed_sig.csv"))
   
 }
+
+
  
