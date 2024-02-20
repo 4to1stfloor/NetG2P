@@ -6,7 +6,7 @@ ref_path = paste0(filepath, "99.reference/")
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 surv_total_results = read_xlsx("~/nas/04.Results/Total_results_survpval2.xlsx")
 # setwd("~/nas/04.Results/short_long/ttest")
-Cancerlist = Cancerlist[c(-7,-11,-12)]
+Cancerlist = Cancerlist[c(-11,-12)]
 total_features = list()
 
 # for all
@@ -23,6 +23,7 @@ for (num_CancerType in Cancerlist) {
   total_features[[CancerType]] = cancer_bf$variable
   
 }
+
 total_spe = data.frame()
 
 for (num_CancerType in Cancerlist) {
@@ -52,6 +53,7 @@ for (num_CancerType in Cancerlist) {
   remove(tmp_sep_filt)
   
 }
+total_spe %>% filter(which_cancer == "")
 
 for (num_CancerType in Cancerlist) {
   
