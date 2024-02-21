@@ -75,8 +75,6 @@ total_cf = total_cal_critical_features %>%
                                                           .default = NA)) %>%
   filter(!is.na(group)) 
 
-tmp_spe %>% filter(variable == "P10P12")  
-
 tmp_shared = total_cf %>% filter(group == "shared")
 
 tmp_spe = total_cf %>% filter(group != "shared")
@@ -86,19 +84,6 @@ cancer_with_more_than_10_variables <- tmp_spe %>%
   summarize(num_variables = n()) %>%
   filter(num_variables > 10) %>%
   pull(cancertype)
-
-# variable의 개수가 10개를 넘는 cancertype 추출
-cancer_with_more_than_10_variables <- count_by_cancer %>%
-  filter(num_variables > 10) %>%
-  pull(cancertype)
-
-test = tmp_spe %>%
-  group_by(cancertype) %>%
-  mutate(rank = row_number(desc(minmax))) %>%
-  filter(!(cancertype %in% cancer_with_more_than_10_variables & rank > 10)) %>%
-  select(-rank) %>%
-  ungroup() 
-
 
 # minmax 값을 기준으로 내림차순 정렬 후 상위 10개만 남기기
 tmp_spe_filtered <- tmp_spe %>%
