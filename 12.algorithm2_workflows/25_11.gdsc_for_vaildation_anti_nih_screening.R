@@ -125,7 +125,7 @@ Cancerlist = Cancerlist[c(-11,-12)]
 
 # TLDR.sample.finder(TCGACode = "TCGA-CESC") %>% filter(DepMap == T & COSMIC == T & GDSC == T)
 
-num_CancerType = "04.TCGA-CESC"
+num_CancerType = "19.TCGA-LIHC"
 
 for (num_CancerType in Cancerlist) {
   
@@ -224,7 +224,8 @@ for (num_CancerType in Cancerlist) {
   nih_drug_gdsc = gdsc_w_cluster %>% filter(DRUG_NAME %in% tmp_cancer_drug$Drug_Name)
 
   tmp_anti = anticancer_drug_filted %>% select(Product,Targets, any_of(Cancername))
-  tmp_anti = tmp_anti %>% filter(!is.na(Cancername))
+  tmp_anti = tmp_anti[!is.na(tmp_anti[,Cancername]),]
+  # tmp_anti = tmp_anti %>% filter(!is.na(Cancername))
   
   anti_drug_gdsc = gdsc_w_cluster %>% 
     filter(DRUG_NAME %in% unique(tmp_anti$Product))
@@ -274,28 +275,29 @@ for (num_CancerType in Cancerlist) {
         # stat_compare_means(label.y = 10) +
         theme_minimal()
       
-    }
-    
-    if (mean(tmp_nih_long$Z_SCORE) - mean(tmp_nih_short$Z_SCORE) < 0) {
-      tolerance = "long"
-    } else {
-      tolerance = "short"
-    }
-    
-    if (anno_tmp < 0.05) {
-      ggsave(filename = paste0(CancerType,"_",drug_name,"_cellline_nih_approved_sig.svg"), tmp_drug)
-           
-      tmp_target = data.frame(drug_name = drug_name,
-                              tolerance = tolerance,
-                              target = unique(nih_drug_gdsc[which(nih_drug_gdsc$DRUG_NAME == drug_name ),]$PUTATIVE_TARGET))
-      tmp_genes = str_trim(str_split(tmp_target$target, ",")[[1]])
-      tmp_target$critical_features = paste(colnames(gc_TCGA)[colnames(gc_TCGA) %in% c(single_genes %>% filter(Genes %in% tmp_genes) %>% pull(Pathway) ,
-                                                                                      link_genes_filtered_df %>% filter(Genes  %in% tmp_genes) %>% pull(Pathway))], collapse = ";")
+      if (mean(tmp_nih_long$Z_SCORE) - mean(tmp_nih_short$Z_SCORE) < 0) {
+        tolerance = "long"
+      } else {
+        tolerance = "short"
+      }
       
-      sig_nih_target = rbind(sig_nih_target,tmp_target)
-    } else {
-      ggsave(filename = paste0(CancerType,"_",drug_name,"_cellline_nih_approved_nonsig.svg"), tmp_drug)
+      if (anno_tmp < 0.05) {
+        ggsave(filename = paste0(CancerType,"_",drug_name,"_cellline_nih_approved_sig.svg"), tmp_drug)
+        
+        tmp_target = data.frame(drug_name = drug_name,
+                                tolerance = tolerance,
+                                target = unique(nih_drug_gdsc[which(nih_drug_gdsc$DRUG_NAME == drug_name ),]$PUTATIVE_TARGET))
+        tmp_genes = str_trim(str_split(tmp_target$target, ",")[[1]])
+        tmp_target$critical_features = paste(colnames(gc_TCGA)[colnames(gc_TCGA) %in% c(single_genes %>% filter(Genes %in% tmp_genes) %>% pull(Pathway) ,
+                                                                                        link_genes_filtered_df %>% filter(Genes  %in% tmp_genes) %>% pull(Pathway))], collapse = ";")
+        
+        sig_nih_target = rbind(sig_nih_target,tmp_target)
+      } else {
+        ggsave(filename = paste0(CancerType,"_",drug_name,"_cellline_nih_approved_nonsig.svg"), tmp_drug)
+      }
+      
     }
+    
     
   }
   
@@ -331,27 +333,28 @@ for (num_CancerType in Cancerlist) {
         ggtitle(drug_name) +
         # stat_compare_means(label.y = 10) +
         theme_minimal()
-    }
-    
-    if (mean(tmp_anti_long$Z_SCORE) - mean(tmp_anti_short$Z_SCORE) < 0) {
-      tolerance = "short"
-    } else {
-      tolerance = "long"
-    }
-    
-    if (anno_tmp < 0.05) {
       
-      ggsave(filename = paste0(CancerType,"_",drug_name,"_cellline_anti_licensed_sig.svg"), tmp_drug)
-      tmp_target = data.frame(drug_name = drug_name,
-                              tolerance = tolerance,
-                              target = unique(tmp_anti[which(tmp_anti$Product == drug_name ),]$Targets))
-      tmp_genes = str_trim(str_split(tmp_target$target, ";")[[1]])
-      tmp_target$critical_features = paste(colnames(gc_TCGA)[colnames(gc_TCGA) %in% c(single_genes %>% filter(Genes %in% tmp_genes) %>% pull(Pathway) ,
-                                                                               link_genes_filtered_df %>% filter(Genes  %in% tmp_genes) %>% pull(Pathway))], collapse = ";")
+      if (mean(tmp_anti_long$Z_SCORE) - mean(tmp_anti_short$Z_SCORE) < 0) {
+        tolerance = "short"
+      } else {
+        tolerance = "long"
+      }
       
-      sig_anti_target = rbind(sig_anti_target,tmp_target)
-    } else {
-      ggsave(filename = paste0(CancerType,"_",drug_name,"_cellline_anti_licensed_nonsig.svg"), tmp_drug)
+      if (anno_tmp < 0.05) {
+        
+        ggsave(filename = paste0(CancerType,"_",drug_name,"_cellline_anti_licensed_sig.svg"), tmp_drug)
+        tmp_target = data.frame(drug_name = drug_name,
+                                tolerance = tolerance,
+                                target = unique(tmp_anti[which(tmp_anti$Product == drug_name ),]$Targets))
+        tmp_genes = str_trim(str_split(tmp_target$target, ";")[[1]])
+        tmp_target$critical_features = paste(colnames(gc_TCGA)[colnames(gc_TCGA) %in% c(single_genes %>% filter(Genes %in% tmp_genes) %>% pull(Pathway) ,
+                                                                                        link_genes_filtered_df %>% filter(Genes  %in% tmp_genes) %>% pull(Pathway))], collapse = ";")
+        
+        sig_anti_target = rbind(sig_anti_target,tmp_target)
+      } else {
+        ggsave(filename = paste0(CancerType,"_",drug_name,"_cellline_anti_licensed_nonsig.svg"), tmp_drug)
+      }
+      
     }
     
   }
