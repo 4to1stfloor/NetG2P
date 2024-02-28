@@ -93,38 +93,72 @@ ck <- compareCluster(geneCluster = top_genes_group,
                      qvalueCutoff = 0.0001 )
 
 ck <- setReadable(ck, OrgDb = org.Hs.eg.db, keyType="ENTREZID")
-dotplot(ck)
-?enrichplot::dotplot()
 
 total_enrich = ck@compareClusterResult
 
 total_enrich_df = total_enrich%>%
   mutate(GeneRatio_numeric = sapply(str_split(GeneRatio, "/"), function(x) as.numeric(x[1]) / as.numeric(x[2]))) 
-  
+
+min_max_scale <- function(x) {
+  (x - min(x)) / (max(x) - min(x))
+}
+
 crop_enrich = total_enrich_df %>%
   group_by(Cluster) %>%
   arrange(desc(GeneRatio_numeric)) %>%
-  slice_head(n = 7)
-
-crop_enrich = total_enrich_df %>%
-  group_by(Cluster) %>%
-  slice_head(n = 5)
-
-crop_enrich %>% filter(Cluster == "STAD_cluster")
-total_enrich_df %>% filter(Description == "NADH dehydrogenase (quinone) activity")
-
-
+  slice_head(n = 15)
 
 crop_enrich = total_enrich_df %>% filter(Description %in% unique(crop_enrich$Description))
+# crop_enrich = test %>% filter(Description %in% unique(crop_enrich$Description))
 
-crop_enrich$log_qvalue <- -log10(crop_enrich$qvalue)
-crop_enrich_matrix <- reshape2::dcast(crop_enrich, Cluster ~ Description, value.var = "log_qvalue", fill = 0)
-rownames(crop_enrich_matrix) <- crop_enrich_matrix$Cluster
+
+crop_enrich$log_qvalue = -log10(crop_enrich$qvalue)
+crop_enrich = crop_enrich %>% 
+  group_by(Cluster) %>%
+  mutate(nor_qvalue = min_max_scale(log_qvalue))
+crop_enrich_matrix = reshape2::dcast(crop_enrich, Cluster ~ Description, value.var = "nor_qvalue", fill = 0)
+rownames(crop_enrich_matrix) <- gsub("_cluster","",crop_enrich_matrix$Cluster)
 crop_enrich_matrix <- crop_enrich_matrix[,-1]
 
-pheatmap(matrix_data, 
+managed_colname = c()
+# cln = "oxidoreduction-driven active transmembrane transporter activity"
+for (cln in colnames(crop_enrich_matrix)) {
+  tmp_cln = unlist(str_split(cln , " "))
+  if (length(tmp_cln) %% 2 == 0 & length(tmp_cln) >2) {
+    tmp_edit = paste0(paste(tmp_cln[1:(length(tmp_cln) / 2)] , collapse = " "), "\n" , paste(tmp_cln[(length(tmp_cln) / 2 + 1): length(tmp_cln)], collapse = " " ))
+    managed_colname = c(managed_colname,tmp_edit)
+    
+  } else if (length(tmp_cln) %% 2 != 0 & length(tmp_cln) >3) {
+    tmp_edit = paste0(paste(tmp_cln[1:ceiling(length(tmp_cln) / 2)] , collapse = " "), "\n" , paste(tmp_cln[(ceiling(length(tmp_cln) / 2) + 1): length(tmp_cln)], collapse = " " ))
+    managed_colname = c(managed_colname,tmp_edit)
+    
+  } else {
+    managed_colname = c(managed_colname,cln)
+  }
+}
+
+
+
+svglite(filename = "figure3E_log_more_enrich.svg", 
+        bg = "white", 
+        pointsize = 12,
+        width = 18,
+        height = 10)
+go_heat = pheatmap(crop_enrich_matrix, 
          cluster_rows = T,
          cluster_cols = T,
-         # scale = "none", 
-         main = "-log(qvalue)")
+         show_row_dend = F,
+         fontfamily = "arial",
+         fontface = "bold",
+         labels_col = str_to_title(managed_colname),
+         col = circlize::colorRamp2(c( 0, 1), c( "white", "red")),
+         row_names_side = "left", 
+         cellheight = 10,
+         # cellwidth = 10,
+         # col_names_max_width = unit(12, "cm"),
+         clustering_method = "ward.D2")
+print(go_heat)
+dev.off()
 
+
+"ward.D", "ward.D2", "single", "complete", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid"
