@@ -20,8 +20,9 @@ anticancer_drug_filted = anticancer_drug %>%
 meta_for_TCGA = read.csv(paste0(ref_path, "/Depmap_meta_filt_to_TCGA.csv"))
 gdsc = readRDS("/mnt/gluster_server/data/reference/GDSC/2024_01_11/GDSC_data_combined.rds")
 meta_cell = readRDS("/mnt/gluster_server/data/reference/TLDR/meta_cells_primary.rds")
+criteria = read.csv("~/nas/99.reference/drug_alias_single.csv")
 
-# num_CancerType = "10.TCGA-BLCA"
+num_CancerType = "30.TCGA-BRCA"
 
 for (num_CancerType in Cancerlist) {
   main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)
@@ -31,7 +32,7 @@ for (num_CancerType in Cancerlist) {
   # call input
   gc_cellline = readRDS(paste0("~/nas/00.data/filtered_TCGA/", num_CancerType, "/",Cancername,"_cellline_dual_all_log.rds"))
   gc_TCGA = readRDS(paste0("~/nas/04.Results/short_long/", CancerType,"_critical_features_short_long.rds"))
-  cli_drug = read.csv(paste0(ref_path,"TCGA_clinical_drug/",Cancername, "_clinical_druginfo.csv"))
+  cli_drug = read.csv(paste0(ref_path,"TCGA_clinical_drug/",Cancername, "_drug_info_update.csv")) # original
   
   filt_cancer_cell = meta_cell %>% 
     filter(DepMap.ID %in% rownames(gc_cellline)) %>%
@@ -53,10 +54,10 @@ for (num_CancerType in Cancerlist) {
   gdsc_w_cluster = left_join(gdsc_each_filt, tmp_df, by = "DepMap.ID")
   
   gdsc_w_cluster = gdsc_w_cluster %>%
-    select(DepMap.ID, cluster, DRUG_ID,DRUG_NAME, PUTATIVE_TARGET, PATHWAY_NAME, AUC, RMSE, LN_IC50,Z_SCORE) %>% 
+    select(DepMap.ID, cluster, DRUG_ID,mapped_drug_name  ,DRUG_NAME, PUTATIVE_TARGET, PATHWAY_NAME, AUC, RMSE, LN_IC50,Z_SCORE) %>% 
     arrange(DepMap.ID)
-  
-  cli_drug = cli_drug %>% select(-X)
+ 
+  # cli_drug = cli_drug %>% select(-X)
   cli_drug_filt = cli_drug %>% 
     slice(-1,-2) %>% 
     filter(pharmaceutical_therapy_drug_name != "[Not Available]") %>%
@@ -67,7 +68,7 @@ for (num_CancerType in Cancerlist) {
   gc_TCGA_drug = gc_TCGA[common_pat,]
   cli_drug_filt = cli_drug_filt %>% filter(bcr_patient_barcode %in% common_pat)
 
-  gdsc_w_cluster_filt = gdsc_w_cluster %>% filter(DRUG_NAME %in% unique(cli_drug_filt$pharmaceutical_therapy_drug_name))
+  gdsc_w_cluster_filt = gdsc_w_cluster %>% filter(mapped_drug_name %in% unique(cli_drug_filt$pharmaceutical_therapy_drug_name))
 
   ###  
   for (cli_pat in unique(cli_drug_filt$bcr_patient_barcode)) {
@@ -80,7 +81,7 @@ for (num_CancerType in Cancerlist) {
     
   }
   
-  sig_treated_target = data.frame()
+  # saveRDS(gc_TCGA_drug , paste0("~/nas/04.Results/short_long/", CancerType,"_critical_features_short_long_with_drug_update.rds"))
   
   # for fic
   
@@ -93,11 +94,11 @@ for (num_CancerType in Cancerlist) {
   }
   setwd(fig_path)
   
-  # drug_name = "Temsirolimus"
-  for (drug_name in unique(gdsc_w_cluster_filt$DRUG_NAME)) {
+  drug_name = "Methotrexate"
+  for (drug_name in unique(gdsc_w_cluster_filt$mapped_drug_name )) {
     # n = n+1
     print(drug_name)
-    tmp_for_drug = gdsc_w_cluster_filt %>% filter(DRUG_NAME == drug_name)
+    tmp_for_drug = gdsc_w_cluster_filt %>% filter(mapped_drug_name == drug_name)
     
     tmp_anti_long = tmp_for_drug %>% filter(cluster == "long")
     tmp_anti_short = tmp_for_drug %>% filter(cluster == "short")
@@ -128,26 +129,33 @@ for (num_CancerType in Cancerlist) {
       
       if (anno_tmp < 0.05 ) {
         print(paste0(drug_name," : ",anno_tmp))
-        ggsave(filename = paste0(CancerType,"_",drug_name, "_treated_TCGA_screening_sig.svg"), tmp_drug)
+        ggsave(filename = paste0(CancerType,"_",drug_name, "_treated_up_TCGA_screening_sig.svg"), tmp_drug)
         
-        tcga_drug = readRDS( paste0("~/nas/04.Results/short_long/", CancerType,"_critical_features_short_long_with_drug.rds"))
+        # tcga_drug = readRDS( paste0("~/nas/04.Results/short_long/", CancerType,"_critical_features_short_long_with_drug.rds")) original
+        # 
+        # tcga_drug_surv = tcga_drug %>%  
+        #   mutate(drug_cluster = case_when(
+        #     str_detect(treated_drug, drug_name) ~ "treated",
+        #     TRUE ~ "untreated"))
         
-        tcga_drug_surv = tcga_drug %>%  
+        tcga_drug_surv = gc_TCGA_drug %>%  
           mutate(drug_cluster = case_when(
             str_detect(treated_drug, drug_name) ~ "treated",
             TRUE ~ "untreated"))
         
-        if (sum(tcga_drug_surv$drug_cluster == "treated") == 0) {
+        tcga_drug_surv_filt = tcga_drug_surv %>% filter(drug_cluster == "treated")
+        
+        if (length(table(tcga_drug_surv_filt$cluster)) != 2) {
           next
         } else {
           
-          fit = survfit(Surv(duration, status) ~ drug_cluster, data = tcga_drug_surv)
+          fit = survfit(Surv(duration, status) ~ cluster, data = tcga_drug_surv_filt)
           
-          svglite(filename =  paste0(CancerType,"_",drug_name, "_treated_TCGA_survival.svg"), 
+          svglite(filename =  paste0(CancerType,"_",drug_name, "_only_treated_up_TCGA_sl_survival.svg"), 
                   bg = "white", 
                   pointsize = 12)
           
-          tmp_drug_surv = ggsurvplot(fit, data = tcga_drug_surv, risk.table = TRUE,
+          tmp_drug_surv = ggsurvplot(fit, data = tcga_drug_surv_filt, risk.table = TRUE,
                                      palette = "jco", pval = TRUE, surv.median.line = "hv", xlab = "days")
           
           print(tmp_drug_surv)
@@ -156,7 +164,7 @@ for (num_CancerType in Cancerlist) {
         }
        
       } else {
-        ggsave(filename = paste0(CancerType,"_",drug_name, "_treated_TCGA_screening_nosig.svg"), tmp_drug)
+        ggsave(filename = paste0(CancerType,"_",drug_name, "_treated_TCGA_up_screening_nosig.svg"), tmp_drug)
       }
      remove(anno_tmp)
     }
