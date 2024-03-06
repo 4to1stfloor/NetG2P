@@ -20,7 +20,10 @@ anticancer_drug_filted = anticancer_drug %>%
 meta_for_TCGA = read.csv(paste0(ref_path, "/Depmap_meta_filt_to_TCGA.csv"))
 gdsc = readRDS("/mnt/gluster_server/data/reference/GDSC/2024_01_11/GDSC_data_combined.rds")
 meta_cell = readRDS("/mnt/gluster_server/data/reference/TLDR/meta_cells_primary.rds")
-criteria = read.csv("~/nas/99.reference/drug_alias_single.csv")
+criteria = read.csv("~/nas/99.reference/drug_alias_single_SW.csv")
+criteria_filt = criteria %>%
+  separate_rows(alias, sep = ",") %>%
+  mutate(alias = trimws(alias)) 
 
 num_CancerType = "30.TCGA-BRCA"
 
@@ -33,6 +36,16 @@ for (num_CancerType in Cancerlist) {
   gc_cellline = readRDS(paste0("~/nas/00.data/filtered_TCGA/", num_CancerType, "/",Cancername,"_cellline_dual_all_log.rds"))
   gc_TCGA = readRDS(paste0("~/nas/04.Results/short_long/", CancerType,"_critical_features_short_long.rds"))
   cli_drug = read.csv(paste0(ref_path,"TCGA_clinical_drug/",Cancername, "_drug_info_update.csv")) # original
+  
+  # cli_drug = cli_drug %>% select(-X)
+  cli_drug_filt = cli_drug %>% 
+    slice(-1,-2) %>% 
+    filter(pharmaceutical_therapy_drug_name != "[Not Available]") %>%
+    select(-bcr_patient_uuid, -bcr_drug_uuid)
+  
+  cli_drug_filt_edit = left_join(cli_drug_filt, criteria_filt, by = c("pharmaceutical_therapy_drug_name" = "alias")) %>%
+    mutate(main_name_new = coalesce(main_name, pharmaceutical_therapy_drug_name)) %>%
+    select(bcr_patient_barcode,main_name_new, main_name,pharmaceutical_therapy_drug_name, everything())
   
   filt_cancer_cell = meta_cell %>% 
     filter(DepMap.ID %in% rownames(gc_cellline)) %>%
@@ -57,26 +70,24 @@ for (num_CancerType in Cancerlist) {
     select(DepMap.ID, cluster, DRUG_ID,mapped_drug_name  ,DRUG_NAME, PUTATIVE_TARGET, PATHWAY_NAME, AUC, RMSE, LN_IC50,Z_SCORE) %>% 
     arrange(DepMap.ID)
  
-  # cli_drug = cli_drug %>% select(-X)
-  cli_drug_filt = cli_drug %>% 
-    slice(-1,-2) %>% 
-    filter(pharmaceutical_therapy_drug_name != "[Not Available]") %>%
-    select(-bcr_patient_uuid, -bcr_drug_uuid)
+  gdsc_w_cluster = left_join(gdsc_w_cluster, criteria_filt, by = c("DRUG_NAME" = "alias")) %>%
+    mutate(DRUG_NAME_new = coalesce(main_name, DRUG_NAME)) %>%
+    select(DepMap.ID,cluster , DRUG_ID,DRUG_NAME_new , DRUG_NAME,main_name, everything())
 
-  common_pat = intersect(rownames(gc_TCGA),cli_drug_filt$bcr_patient_barcode)
+  common_pat = intersect(rownames(gc_TCGA),cli_drug_filt_edit$bcr_patient_barcode)
   
   gc_TCGA_drug = gc_TCGA[common_pat,]
-  cli_drug_filt = cli_drug_filt %>% filter(bcr_patient_barcode %in% common_pat)
+  cli_drug_filt_edit = cli_drug_filt_edit %>% filter(bcr_patient_barcode %in% common_pat)
 
-  gdsc_w_cluster_filt = gdsc_w_cluster %>% filter(mapped_drug_name %in% unique(cli_drug_filt$pharmaceutical_therapy_drug_name))
+  gdsc_w_cluster_filt = gdsc_w_cluster %>% filter(mapped_drug_name %in% unique(cli_drug_filt_edit$main_name_new))
 
   ###  
-  for (cli_pat in unique(cli_drug_filt$bcr_patient_barcode)) {
-    tmp_pat = cli_drug_filt %>% filter(bcr_patient_barcode == cli_pat)
-    if (length(tmp_pat$pharmaceutical_therapy_drug_name) >1) {
-      gc_TCGA_drug[cli_pat,"treated_drug"] = paste(tmp_pat$pharmaceutical_therapy_drug_name , collapse = ",")
+  for (cli_pat in unique(cli_drug_filt_edit$bcr_patient_barcode)) {
+    tmp_pat = cli_drug_filt_edit %>% filter(bcr_patient_barcode == cli_pat)
+    if (length(tmp_pat$main_name_new) >1) {
+      gc_TCGA_drug[cli_pat,"treated_drug"] = paste(tmp_pat$main_name_new , collapse = ",")
     } else {
-      gc_TCGA_drug[cli_pat,"treated_drug"] = tmp_pat$pharmaceutical_therapy_drug_name
+      gc_TCGA_drug[cli_pat,"treated_drug"] = tmp_pat$main_name_new
     }
     
   }
@@ -94,7 +105,7 @@ for (num_CancerType in Cancerlist) {
   }
   setwd(fig_path)
   
-  drug_name = "Methotrexate"
+  # drug_name = "Methotrexate"
   for (drug_name in unique(gdsc_w_cluster_filt$mapped_drug_name )) {
     # n = n+1
     print(drug_name)
