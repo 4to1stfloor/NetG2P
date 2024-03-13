@@ -34,6 +34,7 @@ meta_cell = readRDS("/mnt/gluster_server/data/reference/TLDR/meta_cells_primary.
 
 criteria_filt = read_xlsx("~/nas/99.reference/DrugCorrection.xlsx")
 num_CancerType = "19.TCGA-LIHC"
+# Cancerlist = Cancerlist[c(2,3)]
 
 for (num_CancerType in Cancerlist) {
   
@@ -48,7 +49,6 @@ for (num_CancerType in Cancerlist) {
   
   # cli_drug = cli_drug %>% select(-X)
   cli_drug_filt = cli_drug %>% 
-    slice(-1,-2) %>% 
     filter(!pharmaceutical_therapy_drug_name %in% c("[Not Available]", "Unknown")) %>%
     select(-bcr_patient_uuid, -bcr_drug_uuid)
 
@@ -100,8 +100,6 @@ for (num_CancerType in Cancerlist) {
   
   gdsc_w_cluster_filt = gdsc_w_cluster %>% 
     filter(DRUG_NAME_new %in% unique(cli_drug_filt_edit$main_name_merge))
-  
-
   
   # for fic
   fig_path = paste0(filepath,"/04.Results/drug/depmap/gdsc/", Cancername)
