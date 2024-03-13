@@ -39,12 +39,11 @@ for (num_CancerType in Cancerlist) {
   # call input
   gc_cellline = readRDS(paste0("~/nas/00.data/filtered_TCGA/", num_CancerType, "/",Cancername,"_cellline_dual_all_log.rds"))
   gc_TCGA = readRDS(paste0("~/nas/04.Results/short_long/", CancerType,"_critical_features_short_long.rds"))
-  cli_drug = read.csv(paste0(ref_path,"TCGA_clinical_drug/",Cancername, "_drug_info_update.csv")) # original
+  cli_drug = read_xlsx(paste0(ref_path,"TCGA_clinical_drug/",Cancername, "_drug_info_update.xlsx"))  # original
   
   # cli_drug = cli_drug %>% select(-X)
   cli_drug_filt = cli_drug %>% 
-    slice(-1,-2) %>% 
-    filter(pharmaceutical_therapy_drug_name != "[Not Available]") %>%
+    filter(!pharmaceutical_therapy_drug_name %in% c("[Not Available]", "Unknown")) %>%
     select(-bcr_patient_uuid, -bcr_drug_uuid)
   
   cli_drug_filt_edit = left_join(cli_drug_filt, criteria_filt, by = c("pharmaceutical_therapy_drug_name" = "OldName")) %>%
