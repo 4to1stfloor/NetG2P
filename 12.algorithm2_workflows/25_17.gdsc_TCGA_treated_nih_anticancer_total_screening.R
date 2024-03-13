@@ -27,10 +27,7 @@ nih_drug_filted = nih_drug %>%
 meta_for_TCGA = read.csv(paste0(ref_path, "/Depmap_meta_filt_to_TCGA.csv"))
 gdsc = readRDS("/mnt/gluster_server/data/reference/GDSC/2024_01_11/GDSC_data_combined.rds")
 meta_cell = readRDS("/mnt/gluster_server/data/reference/TLDR/meta_cells_primary.rds")
-criteria = read.csv("~/nas/99.reference/drug_alias_single_SW.csv", encoding = "UTF-8")
-criteria_filt = criteria %>%
-  separate_rows(alias, sep = ",") %>%
-  mutate(alias = trimws(alias))
+criteria_filt = read_xlsx("~/nas/99.reference/DrugCorrection.xlsx")
 
 # num_CancerType = "30.TCGA-BRCA"
 
@@ -50,9 +47,9 @@ for (num_CancerType in Cancerlist) {
     filter(pharmaceutical_therapy_drug_name != "[Not Available]") %>%
     select(-bcr_patient_uuid, -bcr_drug_uuid)
   
-  cli_drug_filt_edit = left_join(cli_drug_filt, criteria_filt, by = c("pharmaceutical_therapy_drug_name" = "alias")) %>%
-    mutate(main_name_new = coalesce(main_name, pharmaceutical_therapy_drug_name)) %>%
-    select(bcr_patient_barcode,main_name_new, main_name,pharmaceutical_therapy_drug_name, everything())
+  cli_drug_filt_edit = left_join(cli_drug_filt, criteria_filt, by = c("pharmaceutical_therapy_drug_name" = "OldName")) %>%
+    mutate(main_name_new = coalesce(Correction, pharmaceutical_therapy_drug_name)) %>%
+    select(bcr_patient_barcode,main_name_new, Correction,pharmaceutical_therapy_drug_name, everything())
   
   filt_cancer_cell = meta_cell %>% 
     filter(DepMap.ID %in% rownames(gc_cellline)) %>%
@@ -77,14 +74,14 @@ for (num_CancerType in Cancerlist) {
     select(DepMap.ID, cluster, DRUG_ID,mapped_drug_name  ,DRUG_NAME, PUTATIVE_TARGET, PATHWAY_NAME, AUC, RMSE, LN_IC50,Z_SCORE) %>% 
     arrange(DepMap.ID)
   
-  gdsc_w_cluster = left_join(gdsc_w_cluster, criteria_filt, by = c("DRUG_NAME" = "alias")) %>%
-    mutate(DRUG_NAME_new = coalesce(main_name, DRUG_NAME)) %>%
-    select(DepMap.ID,cluster , DRUG_ID,DRUG_NAME_new , DRUG_NAME,main_name, everything())
+  gdsc_w_cluster = left_join(gdsc_w_cluster, criteria_filt, by = c("DRUG_NAME" = "OldName")) %>%
+    mutate(DRUG_NAME_new = coalesce(Correction, DRUG_NAME)) %>%
+    select(DepMap.ID,cluster , DRUG_ID,DRUG_NAME_new , DRUG_NAME,Correction, everything())
   
   nih_each = nih_drug_filted %>% filter(Cancer_type == Cancername)
   
-  nih_each_edit = left_join(nih_each, criteria_filt, by = c("Drug_Name" = "alias")) %>%
-    mutate(main_name_new = coalesce(main_name, Drug_Name ))
+  nih_each_edit = left_join(nih_each, criteria_filt, by = c("Drug_Name" = "OldName")) %>%
+    mutate(main_name_new = coalesce(Correction, Drug_Name ))
   
   tmp_anti = anticancer_drug_filted %>% 
     select(Product, Indications, Targets, 
@@ -92,8 +89,8 @@ for (num_CancerType in Cancerlist) {
   
   tmp_anti_filt = tmp_anti[which(tmp_anti[,Cancername] == "Y"),]
   
-  anticancer_drug_filted_edit = left_join(tmp_anti_filt, criteria_filt, by = c("Product" = "alias")) %>%
-    mutate(main_name_new = coalesce(main_name, Product )) %>% 
+  anticancer_drug_filted_edit = left_join(tmp_anti_filt, criteria_filt, by = c("Product" = "OldName")) %>%
+    mutate(main_name_new = coalesce(Correction, Product )) %>% 
     select(main_name_new , Product,any_of(Cancername), Targets)
   
   gdsc_w_cluster_filt = gdsc_w_cluster %>% 
