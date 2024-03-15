@@ -311,7 +311,7 @@ ComplexHeatmap::pheatmap(total_sig_rev_back %>% as.matrix(),
                          border_color = NA
                          )
 
-dev.off()d
+dev.off()
 #FCFDFE
 #F9FEFE
 #FDFDFE
