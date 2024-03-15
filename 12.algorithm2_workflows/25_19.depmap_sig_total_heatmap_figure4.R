@@ -44,7 +44,7 @@ Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 setwd("~/nas/04.Results/drug/depmap/")
 ####
 Cancerlist = Cancerlist[c(-11,-12)]
-num_CancerType =  "04.TCGA-CESC"
+# num_CancerType =  "04.TCGA-CESC"
 total_matrix = data.frame()
 for (num_CancerType in Cancerlist) {
   
@@ -58,7 +58,7 @@ for (num_CancerType in Cancerlist) {
   gc_cellline_filt_df = readRDS(paste0("~/nas/04.Results/drug/depmap/gdsc/",CancerType, "_DM_sl_cluster.rds"))
 
   depmap_common_link_genes <- unique(link_genes_filtered_df[which(link_genes_filtered_df$Pathway %in% colnames(gc_cellline_filt_df %>% dplyr::select(-cluster))),]$Genes)
-  depmap_common_each_genes <- unique(link_genes_filtered_df[which(single_genes$Pathway %in% colnames(gc_cellline_filt_df %>% dplyr::select(-cluster))),]$Genes)
+  depmap_common_each_genes <- unique(single_genes[which(single_genes$Pathway %in% colnames(gc_cellline_filt_df %>% dplyr::select(-cluster))),]$Genes)
   depmap_common_genes = unique(c(depmap_common_link_genes,depmap_common_each_genes))
 
   depmap_score_critical_features = ge.tbl %>% 
@@ -94,7 +94,6 @@ pheatmap(total_rev,
          cluster_rows = F ,
          color = colorRampPalette(c("blue","white" ,"red"))(100))
 
-
 total_sig_matrix = data.frame()
 for (num_CancerType in Cancerlist) {
   
@@ -108,9 +107,10 @@ for (num_CancerType in Cancerlist) {
   gc_cellline_filt_df = readRDS(paste0("~/nas/04.Results/drug/depmap/gdsc/",CancerType, "_DM_sl_cluster.rds"))
   
   depmap_common_link_genes <- unique(link_genes_filtered_df[which(link_genes_filtered_df$Pathway %in% colnames(gc_cellline_filt_df %>% dplyr::select(-cluster))),]$Genes)
-  depmap_common_each_genes <- unique(link_genes_filtered_df[which(single_genes$Pathway %in% colnames(gc_cellline_filt_df %>% dplyr::select(-cluster))),]$Genes)
+  depmap_common_each_genes <- unique(single_genes[which(single_genes$Pathway %in% colnames(gc_cellline_filt_df %>% dplyr::select(-cluster))),]$Genes)
   depmap_common_genes = unique(c(depmap_common_link_genes,depmap_common_each_genes))
-  
+  # depmap_common_genes = unique(depmap_common_each_genes)
+  # 
   depmap_score_critical_features = ge.tbl %>% 
     filter(rownames(ge.tbl) %in% rownames(gc_cellline_filt_df)) %>%
     dplyr::select(any_of(depmap_common_genes))
@@ -140,7 +140,7 @@ for (num_CancerType in Cancerlist) {
                         select(any_of(depmap_gene)) %>% 
                         pull())$p.value
     
-    if (anno_tmp < 0.05) {
+    if (anno_tmp < 0.03) {
       sig_genes = c(sig_genes, depmap_gene)
     } else {
       next
@@ -178,7 +178,7 @@ total_sig_rev[is.na(total_sig_rev)] = 0
 
 tmp_numeric <- matrix(as.numeric(unlist(total_sig_rev)), nrow = nrow(total_sig_rev))
 vec <- as.vector(tmp_numeric)
-
+# hist(vec[vec != 0])
 hist(vec[vec != 0])
 boxplot(vec[vec != 0])
 
@@ -188,7 +188,7 @@ total_sig_rev[total_sig_rev > quantile(vec[vec != 0], probs = 0.75) + 1.5*IQR(ve
 tmp_tt <- matrix(as.numeric(unlist(total_sig_rev)), nrow = nrow(total_sig_rev))
 vec_tt <- as.vector(tmp_tt)
 
-hist(vec_tt)
+hist(vec_tt[vec_tt!=0])
 boxplot(vec_tt[vec_tt!=0])
 
 # # Convert the matrix to a numeric matrix
