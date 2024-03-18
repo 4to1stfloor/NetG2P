@@ -170,7 +170,7 @@ for (num_CancerType in Cancerlist) {
 }
 
 ### delta
-num_CancerType = "10.TCGA-BLCA"
+# num_CancerType = "10.TCGA-BLCA"
 total_sig_matrix = data.frame()
 total_sig_anno = data.frame()
 for (num_CancerType in Cancerlist) {
@@ -271,8 +271,8 @@ for (num_CancerType in Cancerlist) {
 
 
 total_sig_matrix
-
-total_sig_rev = -total_sig_matrix
+total_sig_rev = total_sig_matrix # delta 에서는 금지
+# total_sig_rev = -total_sig_matrix # delta 에서는 금지
 # total_rev_filt = total_rev + (-min(total_rev , na.rm = T))
 total_sig_rev[is.na(total_sig_rev)] = 0
 
@@ -362,11 +362,15 @@ for (cancername in unique(sapply(strsplit(rownames(total_sig_rev_back), "_"), "[
   tmp_arrange = total_sig_rev_back %>% 
     select(annotation_col %>% 
              filter(cancertype == cancername) %>% 
+             mutate(direction = factor(direction, levels = c("both", "long", "short", "none"))) %>%
+             arrange(direction) %>% 
              rownames(.)) %>% 
     filter(grepl(cancername, rownames(.)))
   
-  tmp_ordered = tmp_arrange %>% gather(key = "gene", value = "value") %>% 
+  tmp_ordered = tmp_arrange %>% gather(key = "gene", value = "value") %>%
     arrange(desc(value)) %>% pull(gene)
+  # tmp_ordered = colnames(tmp_arrange)
+  
   ordered_genes = c(ordered_genes, tmp_ordered)
 }
 
@@ -375,6 +379,32 @@ if (sum(colnames(total_sig_rev_back) %in% ordered_genes) == ncol(total_sig_rev_b
 } else {
   print("error")
 }
+annotation_col = annotation_col[colnames(total_sig_rev_back),]
+
+ordered_genes = c()
+for (cancername in unique(sapply(strsplit(rownames(total_sig_rev_back), "_"), "[", 1))) {
+  tmp_arrange = total_sig_rev_back %>% 
+    select(annotation_col %>% 
+             filter(cancertype == cancername) %>% 
+             mutate(direction = factor(direction, levels = c("both", "long", "short", "none"))) %>%
+             arrange(direction) %>% 
+             rownames(.)) %>% 
+    filter(grepl(cancername, rownames(.)))
+  
+  # tmp_ordered = tmp_arrange %>% gather(key = "gene", value = "value") %>%
+  #   arrange(desc(value)) %>% pull(gene)
+  tmp_ordered = colnames(tmp_arrange)
+  
+  ordered_genes = c(ordered_genes, tmp_ordered)
+}
+
+if (sum(colnames(total_sig_rev_back) %in% ordered_genes) == ncol(total_sig_rev_back) ) {
+  total_sig_rev_back = total_sig_rev_back[,ordered_genes]
+} else {
+  print("error")
+}
+annotation_col = annotation_col[colnames(total_sig_rev_back),]
+
 
 # c(
 #   "LGG" = "#00A087FF", # LGG
@@ -443,5 +473,5 @@ ComplexHeatmap::pheatmap(total_sig_rev_back %>% as.matrix(),
                          scale = "none",
                          border_color = NA
                          ) 
-dev.off()
+# dev.off()
 
