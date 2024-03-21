@@ -56,9 +56,12 @@ for (num_CancerType in Cancerlist) {
 
   gc_TCGA = readRDS(paste0("~/nas/04.Results/short_long/", CancerType,"_critical_features_short_long.rds"))
   gc_cellline_filt_df = readRDS(paste0("~/nas/04.Results/drug/depmap/gdsc/",CancerType, "_DM_sl_cluster.rds"))
-
-  depmap_common_link_genes <- unique(link_genes_filtered_df[which(link_genes_filtered_df$Pathway %in% colnames(gc_cellline_filt_df %>% dplyr::select(-cluster))),]$Genes)
-  depmap_common_each_genes <- unique(single_genes[which(single_genes$Pathway %in% colnames(gc_cellline_filt_df %>% dplyr::select(-cluster))),]$Genes)
+  colnames(gc_TCGA)
+  colnames(gc_cellline_filt_df)
+  depmap_common_link_genes <- unique(link_genes_filtered_df[which(link_genes_filtered_df$Pathway %in% colnames(gc_cellline_filt_df %>% 
+                                                                                                                 dplyr::select(-cluster))),]$Genes)
+  depmap_common_each_genes <- unique(single_genes[which(single_genes$Pathway %in% colnames(gc_cellline_filt_df %>% 
+                                                                                             dplyr::select(-cluster))),]$Genes)
   depmap_common_genes = unique(c(depmap_common_link_genes,depmap_common_each_genes))
 
   depmap_score_critical_features = ge.tbl %>% 
@@ -404,7 +407,7 @@ if (sum(colnames(total_sig_rev_back) %in% ordered_genes) == ncol(total_sig_rev_b
   print("error")
 }
 annotation_col = annotation_col[colnames(total_sig_rev_back),]
-
+# saveRDS(annotation_col, "~/nas/04.Results/drug/depmap/delta_cellline_heatmap_anno_col.rds")
 
 # c(
 #   "LGG" = "#00A087FF", # LGG
@@ -453,7 +456,9 @@ row_colors_cluster <- c(
 
 ann_colors_sl = list(direction = spe_colors, cancertype = cancer_colors ,cluster = row_colors_cluster)
 
-ComplexHeatmap::pheatmap(total_sig_rev_back %>% as.matrix(),
+svglite(filename = "depmap_total_sig.svg" ,width = 30 , height = 10)
+
+tmp_heatmap = ComplexHeatmap::pheatmap(total_sig_rev_back %>% as.matrix(),
                          cluster_rows = F,
                          cluster_cols = F,
                          # breaks = c(-Inf,max(total_sig_rev[total_sig_rev < 0]) , 0 , min(total_sig_rev[total_sig_rev > 0]), Inf) ,
@@ -473,5 +478,8 @@ ComplexHeatmap::pheatmap(total_sig_rev_back %>% as.matrix(),
                          scale = "none",
                          border_color = NA
                          ) 
-# dev.off()
+
+print(tmp_heatmap)
+
+dev.off()
 
