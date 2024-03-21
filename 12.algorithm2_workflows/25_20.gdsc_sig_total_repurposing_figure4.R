@@ -128,8 +128,8 @@ stat_test = stat_test %>%
   group_by(cancertype) %>% 
   mutate(x = row_number()) %>% 
   ungroup() %>% 
-  mutate(xmin = x - 0.2) %>% 
-  mutate(xmax = x + 0.2)
+  mutate(xmin = x - 0.2,
+         xmax = x + 0.2) 
 
 stat_test_add_signif = stat_test %>% mutate(p_signif = case_when(p > 0.05 ~ "ns",
                                                                  p < 0.05 & p > 0.01 ~ "*",
