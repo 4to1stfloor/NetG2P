@@ -119,16 +119,23 @@ stat_test <- total_gd_select_arrange %>%
 stat_test <- stat_test %>%
   add_xy_position(fun = "mean_sd", x = "DRUG_NAME_new", dodge = 0.8) 
 
-stat_test[3,"x"] =  2.5
-stat_test[3,"xmin"] =  2.3
-stat_test[3,"xmax"] =  2.7 
-
-stat_test[9,"x"] =  3
-stat_test[9,"xmin"] =  2.8
-stat_test[9,"xmax"] =  3.2 
-
-
 total_gd_select_arrange$cancertype = factor(total_gd_select_arrange$cancertype , levels = c("STAD", "BLCA", "LUSC"))
+total_gd_select_arrange = total_gd_select_arrange %>% arrange(cancertype) 
+
+stat_test$DRUG_NAME_new = factor(stat_test$DRUG_NAME_new , levels = unique(total_gd_select_arrange$DRUG_NAME_new))
+stat_test = stat_test %>% arrange(DRUG_NAME_new)
+stat_test = stat_test %>% 
+  group_by(cancertype) %>% 
+  mutate(x = row_number()) %>% 
+  ungroup() %>% 
+  mutate(xmin = x - 0.2) %>% 
+  mutate(xmax = x + 0.2)
+
+stat_test_add_signif = stat_test %>% mutate(p_signif = case_when(p > 0.05 ~ "ns",
+                                                                 p < 0.05 & p > 0.01 ~ "*",
+                                                                 p < 0.01 & p > 0.001 ~ "**" ,
+                                                                 p < 0.001 ~ "***", 
+                                                                 .default = NA))
 
 total_box = ggboxplot(total_gd_select_arrange ,
           x = "DRUG_NAME_new",
@@ -142,8 +149,8 @@ total_box = ggboxplot(total_gd_select_arrange ,
           ) + 
   facet_grid(~ cancertype,scales = "free", space='free') +  
   stat_pvalue_manual(
-    stat_test,  
-    label = "p", 
+    stat_test_add_signif,  
+    label = "p_signif", 
     tip.length = 0.02,
     bracket.nudge.y = 0.6
   ) +
