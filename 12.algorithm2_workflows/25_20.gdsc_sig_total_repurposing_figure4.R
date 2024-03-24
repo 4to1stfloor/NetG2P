@@ -6,7 +6,8 @@ library(ggsignif)
 library(openxlsx)
 library(ggpubr)
 library(rstatix)
-
+library(ComplexHeatmap)
+library(gridExtra)
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
 
@@ -108,8 +109,6 @@ for (num_CancerType in Cancerlist) {
 
 }
 
-total_gd_select_arrange
-
 stat_test <- total_gd_select_arrange %>%
   group_by(DRUG_NAME_new, cancertype) %>%
   t_test(Z_SCORE ~ cluster) %>%
@@ -123,7 +122,9 @@ total_gd_select_arrange$cancertype = factor(total_gd_select_arrange$cancertype ,
 total_gd_select_arrange = total_gd_select_arrange %>% arrange(cancertype) 
 
 stat_test$DRUG_NAME_new = factor(stat_test$DRUG_NAME_new , levels = unique(total_gd_select_arrange$DRUG_NAME_new))
+
 stat_test = stat_test %>% arrange(DRUG_NAME_new)
+
 stat_test = stat_test %>% 
   group_by(cancertype) %>% 
   mutate(x = row_number()) %>% 
@@ -132,10 +133,12 @@ stat_test = stat_test %>%
          xmax = x + 0.2) 
 
 stat_test_add_signif = stat_test %>% mutate(p_signif = case_when(p > 0.05 ~ "ns",
-                                                                 p < 0.05 & p > 0.01 ~ "*",
-                                                                 p < 0.01 & p > 0.001 ~ "**" ,
-                                                                 p < 0.001 ~ "***", 
+                                                                 p <= 0.05 & p > 0.01 ~ "*",
+                                                                 p <= 0.01 & p > 0.001 ~ "**" ,
+                                                                 p <= 0.001 ~ "***", 
                                                                  .default = NA))
+stat_test_add_signif$cancertype = factor(stat_test_add_signif$cancertype , levels = c("STAD","BLCA","LUSC"))
+stat_test_add_signif = stat_test_add_signif %>% arrange(cancertype)
 
 total_box = ggboxplot(total_gd_select_arrange ,
           x = "DRUG_NAME_new",
@@ -145,7 +148,9 @@ total_box = ggboxplot(total_gd_select_arrange ,
           palette = c("#4dbbd5", "#e64b35"),
           facet.by = "cancertype",
           short.panel.labs = FALSE,
-          panel.labs.background = list(fill = "steelblue", color = "steelblue")
+          panel.labs.background = list(fill = "steelblue", color = "steelblue"),
+          use.label = F,
+          use.labels = F
           ) + 
   facet_grid(~ cancertype,scales = "free", space='free') +  
   stat_pvalue_manual(
@@ -155,14 +160,79 @@ total_box = ggboxplot(total_gd_select_arrange ,
     bracket.nudge.y = 0.6
   ) +
   ylim(-2.5, 2.5)+ 
-  theme(axis.text.x = element_text(angle=45, hjust = 1),
-        )+
+  theme(axis.text.x = element_blank())+
+  # theme(axis.text.x = element_text(angle=45, hjust = 1))+
   xlab("")  +
+  labs(subtitle = "")+
+  rremove("x.ticks") +
   guides(fill = "none")
 
+tmp_heat = total_repur %>% select(drug_name , repur_from_nih, repur_from_anti, repur_from_TCGA)
+
+tmp_heat_df = tmp_heat %>%
+  pivot_longer(cols = starts_with("repur_from_"), names_to = "variable", values_to = "value") %>%
+  separate_rows(value, sep = "; ") %>%
+  filter(!is.na(value)) %>% 
+  select(drug_name, value) %>%
+  mutate(value_present = ifelse(!is.na(value), 1, 0))
+
+colnames(tmp_heat_df) = c("drug_name","cancertype", "present")
+
+tmp_heat_filt_df = tmp_heat_df %>%
+  mutate(origin = case_when(
+    drug_name %in% total_gd_select_arrange$DRUG_NAME_new ~ 
+      total_gd_select_arrange$cancertype[match(drug_name, total_gd_select_arrange$DRUG_NAME_new)],
+    TRUE ~ NA_character_
+  ))
+
+tmp_heat_filt_df$drug_name = factor(tmp_heat_filt_df$drug_name , levels = unique(total_gd_select_arrange$DRUG_NAME_new))
+tmp_heat_filt_df = tmp_heat_filt_df %>% arrange(drug_name)
+tmp_heat_filt_df$origin = factor(tmp_heat_filt_df$origin , levels = unique(total_gd_select_arrange$cancertype))
+tmp_heat_filt_df = tmp_heat_filt_df %>% arrange(origin)
+
+cancer_colors = c(
+  "LGG" = "#00A087FF", # LGG
+  "OV" = "#3C5488FF", # OV
+  "BRCA" = "#4DBBD5FF", # BRCA
+  "KIDNEY" = "#A20056FF",
+  "PAAD" = "#5F559BFF",
+  "PRAD" = "#FFDC91FF",
+  "SKCM" = "#808180FF",
+  "STAD" = "#91D1C2FF", # STAD
+  "LUSC" = "#B09C85FF", # LUSC
+  "UVM" = "#008B45FF",
+  "UCEC" = "#E64B35FF", # UCEC
+  "LUAD" = "#F39B7FFF" # LUAD
+)
+
+
+
+p2 = tmp_heat_filt_df %>% 
+  group_by(cancertype) %>%
+  ggplot(., aes(x = drug_name, y = cancertype))+
+  geom_tile(aes(fill = cancertype), color = "white") +
+  facet_grid(~ origin,scales = "free", space='free') +
+  theme_classic() + 
+  scale_fill_manual(values = cancer_colors) +
+  theme(
+    legend.position="none",
+    strip.background = element_blank(),
+    strip.text.x = element_blank(),
+    text = element_text(family = "Helvetica", face = "bold")
+  ) + xlab("")  +ylab("")
+
+# theme(axis.text.x = element_text(angle=45, hjust = 1))+
+# gA <- ggplotGrob(total_box)
+# gB <- ggplotGrob(p2)
+# grid::grid.newpage()
+# grid::grid.draw(rbind(gA, gB))
+# 
+# grid.arrange(total_box, p2, nrow=2)
+library(cowplot)
+total_box_add_heat = plot_grid(total_box ,p2, align = "v",nrow = 2 , rel_heights = c(c(5/8, 3/8)))
 
 setwd("~/nas/04.Results/drug/depmap/gdsc/")
-ggsave(file= "total_repurposing_screening.svg", plot=total_box, width=8, height=4)
+ggsave(file= "total_repurposing_screening_with_heat.svg", plot=total_box_add_heat, width=8, height=4.8)
 
 # lihc = readRDS(paste0("~/nas/04.Results/short_long/", CancerType,"_critical_features_short_long_with_drug.rds"))
 

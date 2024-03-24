@@ -179,7 +179,7 @@ for (num_CancerType in Cancerlist) {
   cellline_short = gc_cellline_filt_df %>% filter(cluster == "short")
   
   depmap_common_link_genes <- unique(link_genes_filtered_df[which(link_genes_filtered_df$Pathway %in% colnames(gc_cellline_filt_df %>% dplyr::select(-cluster))),]$Genes)
-  depmap_common_each_genes <- unique(link_genes_filtered_df[which(single_genes$Pathway %in% colnames(gc_cellline_filt_df %>% dplyr::select(-cluster))),]$Genes)
+  depmap_common_each_genes <- unique(single_genes[which(single_genes$Pathway %in% colnames(gc_cellline_filt_df %>% dplyr::select(-cluster))),]$Genes)
   depmap_common_genes = unique(c(depmap_common_link_genes,depmap_common_each_genes))
   
   filtered_df = data.frame()
