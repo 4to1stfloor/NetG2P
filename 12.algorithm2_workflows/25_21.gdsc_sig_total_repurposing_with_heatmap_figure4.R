@@ -31,7 +31,7 @@ meta_cell = readRDS("/mnt/gluster_server/data/reference/TLDR/meta_cells_primary.
 
 criteria_filt = read_xlsx("~/nas/99.reference/DrugCorrection.xlsx")
 
-num_CancerType = "19.TCGA-LIHC"
+# num_CancerType = "19.TCGA-LIHC"
 
 total_repur_screening = data.frame()
 for (num_CancerType in Cancerlist) {
@@ -183,11 +183,11 @@ for (num_CancerType in Cancerlist) {
   # lihc = readRDS(paste0("~/nas/04.Results/short_long/", CancerType,"_critical_features_short_long_with_drug.rds"))
 }
 
-lihc_total_repur = total_repur_screening
-lihc_repur_cut = total_repur_screening %>% filter(direction == "short" & pvalue < 0.1)
+# lihc_total_repur = total_repur_screening
+# lihc_repur_cut = total_repur_screening %>% filter(direction == "short" & pvalue < 0.1)
 
-write.xlsx(lihc_total_repur , "~/nas/04.Results/drug/depmap/gdsc/lihc_repurposing_screening_w_target.xlsx")
-write.xlsx(lihc_repur_cut , "~/nas/04.Results/drug/depmap/gdsc/lihc_spe_repurposing_w_target.xlsx")
+# write.xlsx(lihc_total_repur , "~/nas/04.Results/drug/depmap/gdsc/lihc_repurposing_screening_w_target.xlsx")
+# write.xlsx(lihc_repur_cut , "~/nas/04.Results/drug/depmap/gdsc/lihc_spe_repurposing_w_target.xlsx")
 
 library(readxl)
 library(tidyverse)
