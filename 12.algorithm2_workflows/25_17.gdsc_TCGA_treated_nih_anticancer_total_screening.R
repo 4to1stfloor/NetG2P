@@ -10,6 +10,17 @@ ref_path = paste0(filepath, "99.reference/")
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 Cancerlist = Cancerlist[c(-11,-12)]
 
+link_genes = readRDS(paste0(ref_path, "/KEGG_pathway_shared_genes.rds"))
+single_genes = readRDS(paste0(ref_path, "/Kegg_pathway_genes.rds"))
+link_genes$n_genes = NULL
+link_genes_filtered = link_genes[which(link_genes$shared_genes != ""),]
+
+link_genes_filtered <- link_genes_filtered %>%
+  mutate(shared_genes = strsplit(shared_genes, ",")) %>%
+  unnest(cols = shared_genes)
+link_genes_filtered_df = as.data.frame(link_genes_filtered)
+colnames(link_genes_filtered_df) = colnames(single_genes)
+
 #drug 
 anticancer_drug = read_xlsx("~/nas/99.reference/anticancer_fund_cancerdrugsdb.xlsx")
 
@@ -105,7 +116,8 @@ for (num_CancerType in Cancerlist) {
   }
   setwd(fig_path)
   
-  # drug_name = "Lapatinib"
+  total_gdsc_screening = data.frame()
+  # drug_name = "Etoposide"
   for (drug_name in unique(gdsc_w_cluster_filt$DRUG_NAME_new )) {
     # n = n+1
     print(drug_name)
@@ -118,26 +130,26 @@ for (num_CancerType in Cancerlist) {
       next
     } else {
       anno_tmp = t.test(tmp_anti_long$Z_SCORE, tmp_anti_short$Z_SCORE)$p.value
-      tmp_drug = ggplot(tmp_for_drug , aes( x = cluster , y = Z_SCORE, fill= cluster)) + 
+      tmp_drug = ggplot(tmp_for_drug , aes( x = cluster , y = Z_SCORE, fill= cluster)) +
         # geom_violin(color ="black") +
         # geom_boxplot(width=0.1, color = "black" , fill="white")+
         geom_boxplot()+
-        # scale_color_manual(values="black","black") + 
+        # scale_color_manual(values="black","black") +
         scale_fill_manual(values=c("#4DAF4A", "#E41A1C")) +
-        
+
         geom_signif(
           annotation = paste0(formatC(anno_tmp, digits = 3)),
           map_signif_level = TRUE,
           comparisons = list(c("long", "short")),
-          # y_position = 3.05, 
-          # xmin = 1, 
+          # y_position = 3.05,
+          # xmin = 1,
           # xmax = 3,
           # tip_length = c(0.22, 0.02),
         ) +
         ggtitle(paste0(drug_name)) +
         # stat_compare_means(label.y = 10) +
         theme_minimal()
-      
+
       if (anno_tmp < 0.05 ) {
         print(paste0(drug_name," : ",anno_tmp))
         fig_path = paste0(filepath,"/04.Results/drug/depmap/gdsc/", Cancername, "/sig/")
@@ -150,6 +162,16 @@ for (num_CancerType in Cancerlist) {
         setwd(fig_path)
         
         ggsave(filename = paste0(CancerType,"_",drug_name, "_nih_anti_treated_screening_sig.svg"), tmp_drug)
+        pathway_links = link_genes_filtered_df %>% filter(Genes %in% unique(tmp_for_drug$PUTATIVE_TARGET)) %>% pull(Pathway)
+        pathway_single = single_genes %>% filter(Genes %in% unique(tmp_for_drug$PUTATIVE_TARGET)) %>% pull(Pathway)
+        
+        tmp_sig_gdsc = data.frame(cancer = Cancername , 
+                                  drug_name = drug_name , 
+                                  target_genes = unique(tmp_for_drug$PUTATIVE_TARGET), 
+                                  critical_features = ifelse( length(unique(c(pathway_links,pathway_single))) == 0 , 
+                                                              NA , 
+                                                              unique(c(pathway_links,pathway_single))))
+        total_gdsc_screening = rbind(total_gdsc_screening , tmp_sig_gdsc)
         
       } else {
         fig_path = paste0(filepath,"/04.Results/drug/depmap/gdsc/", Cancername, "/no_sig/")
@@ -160,11 +182,22 @@ for (num_CancerType in Cancerlist) {
           print(paste0("Folder already exists: ", fig_path))
         }
         setwd(fig_path)
-        
+
         ggsave(filename = paste0(CancerType,"_",drug_name, "_nih_anti_treated_screening_nosig.svg"), tmp_drug)
       }
       remove(anno_tmp)
     }
   }
+  
+  fig_path = paste0(filepath,"/04.Results/drug/depmap/gdsc/", Cancername, "/sig/")
+  if(!dir.exists(fig_path)){
+    dir.create(fig_path)
+    print(paste0("Created folder: ", fig_path))
+  } else {
+    print(paste0("Folder already exists: ", fig_path))
+  }
+  setwd(fig_path)
+  
+  write.csv(total_gdsc_screening, paste0("~/nas/04.Results/drug/depmap/gdsc/", Cancername, "/sig/", Cancername,"_gdsc_screening_sig.csv"))
   # lihc = readRDS(paste0("~/nas/04.Results/short_long/", CancerType,"_critical_features_short_long_with_drug.rds"))
 }
