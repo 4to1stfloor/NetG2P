@@ -11,6 +11,17 @@ ref_path = paste0(filepath, "99.reference/")
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 Cancerlist = Cancerlist[c(-11,-12)]
 
+link_genes = readRDS(paste0(ref_path, "/KEGG_pathway_shared_genes.rds"))
+single_genes = readRDS(paste0(ref_path, "/Kegg_pathway_genes.rds"))
+link_genes$n_genes = NULL
+link_genes_filtered = link_genes[which(link_genes$shared_genes != ""),]
+
+link_genes_filtered <- link_genes_filtered %>%
+  mutate(shared_genes = strsplit(shared_genes, ",")) %>%
+  unnest(cols = shared_genes)
+link_genes_filtered_df = as.data.frame(link_genes_filtered)
+colnames(link_genes_filtered_df) = colnames(single_genes)
+
 #drug 
 anticancer_drug = read_xlsx("~/nas/99.reference/anticancer_fund_cancerdrugsdb.xlsx")
 
@@ -31,7 +42,7 @@ meta_cell = readRDS("/mnt/gluster_server/data/reference/TLDR/meta_cells_primary.
 
 criteria_filt = read_xlsx("~/nas/99.reference/DrugCorrection.xlsx")
 
-# num_CancerType = "19.TCGA-LIHC"
+# num_CancerType = "11.TCGA-STAD"
 
 total_repur_screening = data.frame()
 for (num_CancerType in Cancerlist) {
@@ -119,7 +130,7 @@ for (num_CancerType in Cancerlist) {
                       unique(cli_drug_filt_edit$main_name_merge), 
                       unique(anticancer_drug_filted_edit$main_name_new))))
   
-  # drug_name = "Fulvestrant"
+  # drug_name = "Sorafenib"
   
   for (drug_name in unique(gdsc_w_cluster_filt$DRUG_NAME_new )) {
     # n = n+1
@@ -161,6 +172,23 @@ for (num_CancerType in Cancerlist) {
         mutate(across(where(~ any(. == "Y" & !is.na(.))), ~.)) %>%
         select(where(~ any(!is.na(.)))) %>% colnames() 
       
+      anti_target_genes = anticancer_drug_filted_edit %>% 
+        filter(main_name_new == drug_name) %>%
+        slice(1) %>%
+        pull(Targets) %>% 
+        str_split(., ";") %>% unlist() %>% 
+        trimws()
+      
+      gdsc_target_genes = unique(tmp_for_drug$PUTATIVE_TARGET) %>% str_split(. ,",") %>% unlist() %>% trimws()
+      
+      anti_pathwaylinks = link_genes_filtered_df %>% filter(Genes %in% anti_target_genes) %>% pull(Pathway) %>% unique()
+      gdsc_pathwaylinks = link_genes_filtered_df %>% filter(Genes %in% gdsc_target_genes) %>% pull(Pathway) %>% unique()
+      
+      anti_pathways = single_genes %>% filter(Genes %in% anti_target_genes) %>% pull(Pathway) %>% unique()
+      gdsc_pathways = single_genes %>% filter(Genes %in% gdsc_target_genes) %>% pull(Pathway) %>% unique()
+      anti_cf = colnames(gc_TCGA)[colnames(gc_TCGA) %in% c(anti_pathwaylinks, anti_pathways)]
+      gdsc_cf = colnames(gc_TCGA)[colnames(gc_TCGA) %in% c(gdsc_pathwaylinks, gdsc_pathways)]
+      
       tmp_repur_screen = data.frame(cancer_name = Cancername, 
                                     drug_name = drug_name, 
                                     pvalue = anno_tmp,
@@ -174,7 +202,9 @@ for (num_CancerType in Cancerlist) {
                                                                 filter(main_name_new == drug_name) %>%
                                                                 slice(1) %>%
                                                                 pull(Targets)),
-                                    target_gene_gdsc = paste0(unique(tmp_for_drug$PUTATIVE_TARGET), collapse = "; ")
+                                    target_gene_gdsc = paste0(unique(tmp_for_drug$PUTATIVE_TARGET), collapse = "; "),
+                                    critical_features_from_anti = ifelse(length(anti_cf) == 0 , NA , anti_cf),
+                                    critical_features_from_gdsc = ifelse(length(gdsc_cf) == 0 , NA , gdsc_cf)
       )
       
     }
@@ -185,9 +215,10 @@ for (num_CancerType in Cancerlist) {
 
 # lihc_total_repur = total_repur_screening
 # lihc_repur_cut = total_repur_screening %>% filter(direction == "short" & pvalue < 0.1)
+total_repur_screening_spe = total_repur_screening %>% filter(direction == "short" & pvalue < 0.05)
 
 # write.xlsx(lihc_total_repur , "~/nas/04.Results/drug/depmap/gdsc/lihc_repurposing_screening_w_target.xlsx")
-# write.xlsx(lihc_repur_cut , "~/nas/04.Results/drug/depmap/gdsc/lihc_spe_repurposing_w_target.xlsx")
+write.xlsx(total_repur_screening_spe , "~/nas/04.Results/drug/depmap/gdsc/total_repurposing_screening_w_target.xlsx")
 
 library(readxl)
 library(tidyverse)
