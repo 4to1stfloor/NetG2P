@@ -308,6 +308,12 @@ total_sig_rev_back[total_sig_rev_back < 0] = (total_sig_rev_back[total_sig_rev_b
   (max(total_sig_rev_back[total_sig_rev_back < 0]) - min(total_sig_rev_back[total_sig_rev_back < 0])) *
   (max(total_sig_rev_back[total_sig_rev_back < 0]) - -1) + -1
 
+## only show short direction 
+
+total_sig_rev_back = total_sig_rev_back %>%
+  select(where(~ !any(. < 0)))
+total_sig_rev_back = total_sig_rev_back[rowSums(total_sig_rev_back) != 0,]
+
 annotation_col = data.frame()
 
 # cancername = "CESC"
@@ -326,8 +332,6 @@ for (cancername in unique(sapply(strsplit(rownames(total_sig_rev_back), "_"), "[
  
   annotation_col = rbind(annotation_col, tmp_annocol)
 }
-
-annotation_col
 
 other_df = data.frame(cancertype = "multiple_specific", genes = colnames(total_sig_rev_back)[!colnames(total_sig_rev_back) %in% annotation_col$genes])
 
@@ -435,10 +439,10 @@ cancer_colors = c(
 )
 
 spe_colors = c(
-  "both" = "#596CFF", # effective both direction
-  "long" = "#009E73", # effective both direction
-  "short" = "#FF3824", # effective both direction
-  "none" = "#FFDC24" # effective both direction
+  "both" = "#FFFFFF", # effective both direction
+  "long" = "#00FF00", # effective both direction
+  "short" = "#FF0000", # effective both direction
+  "none" = "#000000" # effective both direction
 )
 row_colors_cluster <- c(
   "LGG" = "#00A087FF", # LGG
@@ -456,28 +460,55 @@ row_colors_cluster <- c(
 
 ann_colors_sl = list(direction = spe_colors, cancertype = cancer_colors ,cluster = row_colors_cluster)
 
-svglite(filename = "depmap_total_sig.svg" ,width = 30 , height = 10)
+# svglite(filename = "depmap_total_sig.svg" ,width = 30 , height = 10)
+# 
+# tmp_heatmap = ComplexHeatmap::pheatmap(total_sig_rev_back %>% as.matrix(),
+#                          cluster_rows = F,
+#                          cluster_cols = F,
+#                          # breaks = c(-Inf,max(total_sig_rev[total_sig_rev < 0]) , 0 , min(total_sig_rev[total_sig_rev > 0]), Inf) ,
+#                          column_split = factor(annotation_col$cancertype, levels = c(unique(annotation_col$cancertype))) ,
+#                          row_split = factor(annotation_row$cluster, levels = c(unique(annotation_row$cluster))),
+#                          annotation_colors = ann_colors_sl,
+#                          annotation_col = annotation_col %>% select(direction),
+#                          annotation_row = annotation_row,
+#                          legend = T,
+#                          annotation_legend = T,
+#                          annotation_names_col = F,
+#                          annotation_names_row = F,
+#                          show_colnames = T,
+#                          show_rownames = F,
+#                          cluster_column_slices = FALSE,
+#                          color = c( colorRampPalette(c("#387eb8", "#F9FEFE", "#e21e26"))(100)),
+#                          scale = "none",
+#                          border_color = NA
+#                          ) 
+# 
+# print(tmp_heatmap)
+# 
+# dev.off()
+
+svglite(filename = "depmap_only_short_sig.svg" ,width = 30 , height = 10)
 
 tmp_heatmap = ComplexHeatmap::pheatmap(total_sig_rev_back %>% as.matrix(),
-                         cluster_rows = F,
-                         cluster_cols = F,
-                         # breaks = c(-Inf,max(total_sig_rev[total_sig_rev < 0]) , 0 , min(total_sig_rev[total_sig_rev > 0]), Inf) ,
-                         column_split = factor(annotation_col$cancertype, levels = c(unique(annotation_col$cancertype))) ,
-                         row_split = factor(annotation_row$cluster, levels = c(unique(annotation_row$cluster))),
-                         annotation_colors = ann_colors_sl,
-                         annotation_col = annotation_col %>% select(direction),
-                         annotation_row = annotation_row,
-                         legend = T,
-                         annotation_legend = T,
-                         annotation_names_col = F,
-                         annotation_names_row = F,
-                         show_colnames = T,
-                         show_rownames = F,
-                         cluster_column_slices = FALSE,
-                         color = c( colorRampPalette(c("#387eb8", "#F9FEFE", "#e21e26"))(100)),
-                         scale = "none",
-                         border_color = NA
-                         ) 
+                                       cluster_rows = F,
+                                       cluster_cols = F,
+                                       # breaks = c(-Inf,max(total_sig_rev[total_sig_rev < 0]) , 0 , min(total_sig_rev[total_sig_rev > 0]), Inf) ,
+                                       column_split = factor(annotation_col$cancertype, levels = c(unique(annotation_col$cancertype))) ,
+                                       row_split = factor(annotation_row$cluster, levels = c(unique(annotation_row$cluster))),
+                                       annotation_colors = ann_colors_sl,
+                                       annotation_col = annotation_col %>% select(direction),
+                                       annotation_row = annotation_row,
+                                       legend = T,
+                                       annotation_legend = T,
+                                       annotation_names_col = F,
+                                       annotation_names_row = F,
+                                       show_colnames = T,
+                                       show_rownames = F,
+                                       cluster_column_slices = FALSE,
+                                       color = c( colorRampPalette(c("#F9FEFE", "#e21e26"))(100)),
+                                       scale = "none",
+                                       border_color = NA
+) 
 
 print(tmp_heatmap)
 
