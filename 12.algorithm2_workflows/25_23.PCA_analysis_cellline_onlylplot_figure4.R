@@ -31,13 +31,13 @@ ge.tbl <- read.csv(file = paste0(ref_path, 'DepMap/CRISPRGeneEffect.csv'),
 meta_for_TCGA = read.csv(paste0(ref_path, "/Depmap_meta_filt_to_TCGA.csv"))
 
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
-setwd("~/nas/04.Results/drug/depmap/")
+
 ####
 Cancerlist = Cancerlist[c(-11,-12)]
 # num_CancerType =  "04.TCGA-CESC"
 
 for (num_CancerType in Cancerlist) {
-  
+  setwd("~/nas/04.Results/drug/depmap/")
   main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)
   CancerType = gsub('[.]','',gsub('\\d','', num_CancerType))
   Cancername = gsub('TCGA-' , '', CancerType)
@@ -115,7 +115,7 @@ for (num_CancerType in Cancerlist) {
   
   merge_pca_res = rbind(merge_pca_res, mean_of_long, mean_of_short)
 
-  manual_size =  ifelse(merge_pca_res$predict_state == "TCGA" , 1, 3)
+  manual_size =  ifelse(merge_pca_res$predict_state == "TCGA" , 2, 4)
 
   merge_pca_res$text = ifelse(merge_pca_res$predict_state == "TCGA", NA, rownames(merge_pca_res))
   
@@ -144,17 +144,41 @@ for (num_CancerType in Cancerlist) {
   grid$cluster_adjust = "line"
   grid$alpha = F
   grid$text = ""
- 
+  
+  # setwd("~/nas/04.Results/PCA_tsne/cellline_pca/")
+  # pca_plot = ggplot(merge_pca_res , aes(x = PC1, 
+  #                                       y = PC2, 
+  #                                       color = cluster_adjust,
+  #                                       alpha = alpha,
+  #                                       label = text))+
+  #   geom_point(aes(shape = predict_state), size = manual_size)+
+  #   scale_alpha_discrete(range = c(0.3, 1)) +
+  #   geom_text_repel(max.overlaps = 20) +
+  #   stat_contour(data = grid, aes(x = PC1, y = PC2, z = z), breaks = c(0)) +
+  #   scale_shape_manual(values = c(15,17,19,19)) + 
+  #   labs(x = paste0("PC1: ",round(variance_exp[1]*100), "%"),
+  #        y = paste0("PC2: ",round(variance_exp[2]*100), "%")) +
+  #   theme_classic()+  
+  #   scale_color_manual(values=c("short_labelled" = "#e64b35",
+  #                               "long_labelled" = "#4dbbd5",
+  #                               "long" = "#4DAF4A",
+  #                               "short" = "#E41A1C",
+  #                               "mean_of_long" = "#4DAF4A",
+  #                               "mean_of_short" = "#990066",
+  #                               "line" = "black")) +
+  #   theme(legend.position = "none")
+  # 
+  setwd("~/nas/04.Results/PCA_tsne/cellline_pca/")
   pca_plot = ggplot(merge_pca_res , aes(x = PC1, 
-                                          y = PC2, 
-                                          color = cluster_adjust,
-                                          alpha = alpha,
-                                          label = text))+
-    geom_point(aes(shape = predict_state), size = manual_size)+
+                                        y = PC2, 
+                                        color = cluster_adjust,
+                                        alpha = alpha,
+                                        label = text))+
+    geom_point(size = manual_size)+
     scale_alpha_discrete(range = c(0.3, 1)) +
-    geom_text_repel(max.overlaps = 20) +
+    # geom_text_repel(max.overlaps = 20) +
     stat_contour(data = grid, aes(x = PC1, y = PC2, z = z), breaks = c(0)) +
-    scale_shape_manual(values = c(15,17,19,19)) + 
+    scale_shape_manual(values = c(19)) + 
     labs(x = paste0("PC1: ",round(variance_exp[1]*100), "%"),
          y = paste0("PC2: ",round(variance_exp[2]*100), "%")) +
     theme_classic()+  
@@ -165,10 +189,15 @@ for (num_CancerType in Cancerlist) {
                                 "mean_of_long" = "#4DAF4A",
                                 "mean_of_short" = "#990066",
                                 "line" = "black")) +
-    theme(legend.position = "none")
+    theme(legend.position = "none",
+          axis.text.x = element_text(face = "bold", family = "Helvetica-Bold", size = 10),
+          axis.text.y = element_text(face = "bold", family = "Helvetica-Bold", size = 10),
+          axis.title.x = element_text(face = "bold", family = "Helvetica-Bold", size = 10),
+          axis.title.y = element_text(face = "bold", family = "Helvetica-Bold", size = 10)) 
   
-  ggsave(file=paste0(CancerType , "_PCA_plot_predict.svg"), plot=pca_plot, width=7, height=7)
+  ggsave(file=paste0(CancerType , "_PCA_plot_wo_predict_wo_label.svg"), plot=pca_plot, width=5, height=5)
   # write.csv(merge_pca_res,paste0(CancerType , "_PCA_.csv" ))
 }
+
 
 

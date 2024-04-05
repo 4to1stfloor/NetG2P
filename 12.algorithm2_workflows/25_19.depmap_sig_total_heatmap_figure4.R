@@ -16,6 +16,7 @@ library(readxl)
 library(ggridges)
 library(ggdist)
 library(ggpubr)
+library(svglite)
 
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
@@ -439,10 +440,10 @@ cancer_colors = c(
 )
 
 spe_colors = c(
-  "both" = "#FFFFFF", # effective both direction
-  "long" = "#00FF00", # effective both direction
-  "short" = "#FF0000", # effective both direction
-  "none" = "#000000" # effective both direction
+  "both" = "#7FB77E", # effective both direction
+  "long" = "#77DD77", # effective both direction
+  "short" = "#CC6677", # effective both direction
+  "none" = "#E57373" # effective both direction
 )
 row_colors_cluster <- c(
   "LGG" = "#00A087FF", # LGG
@@ -487,7 +488,7 @@ ann_colors_sl = list(direction = spe_colors, cancertype = cancer_colors ,cluster
 # 
 # dev.off()
 
-svglite(filename = "depmap_only_short_sig.svg" ,width = 30 , height = 10)
+svglite(filename = "depmap_only_short_sig.svg" ,width = 17 , height = 8)
 
 tmp_heatmap = ComplexHeatmap::pheatmap(total_sig_rev_back %>% as.matrix(),
                                        cluster_rows = F,
@@ -507,10 +508,60 @@ tmp_heatmap = ComplexHeatmap::pheatmap(total_sig_rev_back %>% as.matrix(),
                                        cluster_column_slices = FALSE,
                                        color = c( colorRampPalette(c("#F9FEFE", "#e21e26"))(100)),
                                        scale = "none",
-                                       border_color = NA
+                                       border_color = NA,
+                                       fontfamily = "Helvetica",
+                                       fontfamily_row = "Helvetica",
+                                       fontfamily_col = "Helvetica",
+                                       fontface = "bold",
+                                       fontface_row = "bold",
+                                       fontface_col = "bold",
+                                       fontsize_row = 10,  
+                                       fontsize_col = 10
 ) 
+
+# draw(tmp_heatmap, annotation_row_font_size=10)
 
 print(tmp_heatmap)
 
 dev.off()
 
+# 
+# library(ComplexHeatmap)
+# pushViewport(viewport(gp = gpar(fontfaily = "Helvetica")))
+# tmp_heatmap = ComplexHeatmap::pheatmap(total_sig_rev_back %>% as.matrix(),
+#                                        cluster_rows = F,
+#                                        cluster_cols = F,
+#                                        # breaks = c(-Inf,max(total_sig_rev[total_sig_rev < 0]) , 0 , min(total_sig_rev[total_sig_rev > 0]), Inf) ,
+#                                        column_split = factor(annotation_col$cancertype, levels = c(unique(annotation_col$cancertype))) ,
+#                                        row_split = factor(annotation_row$cluster, levels = c(unique(annotation_row$cluster))),
+#                                        annotation_colors = ann_colors_sl,
+#                                        annotation_col = annotation_col %>% select(direction),
+#                                        annotation_row = annotation_row,
+#                                        legend = T,
+#                                        annotation_legend = T,
+#                                        annotation_names_col = F,
+#                                        annotation_names_row = F,
+#                                        show_colnames = T,
+#                                        show_rownames = F,
+#                                        cluster_column_slices = FALSE,
+#                                        color = c( colorRampPalette(c("#F9FEFE", "#e21e26"))(100)),
+#                                        scale = "none",
+#                                        border_color = NA,
+#                                        fontfamily = "Helvetica",
+#                                        fontfamily_row = "Helvetica",
+#                                        fontfamily_col = "Helvetica", 
+#                                        fontface = "bold",
+#                                        fontface_row = "bold",
+#                                        fontface_col = "bold",
+#                                        fontsize_row = 10,
+#                                        fontsize_col = 10
+# ) 
+# 
+# # font = "Helvetica"
+# # 
+# # tmp_heatmap@left_annotation@anno_list$cluster@name_param$gp$font = font
+# # tmp_heatmap@left_annotation@anno_list$cluster@name_param$gp$fontsize = 20
+# # tmp_heatmap@top_annotation@anno_list$direction@name_param$gp$fontsize = 20
+# 
+# draw(tmp_heatmap, newpage = F)
+# popViewport()
