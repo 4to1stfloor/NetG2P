@@ -238,31 +238,31 @@ for (num_CancerType in Cancerlist) {
   long_dep_score_cf_filt = dep_score_sig_cf_filt %>% filter(cluster == "long")
   short_dep_score_cf_filt = dep_score_sig_cf_filt %>% filter(cluster == "short")
   
-  long_sum = long_dep_score_cf_filt %>% select(-cluster) %>% colMeans() %>% as.data.frame()
-  short_sum = short_dep_score_cf_filt %>% select(-cluster) %>% colMeans() %>% as.data.frame()
-  delta_sum = long_sum - short_sum
-  colnames(delta_sum) = c(paste0(Cancername , "_mean_delta"))
+  long_mean = long_dep_score_cf_filt %>% select(-cluster) %>% colMeans() %>% as.data.frame()
+  short_mean = short_dep_score_cf_filt %>% select(-cluster) %>% colMeans() %>% as.data.frame()
+  delta_mean = long_mean - short_mean
+  colnames(delta_mean) = c(paste0(Cancername , "_mean_delta"))
   
-  delta_sum$direction = ""
-  if (nrow(delta_sum[which(long_sum < 0 & short_sum < 0 ),]) != 0) {
-    delta_sum[which(long_sum < 0 & short_sum < 0 ),]$direction = "both"
+  delta_mean$direction = ""
+  if (nrow(delta_mean[which(long_mean < 0 & short_mean < 0 ),]) != 0) {
+    delta_mean[which(long_mean < 0 & short_mean < 0 ),]$direction = "both"
   } 
   
-  if (nrow(delta_sum[which(long_sum < 0 & short_sum > 0 ),]) != 0) {
-    delta_sum[which(long_sum < 0 & short_sum > 0 ),]$direction = "long"
+  if (nrow(delta_mean[which(long_mean < 0 & short_mean > 0 ),]) != 0) {
+    delta_mean[which(long_mean < 0 & short_mean > 0 ),]$direction = "long"
   } 
   
-  if (nrow(delta_sum[which(long_sum > 0 & short_sum < 0 ),]) != 0) {
-    delta_sum[which(long_sum > 0 & short_sum < 0 ),]$direction = "short"
+  if (nrow(delta_mean[which(long_mean > 0 & short_mean < 0 ),]) != 0) {
+    delta_mean[which(long_mean > 0 & short_mean < 0 ),]$direction = "short"
   } 
   
-  if (nrow(delta_sum[which(long_sum > 0 & short_sum > 0 ),]) != 0) {
-    delta_sum[which(long_sum > 0 & short_sum > 0 ),]$direction = "none"
+  if (nrow(delta_mean[which(long_mean > 0 & short_mean > 0 ),]) != 0) {
+    delta_mean[which(long_mean > 0 & short_mean > 0 ),]$direction = "none"
   }
   
-  tmp_delta = as.data.frame(t(delta_sum %>% select(any_of(paste0(Cancername , "_mean_delta")))))
+  tmp_delta = as.data.frame(t(delta_mean %>% select(any_of(paste0(Cancername , "_mean_delta")))))
   # tmp_anno = delta_sum %>% select(direction) %>% t() %>% as.data.frame()
-  tmp_anno = delta_sum %>% select(direction)
+  tmp_anno = delta_mean %>% select(direction)
   tmp_anno$genes = rownames(tmp_anno)
   rownames(tmp_anno) = NULL
   tmp_anno$cancertype = Cancername
@@ -311,6 +311,12 @@ total_sig_rev_back[total_sig_rev_back < 0] = (total_sig_rev_back[total_sig_rev_b
 
 ## only show short direction 
 
+# total_sig_rev_back = total_sig_rev_back %>%
+#   select(where(~ !any(. < 0)))
+# total_sig_rev_back = total_sig_rev_back[rowSums(total_sig_rev_back) != 0,]
+
+
+total_sig_rev_back = total_sig_rev_back[,total_sig_anno %>% filter(direction %in% c("both", "short")) %>% pull(genes) %>% unique()]
 total_sig_rev_back = total_sig_rev_back %>%
   select(where(~ !any(. < 0)))
 total_sig_rev_back = total_sig_rev_back[rowSums(total_sig_rev_back) != 0,]
@@ -414,18 +420,6 @@ if (sum(colnames(total_sig_rev_back) %in% ordered_genes) == ncol(total_sig_rev_b
 annotation_col = annotation_col[colnames(total_sig_rev_back),]
 # saveRDS(annotation_col, "~/nas/04.Results/drug/depmap/delta_cellline_heatmap_anno_col.rds")
 
-# c(
-#   "LGG" = "#00A087FF", # LGG
-#   "OV" = "#3C5488FF", # OV
-#   "BRCA" = "#4DBBD5FF", # BRCA
-#   "BLCA" = "#7E6148FF", # BLCA
-#   "LIHC" = "#8491B4FF", # LIHC
-#   "STAD" = "#91D1C2FF", # STAD
-#   "LUSC" = "#B09C85FF", # LUSC
-#   "CESC" = "#DC0000FF", # CESC
-#   "UCEC" = "#E64B35FF", # UCEC
-#   "LUAD" = "#F39B7FFF"  # LUAD
-# )
 cancer_colors = c(
   "LGG" = "#00A087FF", # LGG
   "OV" = "#3C5488FF", # OV
@@ -440,10 +434,10 @@ cancer_colors = c(
 )
 
 spe_colors = c(
-  "both" = "#7FB77E", # effective both direction
-  "long" = "#77DD77", # effective both direction
-  "short" = "#CC6677", # effective both direction
-  "none" = "#E57373" # effective both direction
+  "both" = "#F4A261", # effective both direction
+  "long" = "#F5F5F5", # effective both direction
+  "short" = "#E63946", # effective both direction
+  "none" = "#2A9D8F" # effective both direction
 )
 row_colors_cluster <- c(
   "LGG" = "#00A087FF", # LGG
@@ -461,34 +455,7 @@ row_colors_cluster <- c(
 
 ann_colors_sl = list(direction = spe_colors, cancertype = cancer_colors ,cluster = row_colors_cluster)
 
-# svglite(filename = "depmap_total_sig.svg" ,width = 30 , height = 10)
-# 
-# tmp_heatmap = ComplexHeatmap::pheatmap(total_sig_rev_back %>% as.matrix(),
-#                          cluster_rows = F,
-#                          cluster_cols = F,
-#                          # breaks = c(-Inf,max(total_sig_rev[total_sig_rev < 0]) , 0 , min(total_sig_rev[total_sig_rev > 0]), Inf) ,
-#                          column_split = factor(annotation_col$cancertype, levels = c(unique(annotation_col$cancertype))) ,
-#                          row_split = factor(annotation_row$cluster, levels = c(unique(annotation_row$cluster))),
-#                          annotation_colors = ann_colors_sl,
-#                          annotation_col = annotation_col %>% select(direction),
-#                          annotation_row = annotation_row,
-#                          legend = T,
-#                          annotation_legend = T,
-#                          annotation_names_col = F,
-#                          annotation_names_row = F,
-#                          show_colnames = T,
-#                          show_rownames = F,
-#                          cluster_column_slices = FALSE,
-#                          color = c( colorRampPalette(c("#387eb8", "#F9FEFE", "#e21e26"))(100)),
-#                          scale = "none",
-#                          border_color = NA
-#                          ) 
-# 
-# print(tmp_heatmap)
-# 
-# dev.off()
-
-svglite(filename = "depmap_only_short_sig.svg" ,width = 17 , height = 8)
+svglite(filename = "depmap_only_short_sig_wo_none.svg" ,width = 14 , height = 6)
 
 tmp_heatmap = ComplexHeatmap::pheatmap(total_sig_rev_back %>% as.matrix(),
                                        cluster_rows = F,
@@ -519,49 +486,6 @@ tmp_heatmap = ComplexHeatmap::pheatmap(total_sig_rev_back %>% as.matrix(),
                                        fontsize_col = 10
 ) 
 
-# draw(tmp_heatmap, annotation_row_font_size=10)
-
 print(tmp_heatmap)
 
 dev.off()
-
-# 
-# library(ComplexHeatmap)
-# pushViewport(viewport(gp = gpar(fontfaily = "Helvetica")))
-# tmp_heatmap = ComplexHeatmap::pheatmap(total_sig_rev_back %>% as.matrix(),
-#                                        cluster_rows = F,
-#                                        cluster_cols = F,
-#                                        # breaks = c(-Inf,max(total_sig_rev[total_sig_rev < 0]) , 0 , min(total_sig_rev[total_sig_rev > 0]), Inf) ,
-#                                        column_split = factor(annotation_col$cancertype, levels = c(unique(annotation_col$cancertype))) ,
-#                                        row_split = factor(annotation_row$cluster, levels = c(unique(annotation_row$cluster))),
-#                                        annotation_colors = ann_colors_sl,
-#                                        annotation_col = annotation_col %>% select(direction),
-#                                        annotation_row = annotation_row,
-#                                        legend = T,
-#                                        annotation_legend = T,
-#                                        annotation_names_col = F,
-#                                        annotation_names_row = F,
-#                                        show_colnames = T,
-#                                        show_rownames = F,
-#                                        cluster_column_slices = FALSE,
-#                                        color = c( colorRampPalette(c("#F9FEFE", "#e21e26"))(100)),
-#                                        scale = "none",
-#                                        border_color = NA,
-#                                        fontfamily = "Helvetica",
-#                                        fontfamily_row = "Helvetica",
-#                                        fontfamily_col = "Helvetica", 
-#                                        fontface = "bold",
-#                                        fontface_row = "bold",
-#                                        fontface_col = "bold",
-#                                        fontsize_row = 10,
-#                                        fontsize_col = 10
-# ) 
-# 
-# # font = "Helvetica"
-# # 
-# # tmp_heatmap@left_annotation@anno_list$cluster@name_param$gp$font = font
-# # tmp_heatmap@left_annotation@anno_list$cluster@name_param$gp$fontsize = 20
-# # tmp_heatmap@top_annotation@anno_list$direction@name_param$gp$fontsize = 20
-# 
-# draw(tmp_heatmap, newpage = F)
-# popViewport()
