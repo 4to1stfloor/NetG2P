@@ -177,37 +177,38 @@ merge_pca_res_stad$text = ifelse(merge_pca_res_stad$predict_state == "TCGA_mean"
 
 merge_pca_res_stad$binary = ifelse(grepl("short",merge_pca_res_stad$cluster_adjust) ,1 ,0)
 
-test_set_stad = merge_pca_res_stad %>% filter(!grepl( "TCGA" , predict_state))
-train_set_stad = merge_pca_res_stad %>% filter(predict_state == "TCGA")
+# test_set_stad = merge_pca_res_stad %>% filter(!grepl( "TCGA" , predict_state))
+# train_set_stad = merge_pca_res_stad %>% filter(predict_state == "TCGA")
+# 
+# svmfit_stad = svm(binary ~ PC1 + PC2, 
+#              data = train_set_stad, 
+#              kernel = "linear",
+#              cost = 10,
+#              scale = FALSE,
+#              type = "C-classification")
+# preds_stad = predict(svmfit_stad, train_set_stad %>% select(PC1,PC2), decision.values = T)
 
-svmfit_stad = svm(binary ~ PC1 + PC2, 
-             data = train_set_stad, 
-             kernel = "linear",
-             cost = 10,
-             scale = FALSE,
-             type = "C-classification")
-preds_stad = predict(svmfit_stad, train_set_stad %>% select(PC1,PC2), decision.values = T)
+# x1_stad = seq(min(train_set_stad$PC1) - 1, max(train_set_stad$PC1) + 1, by = 0.01)
+# y1_stad = seq(min(train_set_stad$PC2) - 1, max(train_set_stad$PC2) + 1, by = 0.01)
 
-x1_stad = seq(min(train_set_stad$PC1) - 1, max(train_set_stad$PC1) + 1, by = 0.01)
-y1_stad = seq(min(train_set_stad$PC2) - 1, max(train_set_stad$PC2) + 1, by = 0.01)
-
-grid_stad <- expand.grid(x1_stad, y1_stad)
-colnames(grid_stad) = c('PC1','PC2')
-
-grid_stad$value = predict(svmfit_stad, grid_stad)
-grid_stad$z = as.vector(attributes(predict(svmfit_stad, grid_stad, decision.values = TRUE))$decision)
-
-grid_stad$cluster_adjust = "line"
-grid_stad$alpha = F
-grid_stad$text = ""
+# grid_stad <- expand.grid(x1_stad, y1_stad)
+# colnames(grid_stad) = c('PC1','PC2')
+# 
+# grid_stad$value = predict(svmfit_stad, grid_stad)
+# grid_stad$z = as.vector(attributes(predict(svmfit_stad, grid_stad, decision.values = TRUE))$decision)
+# 
+# grid_stad$cluster_adjust = "line"
+# grid_stad$alpha = F
+# grid_stad$text = ""
+merge_pca_res_stad$ff = ifelse(!is.na(merge_pca_res_stad$text) , "bold" , "plain")
 
 setwd("~/nas/04.Results/PCA_tsne/cellline_pca/")
 
-ggplot(merge_pca_res_stad , aes(x = PC1, 
-                           y = PC2, 
-                           color = cluster_adjust,
-                           alpha = alpha,
-                           label = text))+
+pca_plot = ggplot(merge_pca_res_stad , aes(x = PC1, 
+                                y = PC2, 
+                                color = cluster_adjust,
+                                alpha = alpha,
+                                label = text))+
   geom_point(size = manual_size_stad)+
   geom_point(data = subset(merge_pca_res_stad, predict_state %in% c("Alive" , "Dead")),
              col = "black", 
@@ -221,44 +222,46 @@ ggplot(merge_pca_res_stad , aes(x = PC1,
              shape = 21) +
   scale_alpha_discrete(range = c(0.3, 1)) +
   # geom_text_repel() +
-  geom_text_repel(color = "black",
+  geom_text_repel(aes(fontface = ff),
+                  color = "black",
                   point.padding = 0.5,    
-                  nudge_x = .3,
-                  nudge_y = .35) +
-  stat_contour(data = grid_stad, aes(x = PC1, y = PC2, z = z), breaks = c(0)) +
+                  nudge_x = .5,
+                  nudge_y = .6) +
+  # stat_contour(data = grid_stad, aes(x = PC1, y = PC2, z = z), breaks = c(0)) +
   scale_shape_manual(values = c(19)) + 
   labs(x = paste0("PC1: ",round(variance_exp_stad[1]*100), "%"),
        y = paste0("PC2: ",round(variance_exp_stad[2]*100), "%")) +
   theme_classic()+  
-# scale_color_manual(values=c("short_labelled" = "#e64b35",
-#                             "long_labelled" = "#4dbbd5",
-#                             "long" = "#4DAF4A",
-#                             "short" = "#E41A1C",
-#                             "TCGA-Long" = "#4DAF4A",
-#                             "TCGA-Short" = "#990066",
-#                             "line" = "black")) +
+  
+  # scale_color_manual(values=c("short_labelled" = "#E41A1C",
+  #                             "long_labelled" = "#4DAF4A",
+  #                             "long" = "#4DAF4A",
+  #                             "short" = "#E41A1C",
+  #                             "TCGA-Long" = "#4dbbd5",
+  #                             "TCGA-Short" = "#990066",
+  #                             "line" = "black")) +
 
-scale_color_manual(values=c("short_labelled" = "#E41A1C",
-                            "long_labelled" = "#4DAF4A",
-                            "long" = "#4DAF4A",
-                            "short" = "#E41A1C",
-                            "TCGA-Long" = "#4dbbd5",
-                            "TCGA-Short" = "#990066",
-                            "line" = "black")) +
+  scale_color_manual(values=c("short_labelled" = "black",
+                              "long_labelled" = "black",
+                              "long" = "#4DAF4A",
+                              "short" = "#E41A1C",
+                              "TCGA-Long" = "#4DAF4A",
+                              "TCGA-Short" = "#E41A1C",
+                              "line" = "black")) +
   annotate(geom = "text" ,
            x = min(merge_pca_res_stad$PC1) + 1 , 
            y = max(merge_pca_res_stad$PC2) - 0.5 , 
-           label = "Long Group", 
-           color = "#4DAF4A" ,
-           size = 10 , 
+           label = "Short Group", 
+           color = "#E41A1C" ,
+           size = 6 , 
            # face = "bold", 
            family = "Helvetica") +
   annotate(geom = "text" ,
            x = max(merge_pca_res_stad$PC1) - 1 , 
            y = min(merge_pca_res_stad$PC2) + 0.5 , 
-           label = "Short Group", 
-           color = "#E41A1C" ,
-           size = 10 , 
+           label = "Long Group", 
+           color = "#4DAF4A" ,
+           size = 6 , 
            # face = "bold", 
            family = "Helvetica") +
   theme(legend.position = "none",
@@ -268,4 +271,4 @@ scale_color_manual(values=c("short_labelled" = "#E41A1C",
         # axis.title.x = element_text(face = "bold", family = "Helvetica-Bold", size = 10),
         axis.title.y = element_text(face = "bold", family = "Helvetica-Bold", size = 10)) 
 
-
+ggsave(file=paste0("STAD_PCA_plot_wo_predict_wo_label_final.svg"), plot=pca_plot, width=7, height=7)
