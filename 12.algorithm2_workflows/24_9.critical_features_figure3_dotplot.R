@@ -190,8 +190,13 @@ path_order = c(unique(five_order$pathway_name),
                unique(two_order$pathway_name),
                unique(one_order$pathway_name))
 
+
 tmp_total_cf$pathway_name = factor(tmp_total_cf$pathway_name, levels = path_order)
 
+
+tmp_total_cf %>%
+  mutate(diff_cancertype_group = as.integer(cancertype != group)) %>%
+  arrange(diff_cancertype_group, cancertype, group, desc(minmax))
 
 dotplot = ggplot(tmp_total_cf, aes(x = pathway_name , y = cancertype , size = minmax, color = minmax)) +
   geom_point() +
@@ -211,7 +216,7 @@ dotplot = ggplot(tmp_total_cf, aes(x = pathway_name , y = cancertype , size = mi
         strip.background = element_rect(color = "black", size = 1))
 library(ggplot2)
 
-ggplot2::ggsave(file="~/nas/04.Results/critical_features/figure3A_dotplot.svg", plot=dotplot, width=25, height=10)
+ggplot2::ggsave(file="~/nas/04.Results/critical_features/figure3_pathway_dotplot.svg", plot=dotplot, width=25, height=10)
 
 
 
