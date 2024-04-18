@@ -10,6 +10,7 @@ library(factoextra)
 library(dplyr)
 library(stringr)
 library(readxl)
+library(svglite)
 
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
@@ -26,7 +27,7 @@ if(!dir.exists(fig_path)){
 setwd(fig_path)
 set.seed(13524)
 
-num_CancerType =  "10.TCGA-BLCA"
+# num_CancerType =  "10.TCGA-BLCA"
 total_surv_result = read_xlsx("~/nas/04.Results/Total_results_survpval2.xlsx")
 total_results_pval = data.frame()
 
@@ -144,14 +145,10 @@ for (num_CancerType in Cancerlist) {
     pval_label = paste0("p = ",sprintf("%.3f",surv_pvalue(fit)$pval))
   }
   
-  png(filename =  paste0(CancerType, "_",last_num,"_survival_plot_adjust_thickness.png"),
-      width = 30, height = 25,  units = "cm" ,
-      # pointsize = 12,
-      bg = "white",
-      res = 300,
-      # family = ""
-      )
   
+  svglite::svglite(filename = paste0(CancerType, "_",last_num,"_survival_plot_adjust_thickness.svg"),
+                   bg = "white")
+
   tmp_surv$plot <- tmp_surv$plot +
     annotate("text", 
              x = 0.9, 
