@@ -321,6 +321,23 @@ total_sig_rev_back = total_sig_rev_back %>%
   select(where(~ !any(. < 0)))
 total_sig_rev_back = total_sig_rev_back[rowSums(total_sig_rev_back) != 0,]
 
+if (sum(colSums(total_sig_rev_back  == 0) != (nrow(total_sig_rev_back) - 1)) != 0 ) {
+  tmp_dup_gene = names(which(colSums(total_sig_rev_back  == 0) != (nrow(total_sig_rev_back) - 1)))
+  tmp_dup_rowname = row.names(total_sig_rev_back)[total_sig_rev_back[tmp_dup_gene] != 0]
+  
+  total_sig_rev_back$dup_name = total_sig_rev_back[,tmp_dup_gene]
+
+  total_sig_rev_back[tmp_dup_rowname[1],"dup_name"] = 0
+  total_sig_rev_back[tmp_dup_rowname[2], tmp_dup_gene[1]] = 0
+  tmp_type = strsplit(tmp_dup_rowname[2], "_")
+  
+  tmp_sig_anno = total_sig_anno %>% 
+    filter(cancertype == tmp_type[[1]][1]) %>% 
+    filter(genes == tmp_dup_gene)
+  tmp_sig_anno$genes = "dup_name"
+  total_sig_anno = rbind(total_sig_anno , tmp_sig_anno)
+}
+
 annotation_col = data.frame()
 
 # cancername = "CESC"
@@ -340,25 +357,25 @@ for (cancername in unique(sapply(strsplit(rownames(total_sig_rev_back), "_"), "[
   annotation_col = rbind(annotation_col, tmp_annocol)
 }
 
-other_df = data.frame(cancertype = "multiple_specific", genes = colnames(total_sig_rev_back)[!colnames(total_sig_rev_back) %in% annotation_col$genes])
+# other_df = data.frame(cancertype = "multiple_specific", genes = colnames(total_sig_rev_back)[!colnames(total_sig_rev_back) %in% annotation_col$genes])
+# 
+# multi_genes = other_df$genes
+# multi_only = total_sig_rev_back %>% 
+#   select(any_of(multi_genes))
+# # mg = "COL9A3"
+# other_sort_df = data.frame()
+# for (mg in colnames(multi_only)) {
+#   tmp_m = multi_only %>% select(any_of(mg)) %>% filter(. !=0)
+#   tmp_other = data.frame(cancertype = unlist(strsplit(rownames(tmp_m)[which(tmp_m == max(tmp_m))], "_"))[1] , genes = mg)
+#   
+#   tmp_other = cbind(tmp_other , total_sig_anno %>% 
+#                       filter(cancertype == tmp_other$cancertype) %>% 
+#                       filter(genes == tmp_other$genes) %>% 
+#                       select(direction))
+#   other_sort_df = rbind(other_sort_df,tmp_other) 
+# }
 
-multi_genes = other_df$genes
-multi_only = total_sig_rev_back %>% 
-  select(any_of(multi_genes))
-# mg = "COL9A3"
-other_sort_df = data.frame()
-for (mg in colnames(multi_only)) {
-  tmp_m = multi_only %>% select(any_of(mg)) %>% filter(. !=0)
-  tmp_other = data.frame(cancertype = unlist(strsplit(rownames(tmp_m)[which(tmp_m == max(tmp_m))], "_"))[1] , genes = mg)
-  
-  tmp_other = cbind(tmp_other , total_sig_anno %>% 
-                      filter(cancertype == tmp_other$cancertype) %>% 
-                      filter(genes == tmp_other$genes) %>% 
-                      select(direction))
-  other_sort_df = rbind(other_sort_df,tmp_other) 
-}
-
-annotation_col = rbind(annotation_col, other_sort_df)
+# annotation_col = rbind(annotation_col, other_sort_df)
 rownames(annotation_col) <- annotation_col$genes
 annotation_col = annotation_col %>% select(-genes)
 annotation_col = annotation_col[colnames(total_sig_rev_back), , drop = FALSE]
@@ -454,6 +471,7 @@ row_colors_cluster <- c(
 # row_colors_sl <- c("short" = "red", "long" = "#009E73")
 
 ann_colors_sl = list(direction = spe_colors, cancertype = cancer_colors ,cluster = row_colors_cluster)
+annotation_col = annotation_col %>% select(direction,cancertype)
 
 svglite(filename = "depmap_only_short_sig_wo_none.svg" ,width = 14 , height = 6)
 
@@ -464,8 +482,8 @@ tmp_heatmap = ComplexHeatmap::pheatmap(total_sig_rev_back %>% as.matrix(),
                                        column_split = factor(annotation_col$cancertype, levels = c(unique(annotation_col$cancertype))) ,
                                        row_split = factor(annotation_row$cluster, levels = c(unique(annotation_row$cluster))),
                                        annotation_colors = ann_colors_sl,
-                                       annotation_col = annotation_col %>% select(direction),
-                                       annotation_row = annotation_row,
+                                       annotation_col = annotation_col,
+                                       # annotation_row = annotation_row,
                                        legend = T,
                                        annotation_legend = T,
                                        annotation_names_col = F,
@@ -489,3 +507,6 @@ tmp_heatmap = ComplexHeatmap::pheatmap(total_sig_rev_back %>% as.matrix(),
 print(tmp_heatmap)
 
 dev.off()
+
+
+
