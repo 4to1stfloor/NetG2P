@@ -45,133 +45,6 @@ Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 setwd("~/nas/04.Results/drug/depmap/")
 ####
 Cancerlist = Cancerlist[c(-11,-12)]
-# num_CancerType =  "04.TCGA-CESC"
-total_matrix = data.frame()
-for (num_CancerType in Cancerlist) {
-  
-  main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)
-  CancerType = gsub('[.]','',gsub('\\d','', num_CancerType))
-  Cancername = gsub('TCGA-' , '', CancerType)
-  
-  # call input
-
-  gc_TCGA = readRDS(paste0("~/nas/04.Results/short_long/", CancerType,"_critical_features_short_long.rds"))
-  gc_cellline_filt_df = readRDS(paste0("~/nas/04.Results/drug/depmap/gdsc/",CancerType, "_DM_sl_cluster.rds"))
-  colnames(gc_TCGA)
-  colnames(gc_cellline_filt_df)
-  depmap_common_link_genes <- unique(link_genes_filtered_df[which(link_genes_filtered_df$Pathway %in% colnames(gc_cellline_filt_df %>% 
-                                                                                                                 dplyr::select(-cluster))),]$Genes)
-  depmap_common_each_genes <- unique(single_genes[which(single_genes$Pathway %in% colnames(gc_cellline_filt_df %>% 
-                                                                                             dplyr::select(-cluster))),]$Genes)
-  depmap_common_genes = unique(c(depmap_common_link_genes,depmap_common_each_genes))
-
-  depmap_score_critical_features = ge.tbl %>% 
-    filter(rownames(ge.tbl) %in% rownames(gc_cellline_filt_df)) %>%
-    dplyr::select(any_of(depmap_common_genes))
-  
-  common_depmap = gc_cellline_filt_df[rownames(depmap_score_critical_features),]
-  # at_depmap
-  if (all.equal(rownames(depmap_score_critical_features), rownames(common_depmap))) {
-    depmap_score_critical_features$cluster = common_depmap$cluster
-  }
-  
-  dep_score_cf_filt = depmap_score_critical_features %>% select(-names(which(colSums(is.na(depmap_score_critical_features)) != 0)))
-  
-  long_dep_score_cf_filt = dep_score_cf_filt %>% filter(cluster == "long")
-  short_dep_score_cf_filt = dep_score_cf_filt %>% filter(cluster == "short")
-
-  long_sum = long_dep_score_cf_filt %>% select(-cluster) %>% colMeans() %>% as.data.frame()
-  short_sum = short_dep_score_cf_filt %>% select(-cluster) %>% colMeans() %>% as.data.frame()
-  
-  mid_sum = cbind(long_sum, short_sum)
-  colnames(mid_sum) = c(paste0(Cancername , "_long_mean"), paste0(Cancername , "_short_mean"))
-  tmp = as.data.frame(t(mid_sum))
-
-  total_matrix = bind_rows(total_matrix, tmp)
-
-}
-total_rev = -total_matrix
-# total_rev_filt = total_rev + (-min(total_rev , na.rm = T))
-total_rev[is.na(total_rev)] = 0
-
-pheatmap(total_rev,
-         cluster_rows = F ,
-         color = colorRampPalette(c("blue","white" ,"red"))(100))
-
-### short-long
-
-total_sig_matrix = data.frame()
-for (num_CancerType in Cancerlist) {
-  
-  main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)
-  CancerType = gsub('[.]','',gsub('\\d','', num_CancerType))
-  Cancername = gsub('TCGA-' , '', CancerType)
-  
-  # call input
-  
-  gc_TCGA = readRDS(paste0("~/nas/04.Results/short_long/", CancerType,"_critical_features_short_long.rds"))
-  gc_cellline_filt_df = readRDS(paste0("~/nas/04.Results/drug/depmap/gdsc/",CancerType, "_DM_sl_cluster.rds"))
-  
-  depmap_common_link_genes <- unique(link_genes_filtered_df[which(link_genes_filtered_df$Pathway %in% colnames(gc_cellline_filt_df %>% dplyr::select(-cluster))),]$Genes)
-  depmap_common_each_genes <- unique(single_genes[which(single_genes$Pathway %in% colnames(gc_cellline_filt_df %>% dplyr::select(-cluster))),]$Genes)
-  depmap_common_genes = unique(c(depmap_common_link_genes,depmap_common_each_genes))
-  # depmap_common_genes = unique(depmap_common_each_genes)
-  # 
-  depmap_score_critical_features = ge.tbl %>% 
-    filter(rownames(ge.tbl) %in% rownames(gc_cellline_filt_df)) %>%
-    dplyr::select(any_of(depmap_common_genes))
-  
-  common_depmap = gc_cellline_filt_df[rownames(depmap_score_critical_features),]
-  # at_depmap
-  if (all.equal(rownames(depmap_score_critical_features), rownames(common_depmap))) {
-    depmap_score_critical_features$cluster = common_depmap$cluster
-  }
-  
-  dep_score_cf_filt = depmap_score_critical_features %>% select(-names(which(colSums(is.na(depmap_score_critical_features)) != 0)))
-  # depmap_gene = "CFLAR"
-  
-  sig_genes = c()
-  for (depmap_gene in dep_score_cf_filt %>% select(-cluster) %>% colnames()) {
-    tmp_dep = dep_score_cf_filt %>% select(any_of(depmap_gene) , cluster)
-    
-    tmp_dep_short = tmp_dep %>% filter(cluster == "short") 
-    tmp_dep_long = tmp_dep %>% filter(cluster == "long")
-
-    if (nrow(tmp_dep_short) < 2 | nrow(tmp_dep_long) < 2) {
-      next
-    }
-    anno_tmp = t.test(tmp_dep_short %>% 
-                        select(any_of(depmap_gene)) %>% 
-                        pull(), tmp_dep_long %>% 
-                        select(any_of(depmap_gene)) %>% 
-                        pull())$p.value
-    
-    if (anno_tmp < 0.03) {
-      sig_genes = c(sig_genes, depmap_gene)
-    } else {
-      next
-    }
-    
-  }
-  
-  if (length(sig_genes) == 0 )  {
-    next
-  }
-  dep_score_sig_cf_filt = dep_score_cf_filt[,c(sig_genes,"cluster")]
-  
-  long_dep_score_cf_filt = dep_score_sig_cf_filt %>% filter(cluster == "long")
-  short_dep_score_cf_filt = dep_score_sig_cf_filt %>% filter(cluster == "short")
-  
-  long_sum = long_dep_score_cf_filt %>% select(-cluster) %>% colMeans() %>% as.data.frame()
-  short_sum = short_dep_score_cf_filt %>% select(-cluster) %>% colMeans() %>% as.data.frame()
-  
-  mid_sum = cbind(long_sum, short_sum)
-  colnames(mid_sum) = c(paste0(Cancername , "_long_mean"), paste0(Cancername , "_short_mean"))
-  tmp = as.data.frame(t(mid_sum))
-  
-  total_sig_matrix = bind_rows(total_sig_matrix, tmp)
-  
-}
 
 ### delta
 # num_CancerType = "10.TCGA-BLCA"
@@ -317,8 +190,8 @@ total_sig_rev_back[total_sig_rev_back < 0] = (total_sig_rev_back[total_sig_rev_b
 
 
 total_sig_rev_back = total_sig_rev_back[,total_sig_anno %>% filter(direction %in% c("both", "short")) %>% pull(genes) %>% unique()]
-total_sig_rev_back = total_sig_rev_back %>%
-  select(where(~ !any(. < 0)))
+# total_sig_rev_back = total_sig_rev_back %>%
+#   select(where(~ !any(. < 0)))
 total_sig_rev_back = total_sig_rev_back[rowSums(total_sig_rev_back) != 0,]
 
 if (sum(colSums(total_sig_rev_back  == 0) != (nrow(total_sig_rev_back) - 1)) != 0 ) {
