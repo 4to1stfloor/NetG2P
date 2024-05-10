@@ -29,7 +29,7 @@ gdsc = readRDS("/mnt/gluster_server/data/reference/GDSC/2024_01_11/GDSC_data_com
 meta_cell = readRDS("/mnt/gluster_server/data/reference/TLDR/meta_cells_primary.rds")
 criteria_filt = read_xlsx("~/nas/99.reference/DrugCorrection.xlsx")
 
-num_CancerType = "19.TCGA-LIHC"
+num_CancerType = "10.TCGA-BLCA"
 
 
 sig_drugs = c()
@@ -249,7 +249,7 @@ for (num_CancerType in Cancerlist) {
       } 
       
       if (nrow(posi_delta_sum[which(posi_long_sum < 0 & posi_short_sum > 0 ),]) != 0) {
-        posi_delta_sum[rownames(posi_delta_sum[which(posi_long_sum < 0 & posi_short_sum > 0 ), , drop = F]),]$direction = "long_sensitive"
+        # posi_delta_sum[rownames(posi_delta_sum[which(posi_long_sum < 0 & posi_short_sum > 0 ), , drop = F]),]$direction = "long_sensitive"
       } 
       
       if (nrow(posi_delta_sum[which(posi_long_sum > 0 & posi_short_sum < 0 ),]) != 0) {
@@ -257,7 +257,7 @@ for (num_CancerType in Cancerlist) {
       } 
       
       if (nrow(posi_delta_sum[which(posi_long_sum > 0 & posi_short_sum > 0 ),]) != 0) {
-        posi_delta_sum[rownames(posi_delta_sum[which(posi_long_sum > 0 & posi_short_sum > 0 ), , drop = F]),]$direction = "long_sensitive"
+        posi_delta_sum[rownames(posi_delta_sum[which(posi_long_sum > 0 & posi_short_sum > 0 ), , drop = F]),]$direction = "short_sensitive"
       }
     }
    
@@ -280,7 +280,7 @@ for (num_CancerType in Cancerlist) {
       
       if (nrow(neg_delta_sum[which(neg_long_sum > 0 & neg_short_sum > 0 ),]) != 0) {
         
-        neg_delta_sum[rownames(neg_delta_sum[which(neg_long_sum > 0 & neg_short_sum > 0 ), , drop = F]),]$direction = "short_sensitive"
+        neg_delta_sum[rownames(neg_delta_sum[which(neg_long_sum > 0 & neg_short_sum > 0 ), , drop = F]),]$direction = "long_sensitive"
       }
       
     }
@@ -335,11 +335,11 @@ multi_only = multi_only[grep(paste0(annotation_col %>% filter(drugs == other_df$
 multi_only$direction = annotation_col %>% filter(drugs == other_df$drugs) %>% pull(direction)
 
 # mg = "Fluorouracil"
-remove(mg)
+# remove(mg)
 other_sort_df = data.frame()
 for (mg in colnames(multi_only %>% select(-direction))) {
   tmp_m = multi_only %>% select(any_of(mg), direction) 
-  tmp_other = data.frame(cancertype = unlist(strsplit(rownames(tmp_m)[which(tmp_m$direction == "short_sensitive")], "_"))[1] ,
+  tmp_other = data.frame(cancertype = unlist(strsplit(rownames(tmp_m)[which(tmp_m$direction == "long_sensitive")], "_"))[1] ,
                          drugs = mg)
   
   tmp_other = cbind(tmp_other , total_sig_anno %>% 
@@ -406,8 +406,8 @@ for (cancername in unique(sapply(strsplit(rownames(total_sig_rev_back), "_"), "[
   }
 }
 
-if (sum(colnames(total_sig_rev_back) %in% ordered_genes) == ncol(total_sig_rev_back) ) {
-  total_sig_rev_back = total_sig_rev_back[,ordered_genes]
+if (sum(colnames(total_sig_rev_back) %in% ordered_drugs) == ncol(total_sig_rev_back) ) {
+  total_sig_rev_back = total_sig_rev_back[,ordered_drugs]
 } else {
   print("error")
 }

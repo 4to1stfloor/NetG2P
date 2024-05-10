@@ -44,7 +44,7 @@ Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 setwd("~/nas/04.Results/drug/depmap/")
 ####
 Cancerlist = Cancerlist[c(-11,-12)]
-# num_CancerType =  "04.TCGA-CESC"
+num_CancerType =  "11.TCGA-STAD"
 
 for (num_CancerType in Cancerlist) {
   
@@ -91,7 +91,7 @@ for (num_CancerType in Cancerlist) {
         
         if (t_test_res$p.value <0.05) {
           tmp_test_df = data.frame(genes = critical_genes,
-                                   delta_long_to_short =  mean(ge_short_interest$value) - mean(ge_long_interest$value),
+                                   delta_short_to_long =  mean(ge_short_interest$value) - mean(ge_long_interest$value),
                                    pvalue = t_test_res$p.value,
                                    sig = "significant")
           
@@ -99,7 +99,7 @@ for (num_CancerType in Cancerlist) {
           
         } else {
           tmp_test_df = data.frame(genes = critical_genes,
-                                   delta_long_to_short = mean(ge_short_interest$value) - mean(ge_long_interest$value),
+                                   delta_short_to_long = mean(ge_short_interest$value) - mean(ge_long_interest$value),
                                    pvalue = t_test_res$p.value,
                                    sig = "not")
           
@@ -115,7 +115,7 @@ for (num_CancerType in Cancerlist) {
   if (nrow(filtered_df) == 0) {
     next
   } else {
-    filtered_ordered_df = filtered_df %>% arrange(delta_long_to_short)
+    filtered_ordered_df = filtered_df %>% arrange(delta_short_to_long)
   }
   
   library(ggrepel)
@@ -129,17 +129,18 @@ for (num_CancerType in Cancerlist) {
                              .default = 0))
   
   manual_size = ifelse(filtered_ordered_df$logp != 0 , filtered_ordered_df$logp -2, 0.5)
-  filtered_ordered_df = filtered_ordered_df %>% mutate( direction = case_when(delta_long_to_short > 0 & sig == "significant" ~ "short_sig",
-                                                        delta_long_to_short < 0 & sig == "significant" ~ "long_sig",
-                                                        .default = "nonsig"))
+  filtered_ordered_df = filtered_ordered_df %>% 
+    mutate( direction = case_when(delta_short_to_long > 0 & sig == "significant" ~ "short_sig",
+                                  delta_short_to_long < 0 & sig == "significant" ~ "long_sig",
+                                  .default = "nonsig"))
   
   sigcolor = c(short_sig = "#e64b35",
                long_sig = "#4dbbd5",
                nonsig = "#999999")
-  
+  filtered_ordered_df %>% filter(direction != "nonsig")
   
   dotplot_line = ggplot(filtered_ordered_df, aes(x = factor(genes , levels = genes), 
-                                  y = delta_long_to_short , 
+                                  y = delta_short_to_long , 
                                   label = label,
                                   alpha = alpha)) +
     geom_point(aes(color = direction), size = manual_size) +

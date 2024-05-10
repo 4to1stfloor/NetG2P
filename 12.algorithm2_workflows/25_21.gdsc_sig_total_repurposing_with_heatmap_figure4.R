@@ -42,7 +42,7 @@ meta_cell = readRDS("/mnt/gluster_server/data/reference/TLDR/meta_cells_primary.
 
 criteria_filt = read_xlsx("~/nas/99.reference/DrugCorrection.xlsx")
 
-# num_CancerType = "11.TCGA-STAD"
+num_CancerType = "26.TCGA-LUSC"
 
 total_repur_screening = data.frame()
 for (num_CancerType in Cancerlist) {
@@ -53,6 +53,7 @@ for (num_CancerType in Cancerlist) {
   # call input
   gc_cellline = readRDS(paste0("~/nas/00.data/filtered_TCGA/", num_CancerType, "/",Cancername,"_cellline_dual_all_log.rds"))
   gc_TCGA = readRDS(paste0("~/nas/04.Results/short_long/", CancerType,"_critical_features_short_long.rds"))
+  tmp_origin_cli_drug = read_xlsx(paste0(ref_path,"TCGA_clinical_drug/",Cancername, "_drug_info_update.xlsx")) 
   
   Cancerlist_edit = Cancerlist[Cancerlist != num_CancerType]
   # repur = "04.TCGA-CESC"
@@ -72,10 +73,13 @@ for (num_CancerType in Cancerlist) {
     wo_cli_drug = rbind(wo_cli_drug , tmp_cli_drug_filt)
     
   }
+
+  wo_cli_drug = wo_cli_drug %>% 
+    filter(!pharmaceutical_therapy_drug_name %in% unique(tmp_origin_cli_drug$pharmaceutical_therapy_drug_name)) # do not containa the drug that treated original cancer type patients
   
   cli_drug_filt = wo_cli_drug %>% 
     filter(!pharmaceutical_therapy_drug_name %in% c("[Not Available]", "Unknown")) 
-  
+
   cli_drug_filt_edit = left_join(cli_drug_filt, criteria_filt, by = c("pharmaceutical_therapy_drug_name" = "OldName")) %>%
     mutate(main_name_merge = coalesce(Correction, pharmaceutical_therapy_drug_name)) %>%
     select(cancertype , main_name_merge, Correction,pharmaceutical_therapy_drug_name, everything())
@@ -130,11 +134,14 @@ for (num_CancerType in Cancerlist) {
                       unique(cli_drug_filt_edit$main_name_merge), 
                       unique(anticancer_drug_filted_edit$main_name_new))))
   
-  # drug_name = "Sorafenib"
+  # drug_name = "Erlotinib"
   
   for (drug_name in unique(gdsc_w_cluster_filt$DRUG_NAME_new )) {
     # n = n+1
     # print(drug_name)
+    if (drug_name %in% unique(tmp_origin_cli_drug$pharmaceutical_therapy_drug_name)) {
+      next
+    }
     tmp_for_drug = gdsc_w_cluster_filt %>% filter(DRUG_NAME_new == drug_name)
     
     tmp_anti_long = tmp_for_drug %>% filter(cluster == "long")
@@ -207,7 +214,9 @@ for (num_CancerType in Cancerlist) {
                                     critical_features_from_gdsc = ifelse(length(gdsc_cf) == 0 , NA , gdsc_cf)
       )
       
+      
     }
+    
     total_repur_screening = rbind(total_repur_screening,tmp_repur_screen)
   }
   # lihc = readRDS(paste0("~/nas/04.Results/short_long/", CancerType,"_critical_features_short_long_with_drug.rds"))
