@@ -16,7 +16,7 @@ link_genes_filtered_df = as.data.frame(link_genes_filtered)
 colnames(link_genes_filtered_df) = colnames(single_genes)
 
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
-
+cancerhallmark_geneset = read.csv("~/nas/99.reference/Zhang2020_CHG_filt.csv")
 ####
 Cancerlist = Cancerlist[c(-11,-12)]
 # num_CancerType = "04.TCGA-CESC"
