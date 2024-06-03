@@ -44,7 +44,7 @@ Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 setwd("~/nas/04.Results/drug/depmap/")
 ####
 Cancerlist = Cancerlist[c(-11,-12)]
-num_CancerType =  "11.TCGA-STAD"
+# num_CancerType =  "11.TCGA-STAD"
 
 for (num_CancerType in Cancerlist) {
   
@@ -164,7 +164,7 @@ for (num_CancerType in Cancerlist) {
     scale_color_manual(values=sigcolor) +
     coord_cartesian(xlim = c(-10,length(filtered_ordered_df$genes) + 10)) +
     theme_classic() +
-    geom_text_repel(max.overlaps = 20) +
+    geom_text_repel(max.overlaps = Inf) +
     theme(axis.title.x=element_blank(),
           axis.text.x=element_blank(),
           axis.ticks.x=element_blank())
