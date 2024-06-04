@@ -44,8 +44,8 @@ Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 setwd("~/nas/04.Results/drug/depmap/")
 ####
 Cancerlist = Cancerlist[c(-11,-12)]
-# num_CancerType =  "11.TCGA-STAD"
-
+# num_CancerType =  "26.TCGA-LUSC"
+# Cancerlist = c("10.TCGA-BLCA","26.TCGA-LUSC", "32.TCGA-UCEC")
 for (num_CancerType in Cancerlist) {
   
   main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)
@@ -89,7 +89,13 @@ for (num_CancerType in Cancerlist) {
       } else {
         t_test_res =  t.test(ge_short_interest$value, ge_long_interest$value)
         
-        if (t_test_res$p.value <0.05) {
+        if (Cancername %in% c("BLCA","LUSC", "UCEC")) {
+          pvalue_cutoff = 0.01
+        } else {
+          pvalue_cutoff = 0.05
+        }
+        
+        if (t_test_res$p.value < pvalue_cutoff) {
           tmp_test_df = data.frame(genes = critical_genes,
                                    delta_long_to_short =  mean(ge_long_interest$value) - mean(ge_short_interest$value),
                                    mean_of_long = mean(ge_long_interest$value),
