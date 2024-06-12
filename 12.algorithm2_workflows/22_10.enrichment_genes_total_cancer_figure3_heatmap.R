@@ -7,6 +7,8 @@ library(org.Hs.eg.db)
 library(dplyr)
 library(clusterProfiler)
 library(tidyverse)
+library(ComplexHeatmap)
+library(svglite)
 
 filepath = "/home/seokwon/nas/"
 ref_path = paste0(filepath, "99.reference/")
@@ -85,9 +87,10 @@ for (Cancername in names(total_features)) {
 #                           qvalueCutoff = 0.01)
 # 
 # short_enrichGO <- setReadable(short_enrichGO, OrgDb = org.Hs.eg.db, keyType="ENTREZID")
-
+?compareCluster
 ck <- compareCluster(geneCluster = top_genes_group, 
                      fun = "enrichGO",
+                     ont = "BP",
                      OrgDb='org.Hs.eg.db',
                      pvalueCutoff  = 0.05,
                      qvalueCutoff = 0.0001 )
@@ -106,7 +109,7 @@ min_max_scale <- function(x) {
 crop_enrich = total_enrich_df %>%
   group_by(Cluster) %>%
   arrange(desc(GeneRatio_numeric)) %>%
-  slice_head(n = 15)
+  slice_head(n = 10)
 
 crop_enrich = total_enrich_df %>% filter(Description %in% unique(crop_enrich$Description))
 # crop_enrich = test %>% filter(Description %in% unique(crop_enrich$Description))
@@ -138,8 +141,9 @@ for (cln in colnames(crop_enrich_matrix)) {
 }
 
 
+setwd("~/nas/04.Results/GOenrichment_test/BP/")
 
-svglite(filename = "figure3E_log_more_enrich.svg", 
+svglite(filename = "figure3_GOenrichment_BP_top10.svg", 
         bg = "white", 
         pointsize = 12,
         width = 18,
@@ -156,9 +160,8 @@ go_heat = pheatmap(crop_enrich_matrix,
          cellheight = 10,
          # cellwidth = 10,
          # col_names_max_width = unit(12, "cm"),
-         clustering_method = "ward.D2")
+         clustering_method = "complete")
 print(go_heat)
 dev.off()
-
 
 # "ward.D", "ward.D2", "single", "complete", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid"
