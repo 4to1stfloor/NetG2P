@@ -70,15 +70,16 @@ for (num_CancerType in Cancerlist) {
   rownames(hallmark_hyper) = hallmark_hyper$hallmark
   hallmark_hyper_filt = hallmark_hyper %>% select(pvalue)
   colnames(hallmark_hyper_filt) = Cancername
-  hallmark_hyper_filt[hallmark_hyper_filt > 0.05] = 1
-  hallmark_hyper_filt = -log(hallmark_hyper_filt)
+  hallmark_hyper_filt[hallmark_hyper_filt > 0.01] = 1
+  hallmark_hyper_filt[hallmark_hyper_filt <= 0.01] = 0.1
+  hallmark_hyper_filt = -log10(hallmark_hyper_filt)
   
-  if (sum(hallmark_hyper_filt == 0) != 0) {
-    hallmark_hyper_filt = (hallmark_hyper_filt - min(hallmark_hyper_filt)) / (max(hallmark_hyper_filt) - min(hallmark_hyper_filt))
-  } else {
-    hallmark_hyper_filt = (hallmark_hyper_filt - 0.1) / (max(hallmark_hyper_filt) - 0.1)
-  }
-  
+  # if (sum(hallmark_hyper_filt == 0) != 0) {
+  #   hallmark_hyper_filt = (hallmark_hyper_filt - min(hallmark_hyper_filt)) / (max(hallmark_hyper_filt) - min(hallmark_hyper_filt))
+  # } else {
+  #   hallmark_hyper_filt = (hallmark_hyper_filt - 0.1) / (max(hallmark_hyper_filt) - 0.1)
+  # }
+  # 
   if (Cancername == "CESC") {
     total_hallmark_hyper = hallmark_hyper_filt
   } else {
@@ -97,7 +98,7 @@ svglite::svglite(filename = "figure3D_cancerhallmark_hyper_maxnor.svg")
 
 fig_hall = pheatmap(total_hallmark_hyper_filt %>% as.matrix() %>% t() ,
          # color = c( colorRampPalette(c("#F9FEFE", "black"))(100)),
-         color = inferno(50),
+         # color = inferno(50),
          scale = "none",
          cluster_cols = F,
          border_color = NA,
