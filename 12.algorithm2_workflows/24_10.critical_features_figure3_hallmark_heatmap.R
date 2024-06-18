@@ -70,9 +70,12 @@ for (num_CancerType in Cancerlist) {
   rownames(hallmark_hyper) = hallmark_hyper$hallmark
   hallmark_hyper_filt = hallmark_hyper %>% select(pvalue)
   colnames(hallmark_hyper_filt) = Cancername
-  hallmark_hyper_filt[hallmark_hyper_filt > 0.01] = 1
-  hallmark_hyper_filt[hallmark_hyper_filt <= 0.01] = 0.1
-  hallmark_hyper_filt = -log10(hallmark_hyper_filt)
+  
+# 
+#   pvalue_cutoff = 0.001
+#   hallmark_hyper_filt[hallmark_hyper_filt > pvalue_cutoff] = 1
+#   hallmark_hyper_filt[hallmark_hyper_filt <= pvalue_cutoff] = 0.1
+#   hallmark_hyper_filt = -log10(hallmark_hyper_filt)
   
   # if (sum(hallmark_hyper_filt == 0) != 0) {
   #   hallmark_hyper_filt = (hallmark_hyper_filt - min(hallmark_hyper_filt)) / (max(hallmark_hyper_filt) - min(hallmark_hyper_filt))
@@ -88,30 +91,41 @@ for (num_CancerType in Cancerlist) {
 
 }
 
-total_hallmark_hyper_filt = total_hallmark_hyper[names(sort(rowSums(total_hallmark_hyper), decreasing = T)),]
 library(viridis)
 library(svglite)
 
-setwd("~/nas/04.Results/cancerhallmark/")
+pvalues = c(0.01, 0.001,0.0001)
 
-svglite::svglite(filename = "figure3D_cancerhallmark_hyper_maxnor.svg")
-
-fig_hall = pheatmap(total_hallmark_hyper_filt %>% as.matrix() %>% t() ,
-         # color = c( colorRampPalette(c("#F9FEFE", "black"))(100)),
-         # color = inferno(50),
-         scale = "none",
-         cluster_cols = F,
-         border_color = NA,
-         fontfamily = "Helvetica",
-         fontfamily_row = "Helvetica",
-         fontfamily_col = "Helvetica",
-         fontface = "bold",
-         fontface_row = "bold",
-         fontface_col = "bold",
-         fontsize_row = 10,  
-         fontsize_col = 10
-)
-
-
-print(fig_hall)
-dev.off()
+for (pv in pvalues) {
+  
+  backup_hallmark = total_hallmark_hyper
+  backup_hallmark[backup_hallmark > pv] = 1
+  backup_hallmark[backup_hallmark <= pv] = 0.1
+  backup_hallmark = -log10(backup_hallmark)
+  
+  total_hallmark_hyper_filt = backup_hallmark[names(sort(rowSums(backup_hallmark), decreasing = T)),]
+  
+  setwd("~/nas/04.Results/cancerhallmark/")
+  
+  svglite::svglite(filename = paste0("figure4A_cancerhallmark_hyper_maxnor",pv, ".svg"))
+  
+  fig_hall = pheatmap(total_hallmark_hyper_filt %>% as.matrix() %>% t() ,
+                      # color = c( colorRampPalette(c("#F9FEFE", "black"))(100)),
+                      # color = inferno(50),
+                      scale = "none",
+                      cluster_cols = F,
+                      border_color = NA,
+                      fontfamily = "Helvetica",
+                      fontfamily_row = "Helvetica",
+                      fontfamily_col = "Helvetica",
+                      fontface = "bold",
+                      fontface_row = "bold",
+                      fontface_col = "bold",
+                      fontsize_row = 10,  
+                      fontsize_col = 10
+  )
+  
+  print(fig_hall)
+  dev.off()
+  
+}
