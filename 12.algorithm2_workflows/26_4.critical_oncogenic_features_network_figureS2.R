@@ -26,7 +26,7 @@ link_genes_filtered_df = as.data.frame(link_genes_filtered)
 colnames(link_genes_filtered_df) = colnames(single_genes)
 
 Cancerlist = Cancerlist[c(2,3,5,6,10)]
-# num_CancerType = "11.TCGA-STAD"
+num_CancerType = "11.TCGA-STAD"
 
 for (num_CancerType in Cancerlist) {
   
@@ -74,29 +74,31 @@ for (num_CancerType in Cancerlist) {
   
   critical_network = edges %>%
     as_tbl_graph() %N>% 
-    left_join(., cf_sl %>% select(variable, classification), by = c("name" = "variable")) %N>%
-    mutate(classification = ifelse(is.na(classification), "", classification)) %N>%
+    left_join(., cf_sl %>% select(variable, classification, relative_importance), by = c("name" = "variable")) %E>%
+    left_join(., cf_sl %>% select(variable, relative_importance), by = c("variable" = "variable")) %N>%
+    mutate(classification = ifelse(is.na(classification), "", classification),
+           color = case_when(classification == "short"  ~ "exist",
+                             classification == "long"  ~ "exist",
+                             classification == "common"  ~ "exist",
+                             .default = "non"),
+           node_weight = relative_importance,
+           node_weight = ifelse(is.na(node_weight), 0.1, node_weight)) %E>%
     mutate(color = case_when(classification == "short"  ~ "exist",
                              classification == "long"  ~ "exist",
                              classification == "common"  ~ "exist",
-                             .default = "non")) %E>%
-    mutate(color = case_when(classification == "short"  ~ "exist",
-                             classification == "long"  ~ "exist",
-                             classification == "common"  ~ "exist",
-                             .default = "non")) %E>%
-    mutate(edge_weight = case_when(color == "short" ~ 1,
-                                   color == "long" ~ 1,
-                                   .default = 0.3))  %>% 
+                             .default = "non"),
+           edge_weight = relative_importance) %>% 
     ggraph(layout = "nicely") +
     geom_edge_link(aes(color = color,
                        edge_width = edge_weight)) +
-    scale_edge_width(range = c(0.5,1.5)) +   
+    scale_edge_width(range = c(0.5,2)) +
     # scale_edge_alpha(range = c(0.3,1)) +
-    geom_node_point(aes(color = color),
-                    size = 5) +               # 노드 크기
+    geom_node_point(aes(color = color,
+                        size = node_weight)) +               # 노드 크기
     geom_node_text(aes(label = name),         # 텍스트 표시
                    repel = T,                 # 노드밖 표시
                    size = 5) +  
+    scale_size(range = c(3, 8)) +
     # scale_color_manual(values = c("short" = "blue", "common" = "red", "long" = "green")) +
     scale_color_manual(values = c("exist" = "black",
                                   "non"= "grey")) +
@@ -106,7 +108,7 @@ for (num_CancerType in Cancerlist) {
     # geom_segment(aes(x = -3, y = -1.5, xend = 0.1, yend = 0.1),
     #                           arrow = arrow(length = unit(0.1, "cm"))) +
     theme_graph() 
-  
+
   setwd("~/nas/04.Results/critical_features/network/")
   if (Cancername %in% c("BLCA", "OV","UCEC")) {
     ggsave(critical_network , filename = paste0(Cancername,"_critical_network.svg"), width = 40, height = 40)
@@ -117,7 +119,6 @@ for (num_CancerType in Cancerlist) {
 
   # lihc = readRDS(paste0("~/nas/04.Results/short_long/", CancerType,"_critical_features_short_long_with_drug.rds"))
 }
-
 
 # critical_network = edges %>%
 #   as_tbl_graph() %N>% 
