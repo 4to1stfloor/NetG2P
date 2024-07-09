@@ -23,7 +23,7 @@ colnames(link_genes_filtered_df) = colnames(single_genes)
 
 Cancerlist = dir(paste0(filepath, "/00.data/filtered_TCGA/"))
 surv_total_results = read_xlsx("~/nas/04.Results/Total_results_survpval2.xlsx")
-cancer_specific_critical_features = read_csv("~/nas/04.Results/critical_features/unique_short_long_critical_features_for_SW.csv")
+cancer_specific_critical_features = read_csv("~/nas/04.Results/critical_features/unique_short_long_critical_features_for_SW_ver2.csv")
 meta_for_TCGA = read.csv(paste0(ref_path, "/Depmap_meta_filt_to_TCGA.csv"))
 
 # for fic
@@ -37,10 +37,10 @@ if(!dir.exists(fig_path)){
 setwd(fig_path)
 
 ## Read Dataset 
-meta.tbl <- read.csv(file = '/mnt/gluster_server/data/raw/DepMap/23Q2/Model.csv', 
+meta.tbl <- read.csv(file = '~/nas/99.reference/DepMap/Model.csv', 
                      sep=',', header=T, fill=T)
 
-ge.tbl <- read.csv(file = '/mnt/gluster_server/data/raw/DepMap/23Q2/CRISPRGeneEffect.csv', 
+ge.tbl <- read.csv(file = '~/nas/99.reference/DepMap/CRISPRGeneEffect.csv', 
                    sep=',', header=T, fill=T, row.names=1)
 # rnai
 # ge.tbl <- read.csv(file = '/mnt/gluster_server/data/raw/DepMap/23Q2/', 
