@@ -42,7 +42,7 @@ meta_cell = readRDS("/mnt/gluster_server/data/reference/TLDR/meta_cells_primary.
 
 criteria_filt = read_xlsx("~/nas/99.reference/DrugCorrection.xlsx")
 
-num_CancerType = "26.TCGA-LUSC"
+# num_CancerType = "26.TCGA-LUSC"
 
 total_repur_screening = data.frame()
 for (num_CancerType in Cancerlist) {
@@ -73,13 +73,13 @@ for (num_CancerType in Cancerlist) {
     wo_cli_drug = rbind(wo_cli_drug , tmp_cli_drug_filt)
     
   }
-
+  
   wo_cli_drug = wo_cli_drug %>% 
     filter(!pharmaceutical_therapy_drug_name %in% unique(tmp_origin_cli_drug$pharmaceutical_therapy_drug_name)) # do not containa the drug that treated original cancer type patients
   
   cli_drug_filt = wo_cli_drug %>% 
     filter(!pharmaceutical_therapy_drug_name %in% c("[Not Available]", "Unknown")) 
-
+  
   cli_drug_filt_edit = left_join(cli_drug_filt, criteria_filt, by = c("pharmaceutical_therapy_drug_name" = "OldName")) %>%
     mutate(main_name_merge = coalesce(Correction, pharmaceutical_therapy_drug_name)) %>%
     select(cancertype , main_name_merge, Correction,pharmaceutical_therapy_drug_name, everything())
@@ -227,7 +227,7 @@ for (num_CancerType in Cancerlist) {
 total_repur_screening_spe = total_repur_screening %>% filter(direction == "short" & pvalue < 0.05)
 
 # write.xlsx(lihc_total_repur , "~/nas/04.Results/drug/depmap/gdsc/lihc_repurposing_screening_w_target.xlsx")
-write.xlsx(total_repur_screening_spe , "~/nas/04.Results/drug/depmap/gdsc/total_repurposing_screening_w_target.xlsx")
+write.xlsx(total_repur_screening_spe , "~/nas/04.Results/drug/depmap/gdsc/short_repurposing_screening_w_target.xlsx")
 
 library(readxl)
 library(tidyverse)
@@ -388,7 +388,7 @@ total_box = ggboxplot(total_gd_select_arrange ,
                       panel.labs.background = list(fill = "steelblue", color = "steelblue"),
                       use.label = F,
                       use.labels = F
-                      ) + 
+) + 
   facet_grid(~ cancertype,scales = "free", space='free') +
   stat_pvalue_manual(
     stat_test_add_signif,  
@@ -525,7 +525,7 @@ library(cowplot)
 total_box_add_heat = plot_grid(total_box ,p2, align = "v",nrow = 2 , rel_heights = c(c(5/8, 3/8)))
 
 setwd("~/nas/04.Results/drug/depmap/gdsc/")
-ggsave(file= "total_repurposing_screening_with_heat.svg", plot=total_box_add_heat, width=8, height=4.8)
+ggsave(file= "short_repurposing_screening_with_heat.svg", plot=total_box_add_heat, width=8, height=4.8)
 
 # lihc = readRDS(paste0("~/nas/04.Results/short_long/", CancerType,"_critical_features_short_long_with_drug.rds"))
 
