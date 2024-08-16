@@ -33,7 +33,7 @@ gdsc = readRDS("/mnt/gluster_server/data/reference/GDSC/2024_01_11/GDSC_data_com
 meta_cell = readRDS("/mnt/gluster_server/data/reference/TLDR/meta_cells_primary.rds")
 
 criteria_filt = read_xlsx("~/nas/99.reference/DrugCorrection.xlsx")
-num_CancerType = "19.TCGA-LIHC"
+# num_CancerType = "19.TCGA-LIHC"
 # Cancerlist = Cancerlist[c(2,3)]
 total_gdsc = data.frame()
 for (num_CancerType in Cancerlist) {

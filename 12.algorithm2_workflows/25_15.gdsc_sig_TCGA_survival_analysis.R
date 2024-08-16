@@ -25,7 +25,7 @@ criteria_filt = criteria %>%
   separate_rows(alias, sep = ",") %>%
   mutate(alias = trimws(alias)) 
 
-num_CancerType = "30.TCGA-BRCA"
+# num_CancerType = "30.TCGA-BRCA"
 
 for (num_CancerType in Cancerlist) {
   main.path_tc = paste0(filepath, "00.data/filtered_TCGA/", num_CancerType)

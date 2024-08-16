@@ -25,7 +25,7 @@ criteria_filt = criteria %>%
   separate_rows(alias, sep = ",") %>%
   mutate(alias = trimws(alias))
 
-num_CancerType = "04.TCGA-CESC"
+# num_CancerType = "04.TCGA-CESC"
 # setwd("~/nas/04.Results/drug/TCGA_drug/TCGA_drug/")
 
 for (num_CancerType in Cancerlist) {
