@@ -12,3 +12,4 @@
 - [ ] Provide the pretraining code
 - [ ] Examples for multi-omics integration, networkpropagation, perturbation prediction
 - [ ] Example code for predicting prognosis
+- [ ] Refactoring code
