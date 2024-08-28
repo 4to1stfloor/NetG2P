@@ -2,6 +2,6 @@
 
 Here we provide the examples data for our workflow
 
-## examples data
+## Examples data
 
 Will be updated
