@@ -34,7 +34,7 @@ This script train the model by preprocessed TCGA data. It performs the following
 
 ### `NetGPT/analysis.R`
 will be added. It includes:
-- 
+- will be added.
 
 ## Usage
 
