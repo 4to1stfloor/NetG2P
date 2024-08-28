@@ -6,3 +6,9 @@
 
 
 ![figure4A](https://github.com/4to1stfloor/NetGPT/assets/115065099/41d94253-675d-497f-9bdb-ce2033446f18)
+
+## To-do-list
+- [x] Upload the pretrained model
+- [ ] Provide the pretraining code
+- [ ] Examples for multi-omics integration, networkpropagation, perturbation prediction
+- [ ] Example code for predicting prognosis
