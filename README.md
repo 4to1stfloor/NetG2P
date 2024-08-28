@@ -1,6 +1,7 @@
 # NetGPT
 **NetGPT**: **N**etwork-based **G**enotype-**P**henotype **T**ransformation identifies key signaling crosstalks for prognosis in pan-cancer study
 
+## Graphical abstract
 ![Figure1](https://github.com/user-attachments/assets/dd9163be-850f-4732-b5ae-40c6eef7a2f4)
 
 
