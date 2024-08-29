@@ -16,8 +16,9 @@ This repository contains the following files and directories:
   - `model.R`: Script for data uploading, data preprocessing, training the model, hyperparameter tunning, and save the results
   - Will be added 
 - `data/`: Directory containing input datasets
-  - `TCGA-XXXX_pathwayeach_all_log.rds`: merged tcga transcriptome data and somatic mutation data as pathway levels
-  - `TCGA-XXXX_pathwayeach_all_log.rds`: merged tcga transcriptome data and somatic mutation data as pathway-link levels
+  - `TCGA-XXXX_pathwayeach.rds`: merged tcga transcriptome data and somatic mutation data as pathway levels
+  - `TCGA-XXXX_pathwaylink.rds`: merged tcga transcriptome data and somatic mutation data as pathway-link levels
+  - `TCGA-XXXX_dual_with_duration.rds`: merged `TCGA-XXXX_pathwayeach.rds`, `TCGA-XXXX_pathwaylink.rds`, duration data from TCGA clinical data
 - `tests/`: Will be added 
 - `tutorials/`: Will be added 
 
