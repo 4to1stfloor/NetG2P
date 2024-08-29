@@ -44,6 +44,8 @@ Instructions on how to use the code or reproduce the results.
 
 ## To-do-list
 - [x] Upload the pretrained model
+- [x] Upload the preprocessed input data
+- [x] Upload the input data with clinical information
 - [ ] Provide the pretraining code
 - [ ] Examples for multi-omics integration, networkpropagation, perturbation prediction
 - [ ] Example code for predicting prognosis
