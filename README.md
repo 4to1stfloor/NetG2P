@@ -51,7 +51,8 @@ $ netgpt_GPTmodule.R --expression your expression file --mutation your mutation 
 - [x] Upload the pretrained model
 - [x] Upload the preprocessed input data
 - [x] Upload the input data with clinical information
-- [ ] Provide the pretraining code
+- [x] Provide the pretraining code for GPT module
+- [ ] Provide the pretraining code for COF module
 - [ ] Examples for multi-omics integration, networkpropagation, perturbation prediction
 - [ ] Example code for predicting prognosis
 - [ ] Refactoring code
