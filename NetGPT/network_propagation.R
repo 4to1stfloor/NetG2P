@@ -12,7 +12,7 @@ network_propagation = function(expression_data, mutation_data, binlimit = 192) {
   exp.log.mat = expression_data
   
   # protein to protein 
-  g.ppi.conn = readRDS(file = "data/ppi_backbone_20220117.rds")
+  g.ppi.conn = readRDS(file = "data/reference/ppi_backbone_20220117.rds")
   g.ppi.conn.simp = simplify(g.ppi.conn) 
   gene.backbone = names(V(g.ppi.conn.simp))
   
