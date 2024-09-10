@@ -40,8 +40,13 @@ will be added. It includes:
 
 ## Usage
 
-Instructions on how to use the code or reproduce the results.
+For producing network propagation with GC clustering method, follow the code below.
 
+```bash
+$ git clone this-repo-url
+$ cd NetGPT
+$ netgpt --expression your expression file --mutation your mutation file 
+```
 ## To-do-list
 - [x] Upload the pretrained model
 - [x] Upload the preprocessed input data
