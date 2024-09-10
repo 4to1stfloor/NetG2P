@@ -45,7 +45,7 @@ For producing network propagation with GC clustering method, follow the code bel
 ```bash
 $ git clone this-repo-url
 $ cd NetGPT
-$ netgpt --expression your expression file --mutation your mutation file 
+$ netgpt_GPTmodule.R --expression your expression file --mutation your mutation file 
 ```
 ## To-do-list
 - [x] Upload the pretrained model
