@@ -64,7 +64,7 @@ GC_projection = function(result_rdpn,
     rownames(enr.mat) = name.accum
     colnames(enr.mat) = colnames(pval.mat)
     
-    saveRDS(enr.mat, paste0(output_path, "phyper_enrichment_", length(unique(path$pathway)), "_", path.dat, "_GC.rds"))
+    saveRDS(enr.mat, paste0(output_path, "phyper_enrichment_", length(unique(path$Pathway)), "_", path.dat, "_GC.rds"))
     
   }
   ###########################################################################################################################################################################
@@ -120,7 +120,7 @@ GC_projection = function(result_rdpn,
     rownames(dat) = names 
     colnames(dat) = colnames(pval.mat) 
     
-    saveRDS(dat, paste0(output_path, "phyper_enrichment_", length(unique(path$pathway)), "_", path.dat, "_net_GC.rds"))
+    saveRDS(dat, paste0(output_path, "phyper_enrichment_", length(unique(path$Pathway)), "_", path.dat, "_net_GC.rds"))
   }
   ###########################################################################################################################################################################
 
