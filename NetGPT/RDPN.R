@@ -1,5 +1,5 @@
 RDPN = function(expression_data, 
-                muatation_data, 
+                mutation_data, 
                 net_propa_data, 
                 random_out_path = "RDPN/", 
                 final_out_path = "RDPN_res/",
@@ -19,7 +19,7 @@ RDPN = function(expression_data,
   ######################################################################################################################
   
   # input data (exp data and mut data)
-  mut.mat = muatation_data
+  mut.mat = mutation_data
   exp.log.mat = expression_data
   raw.prop.score = net_propa_data
   query.genes = rownames(raw.prop.score) #12902
@@ -109,7 +109,7 @@ RDPN = function(expression_data,
     tic() 
     # .combine = > combine mode of results (it must be r function)
     prop.res.all = foreach(j=1:N.pat, .combine =cbind) %dopar% {
-      source(paste0(ref_path,"func_netprop.r"))
+      source("NetGPT/func_netprop.r")
       prop.res.new <- net.propagation(exp.rdpn[,j], adj.rdpn, n.mut.stretch[,j], alphav) 
       prop.res.new       
     }
