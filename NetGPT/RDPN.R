@@ -44,6 +44,10 @@ RDPN = function(expression_data,
   
   for (i in 1:random.num) { 
     
+    if (file.exists(paste0(random_out_path,"net_prop_RDPN",c(i),".rds"))) {
+      next
+    }
+    
     g.rdpn = readRDS(paste0("reference/RDPN/10X/ppi_backbone_20220117_RDPN",c(i),".rds")) 
     g.rdpn.sub = induced_subgraph(g.rdpn, query.genes) 
     c.rdpn = components(g.rdpn.sub) 
@@ -59,9 +63,6 @@ RDPN = function(expression_data,
     common.mut = intersect(query.names, rownames(mut.mat)) 
     idx.mut = match(common.mut, rownames(mut.mat))
     mut.rdpn = as.matrix(mut.mat[idx.mut,]) 
-    
-    # colnames(mut.rdpn) = substr(colnames(mut.rdpn), 1, 16)
-    # colnames(exp.rdpn) = substr(colnames(exp.rdpn), 1, 16)
     
     int.col.names = intersect(colnames(mut.rdpn), colnames(exp.rdpn))
     
@@ -138,7 +139,7 @@ RDPN = function(expression_data,
   
   for (i in 1:random.num) {
     # print (i)
-    rdpn.file = paste0(random_out_path, "net_prop_RDPN", c(i), "_.rds")
+    rdpn.file = paste0(random_out_path, "net_prop_RDPN", c(i), ".rds")
     rand.prop.score = readRDS(rdpn.file)
     
     idx = match(rownames(rand.prop.score), rownames(net_propa_data)) 
@@ -168,7 +169,7 @@ RDPN = function(expression_data,
     pval.mat[idx, j] = 0 # to treat as very significant when the mutation exists 
   }
   
-  saveRDS(pval.mat, file = paste0(final_out_path, "net_prop_pval_", random.num, "rep_total_samples.rds"))
+  saveRDS(pval.mat, file = paste0(final_out_path, "RDPN_res_", random.num, "rep_total_samples.rds"))
   return(pval.mat)
   
 }
