@@ -14,7 +14,7 @@ GC_projection = function(result_rdpn,
   }
   
   path.dat = "KEGG" #"DKShin"
-  path = readRDS("reference/KEGG_pathway_genes.rds")
+  path = readRDS("reference/KEGG_dual_total_genes.rds")
   g.ppi.conn = readRDS("reference/ppi_backbone_20220117.rds")
   
   ###############################################################################################################################################
@@ -40,9 +40,9 @@ GC_projection = function(result_rdpn,
       #g.ppi.gc = induced.subgraph(g.ppi.spec, names(which(c.ppi.spec$membership == idx.max)))
       genes.gc = names(which(c.ppi.spec$membership == idx.max))
       group2 = genes.gc
-      for ( p in 1:length(unique(path$pathway))) {
+      for ( p in 1:length(unique(path$Pathway))) {
         pathway.name = paste0("P", p)
-        group1 = intersect(path$Symbol[which(path$pathway == pathway.name)], pval.sample)
+        group1 = intersect(path$Genes[which(path$Pathway == pathway.name)], pval.sample)
         total.genes = unique(c(pval.sample, group1))
         overlapped = intersect(group1, group2) 
         enr.value = phyper(length(overlapped)-1, length(group2), (length(total.genes) - length(group2)), length(group1), lower.tail = FALSE) 
