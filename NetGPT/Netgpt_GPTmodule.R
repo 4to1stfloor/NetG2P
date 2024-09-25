@@ -29,7 +29,19 @@ if (is.null(opt$expression) || is.null(opt$mutation)) {
 expression_data <- read.csv(opt$expression, row.names = 1)
 mutation_data <- read.csv(opt$mutation, row.names = 1)
 
-# networkpropagation 
+if (all.equal(colnames(expression_data), colnames(mutation_data))) {
+  print("samples are equal between expression data and mutation data")
+} else {
+  stop("please, make exp and mut data have the same columns", call.=FALSE)
+}
+
+if (all.equal(rownames(expression_data), rownames(mutation_data))) {
+  print("genes are equal between expression data and mutation data")
+} else {
+  stop("please, make exp and mut data have the same rows", call.=FALSE)
+}
+
+# network propagation 
 result_networkpropa = network_propagation(expression_data, mutation_data)
 result_rdpn = RNPN(expression_data, mutation_data,network_propagation)
 
