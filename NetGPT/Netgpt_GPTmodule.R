@@ -5,6 +5,7 @@ library(optparse)
 source("network_propagation.R")
 source("RDPN.R")
 source("GC.R")
+source("GC_projection.R")
 
 # option
 option_list <- list(
