@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-library(optparse)
+require(optparse)
 
 source("network_propagation.R")
 source("RDPN.R")
