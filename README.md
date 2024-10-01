@@ -7,6 +7,15 @@
 
 ![figure4A](https://github.com/4to1stfloor/NetGPT/assets/115065099/41d94253-675d-497f-9bdb-ce2033446f18)
 
+## Usage
+
+For producing network propagation with GC clustering method, follow the code below.
+
+```bash
+$ git clone this-repo-url
+$ cd NetGPT
+$ Netgpt_GPTmodule.R --expression your expression file --mutation your mutation file --output your path
+```
 
 ## Repository Structure
 
@@ -38,15 +47,6 @@ This script train the model by preprocessed TCGA data. It performs the following
 will be added. It includes:
 - will be added.
 
-## Usage
-
-For producing network propagation with GC clustering method, follow the code below.
-
-```bash
-$ git clone this-repo-url
-$ cd NetGPT
-$ Netgpt_GPTmodule.R --expression your expression file --mutation your mutation file --output your path
-```
 ## To-do-list
 - [x] Upload the pretrained model
 - [x] Upload the preprocessed input data
