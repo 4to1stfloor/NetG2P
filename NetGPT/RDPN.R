@@ -6,6 +6,16 @@ RDPN = function(expression_data,
                 num.edge.multi = 10, 
                 random.num = 150){
   
+  packages <- c("igraph","data.table","tictoc") 
+  
+  install_if_missing <- function(pkg) {
+    if (!require(pkg, character.only = TRUE)) {
+      install.packages(pkg, dependencies = TRUE)
+      library(pkg, character.only = TRUE)
+    }
+  }
+  
+  sapply(packages, install_if_missing)
   
   #loading tools 
   require(igraph) 
@@ -48,7 +58,7 @@ RDPN = function(expression_data,
       next
     }
     
-    g.rdpn = readRDS(paste0("reference/RDPN/10X/ppi_backbone_20220117_RDPN",c(i),".rds")) 
+    g.rdpn = readRDS(paste0("../data/reference/RDPN/10X/ppi_backbone_20220117_RDPN",c(i),".rds")) 
     g.rdpn.sub = induced_subgraph(g.rdpn, query.genes) 
     c.rdpn = components(g.rdpn.sub) 
     
@@ -110,8 +120,8 @@ RDPN = function(expression_data,
     tic() 
     # .combine = > combine mode of results (it must be r function)
     prop.res.all = foreach(j=1:N.pat, .combine =cbind) %dopar% {
-      source("NetGPT/func_netprop.r")
-      prop.res.new <- net.propagation(exp.rdpn[,j], adj.rdpn, n.mut.stretch[,j], alphav) 
+      source("./func_network.r")
+      prop.res.new <- network_propagation(exp.rdpn[,j], adj.rdpn, n.mut.stretch[,j], alphav) 
       prop.res.new       
     }
     toc() 
@@ -174,12 +184,12 @@ RDPN = function(expression_data,
   
 }
 
-  
 
 
 
 
-  
+
+
 
 
 

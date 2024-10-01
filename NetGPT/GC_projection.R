@@ -1,7 +1,7 @@
 GC_projection = function(result_rdpn,
                          output_path = "final_res/",
                          random.num = 150){
-
+  
   ###########################################################################################################################################################################
   ## This script is for hypergeometric test (both pathway and pathway link levels)
   ###########################################################################################################################################################################
@@ -10,6 +10,19 @@ GC_projection = function(result_rdpn,
   ## Function define
   ###########################################################################################################################################################################
   ### 1.function of pathway-level (e.g., P1, P2, P3, ..., P54) 
+  
+  packages <- c("dplyr") 
+  
+  install_if_missing <- function(pkg) {
+    if (!require(pkg, character.only = TRUE)) {
+      install.packages(pkg, dependencies = TRUE)
+      library(pkg, character.only = TRUE)
+    }
+  }
+  
+  sapply(packages, install_if_missing)
+  
+  library(dplyr)
   
   GC.hyper.pathway.direct  <- function(path.dat) {
     
@@ -65,7 +78,7 @@ GC_projection = function(result_rdpn,
   ### 2.function of pathway-link level (e.g., P1-P2, P3-P10, ..., )
   
   GC.hyper.path.net.direct  <- function(path.dat) {
-   
+    
     tmp_pathway = path %>%
       filter(nchar(Pathway) <= 3)  %>%
       pull(Pathway) %>%
@@ -84,7 +97,7 @@ GC_projection = function(result_rdpn,
       #g.ppi.gc = induced.subgraph(g.ppi.spec, names(which(c.ppi.spec$membership == idx.max)))
       genes.gc = names(which(c.ppi.spec$membership == idx.max))
       group2 = genes.gc
-
+      
       enr.comb = c()
       names = c()
       for (pathway_link in pathway_links){
@@ -125,7 +138,7 @@ GC_projection = function(result_rdpn,
     return(dat)
   }
   ###########################################################################################################################################################################
-
+  
   #loading R packages
   require(data.table)
   require(igraph)
@@ -139,8 +152,8 @@ GC_projection = function(result_rdpn,
   }
   
   path.dat = "KEGG" #"DKShin"
-  path = readRDS("reference/KEGG_dual_total_genes.rds")
-  g.ppi.conn = readRDS("reference/ppi_backbone_20220117.rds")
+  path = readRDS("../data/reference/KEGG_dual_total_genes.rds")
+  g.ppi.conn = readRDS("../data/reference/ppi_backbone_20220117.rds")
   pval.mat = result_rdpn # output of RDPN.R 
   
   # Execute function 1
@@ -157,6 +170,7 @@ GC_projection = function(result_rdpn,
     saveRDS(total_res , paste0(output_path,"GC_projection_final.rds"))
   }
   
+  write.csv(total_res, paste0(output_path,"GC_projection_final.csv"))
   return(total_res)
   
 }
@@ -165,5 +179,5 @@ GC_projection = function(result_rdpn,
 
 
 
-  
+
 

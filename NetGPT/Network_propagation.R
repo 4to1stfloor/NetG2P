@@ -2,7 +2,19 @@
 ## network propagation 
 ##########################################################################################################################
 
-network_propagation = function(expression_data, mutation_data, binlimit = 192) {
+Network_propagation = function(expression_data, mutation_data, binlimit = 192) {
+  
+  packages <- c("igraph","tictoc","pcg","foreach","doParallel") 
+  
+  install_if_missing <- function(pkg) {
+    if (!require(pkg, character.only = TRUE)) {
+      install.packages(pkg, dependencies = TRUE)
+      library(pkg, character.only = TRUE)
+    }
+  }
+  
+  sapply(packages, install_if_missing)
+  
   library(igraph)
   library(tictoc) 
   library(pcg)
@@ -12,7 +24,8 @@ network_propagation = function(expression_data, mutation_data, binlimit = 192) {
   exp.log.mat = expression_data
   
   # protein to protein 
-  g.ppi.conn = readRDS(file = "data/reference/ppi_backbone_20220117.rds")
+  g.ppi.conn = readRDS(file = "../data/reference/ppi_backbone_20220117.rds")
+  
   g.ppi.conn.simp = simplify(g.ppi.conn) 
   gene.backbone = names(V(g.ppi.conn.simp))
   
@@ -64,12 +77,13 @@ network_propagation = function(expression_data, mutation_data, binlimit = 192) {
     ###################################################################################################
     ## Network propagation using parallel, depends on the sample size  
     ###################################################################################################
+    
     N.pat <- dim(n.exp.mat)[2] #971 
     N.net <- dim(n.adj.mat)[1] #12902 
     alphav <- 0.7 # propagation parameter (0.3 is assumed as returning back to the starting point, other 0.7 is assumed as going to the end network, not returning)
     
-    require(foreach)
-    require(doParallel)
+    library(foreach)
+    library(doParallel)
     
     # parallel::detectCores()-1 #detect the number of available cores 
     # binlimit = 24 * 8. using 24 cores is 1.5 times faster than 36 cores due to memory issues (= 24 cores for 8 samples each time) 
@@ -79,9 +93,10 @@ network_propagation = function(expression_data, mutation_data, binlimit = 192) {
       registerDoParallel(cl) 
       tic() 
       prop.res.all = foreach (i=1:N.pat, .combine = cbind) %dopar% {
-        source("NetGPT/func_netprop.r")
-        prop.res.new <- net.propagation(n.exp.mat[,i], n.adj.mat, n.mut.stretch[,i], alphav) 
-        prop.res.new 
+        source("./func_network.r")
+        
+        prop.res.new <- network_propagation(n.exp.mat[,i], n.adj.mat, n.mut.stretch[,i], alphav) 
+        # prop.res.new 
       }
       toc() 
       stopCluster(cl) 
@@ -93,8 +108,9 @@ network_propagation = function(expression_data, mutation_data, binlimit = 192) {
       registerDoParallel(cl) 
       tic() 
       prop.res.all = foreach(i=1:binlimit, .combine = cbind) %dopar% { 
-        source("NetGPT/func_netprop.r")
-        prop.res.new <- net.propagation(n.exp.mat[,i], n.adj.mat, n.mut.stretch[,i], alphav) 
+        source("./func_network.r")
+        
+        prop.res.new <- network_propagation(n.exp.mat[,i], n.adj.mat, n.mut.stretch[,i], alphav) 
         prop.res.new
       }
       toc() 
@@ -108,9 +124,10 @@ network_propagation = function(expression_data, mutation_data, binlimit = 192) {
         registerDoParallel(cl) 
         tic() 
         prop.res.add = foreach(i=((binlimit*(j-1))+1): max.query, .combine = cbind) %dopar% {
-          source("NetGPT/func_netprop.r") 
-          prop.res.new <- net.propagation(n.exp.mat[,i], n.adj.mat, n.mut.stretch[,i], alphav) 
-          prop.res.new 
+          source("./func_network.r") 
+          
+          prop.res.new <- network_propagation(n.exp.mat[,i], n.adj.mat, n.mut.stretch[,i], alphav) 
+          # prop.res.new 
         }
         toc() 
         stopCluster(cl) 
@@ -124,11 +141,11 @@ network_propagation = function(expression_data, mutation_data, binlimit = 192) {
     return(prop.res.all)
     
     ######################################################################################################################
-  
+    
   } 
   
 }
-  
+
 
 
 
