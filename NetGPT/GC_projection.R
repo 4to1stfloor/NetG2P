@@ -1,5 +1,5 @@
 GC_projection = function(result_rdpn,
-                         output_path = "final_res/",
+                         output_path = "./final_res/",
                          random.num = 150){
   
   ###########################################################################################################################################################################
@@ -68,7 +68,6 @@ GC_projection = function(result_rdpn,
     rownames(enr.mat) = name.accum
     colnames(enr.mat) = colnames(pval.mat)
     
-    saveRDS(enr.mat, paste0(output_path, "phyper_enrichment_", length(unique(path$Pathway)), "_", path.dat, "_GC.rds"))
     return(enr.mat)
     
   }
@@ -134,7 +133,6 @@ GC_projection = function(result_rdpn,
     rownames(dat) = names 
     colnames(dat) = colnames(pval.mat) 
     
-    saveRDS(dat, paste0(output_path, "phyper_enrichment_", length(unique(path$Pathway)), "_", path.dat, "_net_GC.rds"))
     return(dat)
   }
   ###########################################################################################################################################################################
@@ -168,9 +166,14 @@ GC_projection = function(result_rdpn,
   if (all.equal(rownames(path_res_t), rownames(link_res_t))) {
     total_res = cbind(path_res_t, link_res_t)
     saveRDS(total_res , paste0(output_path,"GC_projection_final.rds"))
+    write.csv(total_res, paste0(output_path,"GC_projection_final.csv"))
+    
+  } else {
+    print("pathway and pathwaylink data are not matched rownames. Will be provided seperated file.")
+    write.csv(path_res_t , paste0(output_path,"GC_projection_final_pathway.csv"))
+    write.csv(link_res_t, paste0(output_path,"GC_projection_final_pathway_link.csv"))
   }
   
-  write.csv(total_res, paste0(output_path,"GC_projection_final.csv"))
   return(total_res)
   
 }
