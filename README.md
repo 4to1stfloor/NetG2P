@@ -14,15 +14,15 @@ For producing network propagation with GC clustering method, follow the code bel
 
 ```bash
 $ git clone this-repo-url
-$ cd ./NetGPT/NetGPT/
-$ Rscript Netgpt_GPTmodule.R --expression your expression file --mutation your mutation file --output your path
+$ cd ./NetG2P/NetG2P/
+$ Rscript Netg2p_GPTmodule.R --expression your expression file --mutation your mutation file --output your path
 ```
 
 ## Repository Structure
 
 This repository contains the following files and directories:
 
-- `NetGPT/`: Directory containing source code
+- `NetG2P/`: Directory containing source code
   - `model.R`: Script for data uploading, data preprocessing, training the model, hyperparameter tunning, and save the results
   - Will be added 
 - `data/`: Directory containing input datasets
@@ -34,7 +34,7 @@ This repository contains the following files and directories:
 
 ## File Descriptions
 
-### `NetGPT/model.R`
+### `NetG2P/model.R`
 This script train the model by preprocessed TCGA data. It performs the following steps:
 1. Loads preprocessed TCGA data
 2. Cleans and split the data.
@@ -44,7 +44,7 @@ This script train the model by preprocessed TCGA data. It performs the following
 6. Retraining 3-5 steps until are met the criteria while ablating the noise features
 7. Outputs (best model and metrics) to the `your path` directory
 
-### `NetGPT/analysis.R`
+### `NetG2P/analysis.R`
 will be added. It includes:
 - will be added.
 
