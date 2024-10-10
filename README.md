@@ -6,7 +6,7 @@
 ## Graphical abstract
 ![Figure1](https://github.com/user-attachments/assets/b5208b2e-6b36-4a46-8346-1be139cc452b)
 
-![figure4A](https://github.com/4to1stfloor/NetGPT/assets/115065099/41d94253-675d-497f-9bdb-ce2033446f18)
+<img width="1545" alt="abstract" src="https://github.com/user-attachments/assets/52df8886-03b7-4351-8b00-7ddfac978a58">
 
 ## Usage
 
