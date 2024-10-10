@@ -4,8 +4,7 @@
 **NetG2P**: **N**etwork-based **G**enotype-to(**2**)-**P**henotype transformation identifies key signaling crosstalks for prognosis in pan-cancer study
 
 ## Graphical abstract
-![Figure1](https://github.com/user-attachments/assets/dd9163be-850f-4732-b5ae-40c6eef7a2f4)
-
+![Figure1](https://github.com/user-attachments/assets/b5208b2e-6b36-4a46-8346-1be139cc452b)
 
 ![figure4A](https://github.com/4to1stfloor/NetGPT/assets/115065099/41d94253-675d-497f-9bdb-ce2033446f18)
 
