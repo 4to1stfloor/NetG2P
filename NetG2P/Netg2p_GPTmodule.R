@@ -42,7 +42,7 @@ mutation_data <- read.csv(opt$mutation, row.names = 1)
 if (isTRUE(all.equal(colnames(expression_data), colnames(mutation_data)))) {
   print("samples are equal between expression data and mutation data")
 } else {
-  print("Colnames between exp and mut are not matched. NetGPT will process the rowname by interaction.")
+  print("Colnames between exp and mut are not matched. NetG2P will process the rowname by interaction.")
   inter_col = intersect(colnames(expression_data), colnames(mutation_data))
   expression_data = expression_data[,inter_col]
   mutation_data = mutation_data[,inter_col]
@@ -51,7 +51,7 @@ if (isTRUE(all.equal(colnames(expression_data), colnames(mutation_data)))) {
 if (isTRUE(all.equal(rownames(expression_data), rownames(mutation_data)))) {
   print("genes are equal between expression data and mutation data")
 } else {
-  print("Rownames between exp and mut are not matched. NetGPT will process the rowname by interaction.")
+  print("Rownames between exp and mut are not matched. NetG2P will process the rowname by interaction.")
   inter_row = intersect(rownames(expression_data), rownames(mutation_data))
   expression_data = expression_data[inter_row,]
   mutation_data = mutation_data[inter_row,]
