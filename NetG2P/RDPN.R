@@ -1,8 +1,8 @@
 RDPN = function(expression_data, 
                 mutation_data, 
                 net_propa_data, 
-                random_out_path = "RDPN/", 
-                final_out_path = "RDPN_res/",
+                # random_out_path = "RDPN/", 
+                # final_out_path = "RDPN_res/",
                 num.edge.multi = 10, 
                 random.num = 150){
   
@@ -36,6 +36,9 @@ RDPN = function(expression_data,
   
   # savepath == random_out_path
   # result_savepath == final_out_path
+  
+  random_out_path <- file.path(opt$output, "RDPN/")
+  final_out_path <- file.path(opt$output, "RDPN_res/")
   
   # create folder
   if(!dir.exists(random_out_path)){
