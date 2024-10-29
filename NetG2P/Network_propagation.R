@@ -87,9 +87,9 @@ Network_propagation = function(expression_data, mutation_data, binlimit = 192) {
     
     # parallel::detectCores()-1 #detect the number of available cores 
     # binlimit = 24 * 8. using 24 cores is 1.5 times faster than 36 cores due to memory issues (= 24 cores for 8 samples each time) 
-    
+    ??makeCluster
     if (N.pat < binlimit) {
-      cl <- makeCluster(24, outfile = "log.txt") 
+      cl <- makeCluster(24) 
       registerDoParallel(cl) 
       tic() 
       prop.res.all = foreach (i=1:N.pat, .combine = cbind) %dopar% {
@@ -104,7 +104,7 @@ Network_propagation = function(expression_data, mutation_data, binlimit = 192) {
       # subsetting data
       bin = ceiling(N.pat / binlimit) 
       message(paste("data is too large. Dividing into", c(bin), "bins"))
-      cl <- makeCluster(24, outfile = "log.txt") 
+      cl <- makeCluster(24) 
       registerDoParallel(cl) 
       tic() 
       prop.res.all = foreach(i=1:binlimit, .combine = cbind) %dopar% { 
@@ -120,7 +120,7 @@ Network_propagation = function(expression_data, mutation_data, binlimit = 192) {
         if (max.query > N.pat) { 
           max.query = N.pat 
         }
-        cl <- makeCluster(24, outfile = "log.txt")
+        cl <- makeCluster(24)
         registerDoParallel(cl) 
         tic() 
         prop.res.add = foreach(i=((binlimit*(j-1))+1): max.query, .combine = cbind) %dopar% {

@@ -41,6 +41,14 @@ RDPN = function(expression_data,
   final_out_path <- file.path(opt$output, "RDPN_res/")
   
   # create folder
+  
+  if(!dir.exists(opt$output)){
+    dir.create(opt$output)
+    print(paste0("Created folder: ", opt$output))
+  } else {
+    print(paste0("Folder already exists: ", opt$output))
+  }
+  
   if(!dir.exists(random_out_path)){
     dir.create(random_out_path)
     print(paste0("Created folder: ", random_out_path))
