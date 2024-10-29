@@ -165,13 +165,17 @@ GC_projection = function(result_rdpn,
   
   if (all.equal(rownames(path_res_t), rownames(link_res_t))) {
     total_res = cbind(path_res_t, link_res_t)
-    saveRDS(total_res , paste0(output_path,"GC_projection_final.rds"))
-    write.csv(total_res, paste0(output_path,"GC_projection_final.csv"))
+    total_res = -log(total_res)
+    saveRDS(total_res , paste0(output_path,"/GC_projection_final.rds"))
+    write.csv(total_res, paste0(output_path,"/GC_projection_final.csv"))
     
   } else {
     print("pathway and pathwaylink data are not matched rownames. Will be provided seperated file.")
-    write.csv(path_res_t , paste0(output_path,"GC_projection_final_pathway.csv"))
-    write.csv(link_res_t, paste0(output_path,"GC_projection_final_pathway_link.csv"))
+    path_res_t = -log(path_res_t)
+    link_res_t = -log(link_res_t)
+    
+    write.csv(path_res_t , paste0(output_path,"/GC_projection_final_pathway.csv"))
+    write.csv(link_res_t, paste0(output_path,"/GC_projection_final_pathway_link.csv"))
   }
   
   return(total_res)
