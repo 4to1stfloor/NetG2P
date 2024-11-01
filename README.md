@@ -12,6 +12,7 @@
 ## Usage
 
 For producing network propagation with GC clustering method, follow the code below.
+
 cf. For expression and mutation data, samples (patients) should be organized as columns.
 
 ```bash
