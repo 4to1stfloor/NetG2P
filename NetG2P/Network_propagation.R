@@ -87,7 +87,7 @@ Network_propagation = function(expression_data, mutation_data, binlimit = 192) {
     
     # parallel::detectCores()-1 #detect the number of available cores 
     # binlimit = 24 * 8. using 24 cores is 1.5 times faster than 36 cores due to memory issues (= 24 cores for 8 samples each time) 
-    ??makeCluster
+
     if (N.pat < binlimit) {
       cl <- makeCluster(24) 
       registerDoParallel(cl) 
