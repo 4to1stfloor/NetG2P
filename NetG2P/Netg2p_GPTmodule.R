@@ -21,7 +21,7 @@ option_list <- list(
               help="Path to the expression data CSV file or RDS file", metavar="character"),
   make_option(c("--mutation"), type="character", default=NULL, 
               help="Path to the mutation data CSV file or RDS file", metavar="character"),
-  make_option(c("--output"), type="character", default= "final_res/", 
+  make_option(c("--outdir"), type="character", default= "final_res/", 
               help="Path to final result", metavar="character")
 )
 
