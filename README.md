@@ -28,10 +28,10 @@ usage: Netg2p_GPTmodule.R [-h] --expression EXP --mutation MUT --outdir OUTDIR
 Merge expression data and mutation data by networkpropagation
 
 optional arguments:
-        --expression EXP  EXP file to be merged by networkpropagation, Path to the expression data CSV file or RDS file
-        --mutation MUT    EXP file to be merged by networkpropagation, Path to the mutation data CSV file or RDS file
-        --outdir OUTDIR   Out directory
-        -h, --help        Show this help message and exit
+    --expression EXP  EXP file to be merged by networkpropagation, Path to the expression data CSV file or RDS file
+    --mutation MUT    EXP file to be merged by networkpropagation, Path to the mutation data CSV file or RDS file
+    --outdir OUTDIR   Out directory
+    -h, --help        Show this help message and exit
 ```
 
 ## Repository Structure
