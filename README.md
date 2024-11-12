@@ -20,7 +20,7 @@ $ git clone this-repo-url
 $ cd ./NetG2P/NetG2P/
 $ Rscript Netg2p_GPTmodule.R --expression your expression file
                              --mutation your mutation file
-                             --output your path
+                             --outdir your path
 
 - List of parameters:
 
