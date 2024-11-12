@@ -19,6 +19,19 @@ cf. For expression and mutation data, samples (patients) should be organized as 
 $ git clone this-repo-url
 $ cd ./NetG2P/NetG2P/
 $ Rscript Netg2p_GPTmodule.R --expression your expression file --mutation your mutation file --output your path
+
+- List of parameters:
+
+Rscript Netg2p_GPTmodule.R --help
+usage: Netg2p_GPTmodule.R [-h] --expression EXP --mutation MUT --outdir OUTDIR
+
+Merge expression data and mutation data by networkpropagation
+
+optional arguments:
+        --expression EXP  EXP file to be merged by networkpropagation, Path to the expression data CSV file or RDS file
+        --mutation MUT    EXP file to be merged by networkpropagation, Path to the mutation data CSV file or RDS file
+        --outdir          Out directory
+        -h, --help        Show this help message and exit
 ```
 
 ## Repository Structure
