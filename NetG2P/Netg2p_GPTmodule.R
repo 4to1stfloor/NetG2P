@@ -62,15 +62,6 @@ if (isTRUE(all.equal(colnames(expression_data), colnames(mutation_data)))) {
   mutation_data = mutation_data[,inter_col]
 }
 
-# if (isTRUE(all.equal(rownames(expression_data), rownames(mutation_data)))) {
-#   print("genes are equal between expression data and mutation data")
-# } else {
-#   print("Rownames between exp and mut are not matched. NetG2P will process the rowname by interaction.")
-#   inter_row = intersect(rownames(expression_data), rownames(mutation_data))
-#   expression_data = expression_data[inter_row,]
-#   mutation_data = mutation_data[inter_row,]
-# }
-
 if (isTRUE(all.equal(colnames(expression_data), colnames(mutation_data)))) {
   print("pass rownames and colnames")
 } else {
