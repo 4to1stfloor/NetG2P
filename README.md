@@ -6,10 +6,9 @@
 ## Table of Contents
 
 - [Graphical abstract](#graphical-abstract)
-- [Folder Structure](#folder-structure)
-- [Configuration](#configuration)
-- [Running the Script](#running-the-script)
-- [Outputs](#outputs)
+- [Usage](#usage)
+- [Repository Structure](#repository-structure)
+- [File Descriptions](#file-descriptions)
 - [Example Workflow](#example-workflow)
 - [Common Issues and Tips](#common-issues-and-tips)
 - [License](#license)
@@ -21,6 +20,8 @@
 
 
 <img width="1563" alt="abstract" src="https://github.com/user-attachments/assets/89f97e34-d41c-46af-9884-a162a365e7d8">
+
+---
 
 ## Usage
 
@@ -79,6 +80,8 @@ This script train the model by preprocessed TCGA data. It performs the following
 will be added. It includes:
 - will be added.
 
+---
+
 ## To-do-list
 - [x] Upload the pretrained model
 - [x] Upload the preprocessed input data
@@ -88,3 +91,11 @@ will be added. It includes:
 - [ ] Examples for multi-omics integration, networkpropagation, perturbation prediction
 - [ ] Example code for predicting prognosis
 - [ ] Refactoring code
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+**Note:** Always ensure that your data and scripts are backed up before running batch processing tasks to prevent accidental data loss.
