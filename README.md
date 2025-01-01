@@ -5,7 +5,7 @@
 
 ## Table of Contents
 
-- [Prerequisites](#prerequisites)
+- [Graphical abstract](#prerequisites)
 - [Folder Structure](#folder-structure)
 - [Configuration](#configuration)
 - [Running the Script](#running-the-script)
